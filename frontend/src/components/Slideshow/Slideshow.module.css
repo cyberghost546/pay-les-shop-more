@@ -1,0 +1,103 @@
+/* src/components/Slideshow/Slideshow.module.css */
+.slideshow {
+  position: relative;
+  /* 3:2 shape, but never taller than 60% of the viewport */
+  max-width: min(960px, calc(60vh * 3 / 2), 100%);
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+.stage {
+  position: relative;          /* anchors the arrows to the image, not the text below */
+}
+
+.viewport {
+  overflow: hidden;          /* hides the off-screen slides */
+  border-radius: 12px;
+}
+
+.track {
+  display: flex;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  transition: transform 0.4s ease;
+}
+
+.slide {
+  position: relative;
+  flex: 0 0 100%;            /* each slide fills the viewport, no shrinking */
+  min-width: 0;
+}
+
+.image {
+  display: block;
+  width: 100%;
+  aspect-ratio: 3 / 2;       /* matches the flags, so nothing gets cropped */
+  object-fit: contain;       /* show the whole flag, letterbox any odd ratio */
+  background: #f2f4f7;       /* fills the letterbox bars */
+}
+
+.caption {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  margin: 0;
+  padding: 1.5rem;
+  color: #fff;
+  font-size: 1.1rem;
+  font-weight: 600;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.7), transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .track {
+    transition: none;
+  }
+}
+
+.arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;               /* 44px keeps it comfortably tappable on touch */
+  height: 44px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  font-size: 1.75rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.arrow:hover {
+  background: rgba(0, 0, 0, 0.8);
+}
+
+.arrow:focus-visible {
+  outline: 3px solid #2563eb;
+  outline-offset: 2px;
+}
+
+.prev {
+  left: 1.75rem;
+}
+
+.next {
+  right: 1.75rem;
+}
+
+.shipNote {
+  margin: 0.9rem 0 0;
+  text-align: center;
+  color: #475569;
+  font-size: 0.95rem;
+}

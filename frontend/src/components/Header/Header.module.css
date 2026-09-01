@@ -1,0 +1,107 @@
+/* src/components/Header/Header.module.css */
+
+/* Site header: pinned to the top of the viewport while the page scrolls */
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: #ffffff;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+/* Centred content row: logo on the left, nav pushed to the right */
+.inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+  height: 72px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* Wordmark link back to the home page */
+.logo {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #111827;
+  text-decoration: none;
+}
+
+/* Horizontal nav; list bullets and default spacing removed */
+.navList {
+  display: flex;
+  gap: 2rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* Nav items sit muted by default and darken on hover */
+.navLink {
+  color: #4b5563;
+  text-decoration: none;
+  font-size: 0.95rem;
+  transition: color 0.15s ease;
+}
+
+.navLink:hover {
+  color: #111827;
+}
+
+/* Log in / Sign up pair at the far right of the header */
+.account {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+/* Secondary action: text-only so it does not compete with Sign up */
+.login {
+  padding: 0.5rem 0.9rem;
+  border-radius: 8px;
+  color: #1f2937;
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 0.15s ease;
+}
+
+.login:hover {
+  background: #f3f4f6;
+}
+
+/* Primary action: filled so it reads as the main thing to click */
+.signup {
+  padding: 0.5rem 1.1rem;
+  border-radius: 8px;
+  background: #2563eb;
+  color: #ffffff;
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background 0.15s ease;
+}
+
+.signup:hover {
+  background: #1d4ed8;
+}
+
+.login:focus-visible,
+.signup:focus-visible {
+  outline: 3px solid #2563eb;
+  outline-offset: 2px;
+}
+
+/* Narrow screens: drop the nav row down so the buttons keep their place */
+@media (max-width: 720px) {
+  .navList {
+    gap: 1.1rem;
+  }
+
+  .inner {
+    padding: 0 1rem;
+  }
+}

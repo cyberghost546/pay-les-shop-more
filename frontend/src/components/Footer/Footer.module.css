@@ -1,0 +1,142 @@
+.footer {
+  background: #fefeff;
+  color: #000000;
+  border-top: 1px solid #1f2430;
+}
+
+.inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 3.5rem 1.5rem 2rem;
+}
+
+/* --- Top area: brand + columns --- */
+.top {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3rem;
+  justify-content: space-between;
+}
+
+.brand {
+  flex: 1 1 280px;
+  max-width: 360px;
+}
+
+.logo {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #000000;
+  text-decoration: none;
+}
+
+.dot {
+  color: #6366f1;
+}
+
+.tagline {
+  margin: 0.85rem 0 1.25rem;
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+.social {
+  display: flex;
+  gap: 1rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.socialLink {
+  color: #000000;
+  font-size: 0.85rem;
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+
+.socialLink:hover {
+  color: #000000;
+}
+
+/* --- Link columns --- */
+.columns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2.5rem;
+}
+
+.column {
+  min-width: 140px;
+}
+
+.heading {
+  margin: 0 0 1rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #000000;
+}
+
+.linkList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.link {
+  color: #000000;
+  font-size: 0.9rem;
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+
+.link:hover {
+  color: #474545;
+}
+
+.linkActive {
+  color: #000000;
+}
+
+/* --- Bottom bar --- */
+.bottom {
+  margin-top: 3rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #1f2430;
+
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.5rem;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.copyright,
+.madeIn {
+  margin: 0;
+  font-size: 0.82rem;
+}
+
+/* --- Mobile --- */
+@media (max-width: 640px) {
+  .inner {
+    padding: 2.5rem 1.5rem 1.5rem;
+  }
+
+  .top {
+    gap: 2.5rem;
+  }
+
+  .columns {
+    gap: 2rem;
+  }
+
+  .bottom {
+    justify-content: flex-start;
+  }
+}

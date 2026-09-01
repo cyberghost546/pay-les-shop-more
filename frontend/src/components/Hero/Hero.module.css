@@ -1,0 +1,29 @@
+/* src/components/Hero/Hero.module.css */
+.hero {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  align-items: center;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 1.5rem;
+}
+
+/* Stack to one column on narrow screens, picture first. */
+@media (max-width: 900px) {
+  .hero {
+    grid-template-columns: 1fr;
+  }
+}
+
+.picture {
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.pictureImage {
+  width: 100%;
+  aspect-ratio: 3 / 2;
+  object-fit: cover;
+}
+

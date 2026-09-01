@@ -1,0 +1,229 @@
+/* src/pages/Services/Services.module.css */
+
+/* Top band: dark title panel on the left, photo on the right */
+.banner {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 1rem 1rem 0;
+}
+
+.titlePanel {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: center;
+  aspect-ratio: 16 / 6;
+  padding: 2rem;
+  box-sizing: border-box;
+  overflow: hidden;
+  background: #05070a;
+  /* Diagonal light streaks, echoing the brand banner */
+  background-image:
+    linear-gradient(115deg, rgba(56, 160, 220, 0.55) 0 6%, transparent 6%),
+    linear-gradient(115deg, rgba(56, 160, 220, 0.30) 0 11%, transparent 11%),
+    linear-gradient(115deg, rgba(56, 160, 220, 0.16) 0 18%, transparent 18%);
+}
+
+.eyebrow {
+  margin: 0;
+  color: #38a0dc;
+  font-size: clamp(1.4rem, 3vw, 2.6rem);
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  line-height: 1.05;
+}
+
+.title {
+  margin: 0;
+  color: #ffffff;
+  font-size: clamp(1.8rem, 4vw, 3.4rem);
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  line-height: 1.05;
+}
+
+.rule {
+  width: min(240px, 60%);
+  height: 1px;
+  margin: 1.25rem 0 0.9rem;
+  border: 0;
+  background: rgba(255, 255, 255, 0.45);
+}
+
+.breadcrumb {
+  margin: 0;
+  color: #ffffff;
+  font-size: 0.95rem;
+}
+
+.crumbLink {
+  color: #38a0dc;
+  text-decoration: none;
+}
+
+.crumbLink:hover {
+  text-decoration: underline;
+}
+
+.bannerImage {
+  width: 100%;
+  aspect-ratio: 16 / 6;
+  object-fit: cover;
+}
+
+/* Yellow strip: three selling points, divided by thin rules */
+.highlights {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  max-width: 1400px;
+  margin: 1rem auto 0;
+  padding: 0;
+  list-style: none;
+  background: #f9c80e;
+}
+
+.highlight {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.4rem 2rem;
+  color: #14387f;
+  font-weight: 700;
+  font-size: 1.05rem;
+}
+
+/* Divider between items, never before the first one */
+.highlight + .highlight {
+  border-left: 1px solid rgba(20, 56, 127, 0.35);
+}
+
+.icon {
+  flex: 0 0 auto;
+  width: 38px;
+  height: 38px;
+  stroke: #14387f;
+  fill: none;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* Stack everything on narrow screens */
+@media (max-width: 900px) {
+  .banner {
+    grid-template-columns: 1fr;
+  }
+
+  .highlights {
+    grid-template-columns: 1fr;
+  }
+
+  .highlight + .highlight {
+    border-left: none;
+    border-top: 1px solid rgba(20, 56, 127, 0.35);
+  }
+}
+
+/* "Onze diensten" section: one card per island */
+.services {
+  max-width: 1400px;
+  margin: 2.5rem auto 3rem;
+  padding: 0 1rem;
+}
+
+.sectionTitle {
+  margin: 0 0 0.9rem;
+  padding-bottom: 0.9rem;
+  border-bottom: 1px solid #e5e7eb;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 2.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.card {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  align-items: start;
+  padding: 2rem;
+  border: 1px solid #e5e7eb;
+}
+
+.cardTitle {
+  margin: 0 0 1.1rem;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+.serviceList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.serviceItem {
+  margin-bottom: 0.5rem;
+}
+
+/* The ↳ marker sits in the gutter, matching the reference design */
+.serviceLink {
+  color: #38a0dc;
+  text-decoration: none;
+  font-size: 0.95rem;
+}
+
+.serviceLink::before {
+  content: '\21B3';
+  margin-right: 0.6rem;
+  color: #6cbf3f;
+}
+
+.serviceLink:hover {
+  text-decoration: underline;
+}
+
+/* Slot for the island silhouette — replace with a real <img> */
+.mapSlot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 240px;
+  padding: 1rem;
+  box-sizing: border-box;
+  border: 2px dashed #cbd5e1;
+  border-radius: 8px;
+  color: #64748b;
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+.mapImage {
+  width: 100%;
+  object-fit: contain;
+}
+
+@media (max-width: 1100px) {
+  .cards {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .card {
+    grid-template-columns: 1fr;
+  }
+}
