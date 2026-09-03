@@ -1,0 +1,12 @@
+# Virtualenv — recreated from requirements.txt, never committed
+.venv/
+
+# Local SQLite database. Real data does not belong in git.
+db.sqlite3
+
+__pycache__/
+*.py[cod]
+
+# Secrets, once settings read from the environment
+.env
+media/

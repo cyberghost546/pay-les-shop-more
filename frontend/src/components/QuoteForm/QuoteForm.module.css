@@ -1,0 +1,260 @@
+/* src/components/QuoteForm/QuoteForm.module.css */
+
+/* Full-width grey band, as in the design */
+.section {
+  background: #f5f5f5;
+  padding: 4rem 1rem 5rem;
+}
+
+.inner {
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.title {
+  margin: 0 0 1.5rem;
+  font-size: clamp(1.4rem, 3vw, 1.9rem);
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  color: #111827;
+}
+
+.intro {
+  margin: 0 0 0.35rem;
+  font-size: 0.95rem;
+  color: #1f2937;
+}
+
+/* Second line is the caveat, so it is tinted rather than plain body colour */
+.introNote {
+  margin: 0 0 2.5rem;
+  font-size: 0.95rem;
+  color: #1d4ed8;
+}
+
+.failure {
+  margin: 0 0 1.5rem;
+  padding: 0.8rem 1rem;
+  border-left: 4px solid #dc2626;
+  border-radius: 4px;
+  background: #fef2f2;
+  color: #991b1b;
+  font-size: 0.92rem;
+}
+
+/* Confirmation after a successful submission */
+.success {
+  margin: 0 0 1.5rem;
+  padding: 0.8rem 1rem;
+  border-left: 4px solid #6cbf3f;
+  border-radius: 4px;
+  background: #f2fbef;
+  color: #14532d;
+  font-size: 0.92rem;
+  line-height: 1.45;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* The three name/email fields share one line */
+.row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.label {
+  font-size: 0.9rem;
+  color: #1f2937;
+}
+
+.required {
+  color: #dc2626;
+}
+
+.input,
+.textarea {
+  width: 100%;
+  padding: 0.85rem 1rem;
+  box-sizing: border-box;
+  border: 1px solid #d4d4d4;
+  border-radius: 6px;
+  background: #ffffff;
+  font: inherit;
+  font-size: 0.95rem;
+  color: #111827;
+}
+
+.textarea {
+  resize: vertical;
+  min-height: 220px;
+  line-height: 1.6;
+}
+
+.input:focus,
+.textarea:focus {
+  outline: 2px solid #2563eb;
+  outline-offset: 1px;
+  border-color: #2563eb;
+}
+
+.input[aria-invalid='true'] {
+  border-color: #dc2626;
+}
+
+/* File row: hidden native input, styled trigger, then the chosen name */
+.upload {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #d4d4d4;
+  border-radius: 6px;
+  background: #ffffff;
+}
+
+/* Not display:none — that would take it out of the tab order and break the
+   keyboard path to the file picker. */
+.fileInput {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.browse {
+  padding: 0.45rem 1rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  background: #f3f4f6;
+  color: #1f2937;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.browse:hover {
+  background: #e5e7eb;
+}
+
+/* Focus lands on the hidden input, so the ring has to be drawn on its label */
+.fileInput:focus-visible + .browse {
+  outline: 3px solid #2563eb;
+  outline-offset: 2px;
+}
+
+.fileName {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 0.9rem;
+  color: #4b5563;
+  /* Long filenames must not stretch the row */
+  overflow-wrap: anywhere;
+}
+
+.removeFile {
+  padding: 0.3rem 0.6rem;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: #dc2626;
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.removeFile:hover {
+  background: #fef2f2;
+}
+
+.hint {
+  font-size: 0.82rem;
+  color: #6b7280;
+}
+
+.error {
+  font-size: 0.82rem;
+  color: #dc2626;
+}
+
+.multiple {
+  margin: 0;
+  font-size: 0.95rem;
+  color: #1d4ed8;
+}
+
+.mailLink {
+  color: #1d4ed8;
+  font-weight: 600;
+}
+
+/* Announced to screen readers; the visible label is the placeholder */
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.submit {
+  align-self: flex-start;
+  padding: 0.85rem 2.5rem;
+  border: 0;
+  border-radius: 999px;
+  background: #29abe2;
+  color: #ffffff;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.submit:hover:not(:disabled) {
+  background: #1c93c6;
+}
+
+.submit:disabled {
+  background: #a5d6ee;
+  cursor: not-allowed;
+}
+
+.submit:focus-visible,
+.removeFile:focus-visible {
+  outline: 3px solid #2563eb;
+  outline-offset: 2px;
+}
+
+@media (max-width: 800px) {
+  .row {
+    grid-template-columns: 1fr;
+  }
+
+  .section {
+    padding: 3rem 1rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .submit {
+    transition: none;
+  }
+}

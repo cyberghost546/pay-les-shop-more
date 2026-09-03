@@ -1,36 +1,48 @@
 /* src/components/Contact/Contact.module.css */
 
-/* Top band: dark title panel on the left, photo on the right.
-   Mirrors the Services banner so the two pages read as one site. */
+/* Top band: the Willemstad photo fills the banner, title text over it.
+   The image URL is set inline in Contact.jsx so the bundler can hash it. */
 .banner {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1rem;
+  position: relative;
+  display: flex;
+  align-items: center;
+  aspect-ratio: 16 / 5;
   max-width: 1400px;
-  margin: 0 auto;
-  padding: 1rem 1rem 0;
+  margin: 1rem auto 0;
+  overflow: hidden;
+  background-color: #05070a;
+  background-position: center 42%;
+  background-size: cover;
+  background-repeat: no-repeat;
+}
+
+/* Darkens the photo behind the copy without washing out the far side */
+.banner::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    rgba(5, 7, 10, 0.75) 0%,
+    rgba(5, 7, 10, 0.5) 45%,
+    rgba(5, 7, 10, 0.15) 100%
+  );
 }
 
 .titlePanel {
   position: relative;
   display: flex;
   flex-direction: column;
-  align-items: flex-end;
+  align-items: flex-start;
   justify-content: center;
-  aspect-ratio: 16 / 6;
-  padding: 2rem;
+  padding: 2rem clamp(1.5rem, 5vw, 4rem);
   box-sizing: border-box;
-  overflow: hidden;
-  background: #05070a;
-  background-image:
-    linear-gradient(115deg, rgba(56, 160, 220, 0.55) 0 6%, transparent 6%),
-    linear-gradient(115deg, rgba(56, 160, 220, 0.3) 0 11%, transparent 11%),
-    linear-gradient(115deg, rgba(56, 160, 220, 0.16) 0 18%, transparent 18%);
 }
 
 .eyebrow {
   margin: 0;
-  color: #38a0dc;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.55);
+  color: #6cc6f0;
   font-size: clamp(1.4rem, 3vw, 2.6rem);
   font-weight: 400;
   letter-spacing: 0.02em;
@@ -39,6 +51,7 @@
 
 .title {
   margin: 0;
+  text-shadow: 0 2px 14px rgba(0, 0, 0, 0.6);
   color: #ffffff;
   font-size: clamp(1.8rem, 4vw, 3.4rem);
   font-weight: 800;
@@ -56,12 +69,13 @@
 
 .breadcrumb {
   margin: 0;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.6);
   color: #ffffff;
   font-size: 0.95rem;
 }
 
 .crumbLink {
-  color: #38a0dc;
+  color: #6cc6f0;
   text-decoration: none;
 }
 
@@ -69,16 +83,10 @@
   text-decoration: underline;
 }
 
-.bannerImage {
-  width: 100%;
-  aspect-ratio: 16 / 6;
-  object-fit: cover;
-}
-
 /* Form on the left, contact details on the right */
 .content {
   max-width: 1400px;
-  margin: 2.5rem auto 3rem;
+  margin: 2.5rem auto 2.5rem;
   padding: 0 1rem;
 }
 
@@ -98,12 +106,18 @@
   align-items: start;
 }
 
+/* Slightly translucent so the page backdrop tints the panel */
 .form {
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
   padding: 2rem;
   border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.9);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  box-shadow: 0 10px 30px rgba(5, 7, 10, 0.06);
 }
 
 /* Name and e-mail sit side by side until the column gets narrow */
@@ -174,6 +188,18 @@
   background: #e6b800;
 }
 
+/* Whole-form failure, distinct from the per-field errors */
+.failure {
+  margin: 0;
+  padding: 0.8rem 1rem;
+  border-left: 4px solid #dc2626;
+  border-radius: 4px;
+  background: #fef2f2;
+  color: #991b1b;
+  font-size: 0.95rem;
+  line-height: 1.45;
+}
+
 .success {
   margin: 0;
   padding: 0.8rem 1rem;
@@ -187,6 +213,11 @@
 .details {
   padding: 2rem;
   border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.9);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  box-shadow: 0 10px 30px rgba(5, 7, 10, 0.06);
 }
 
 .detailsTitle {
@@ -247,10 +278,21 @@
   text-decoration: underline;
 }
 
-/* Full-width map band under the content */
-.mapBand {
-  margin: 0;
-  line-height: 0;
+/* Map panel under the content, matching the width and framing of the form */
+.mapSection {
+  max-width: 1400px;
+  margin: 0 auto 3rem;
+  padding: 0 1rem;
+}
+
+.mapPanel {
+  padding: 0.75rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.9);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  box-shadow: 0 10px 30px rgba(5, 7, 10, 0.06);
 }
 
 .map {
@@ -258,6 +300,8 @@
   width: 100%;
   height: clamp(280px, 32vw, 420px);
   border: 0;
+  /* Slightly tighter than the panel, so the white frame reads as a mount */
+  border-radius: 6px;
 }
 
 /* Stack everything on narrow screens */
@@ -268,8 +312,9 @@
 }
 
 @media (max-width: 900px) {
+  /* Taller crop so the copy still has room over the photo */
   .banner {
-    grid-template-columns: 1fr;
+    aspect-ratio: 16 / 9;
   }
 }
 

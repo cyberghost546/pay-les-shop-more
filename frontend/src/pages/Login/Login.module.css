@@ -1,0 +1,233 @@
+/* src/pages/Login/Login.module.css */
+
+/* Centred card on the site backdrop. min-height keeps it off the header
+   without pushing the footer down on tall screens. */
+.page {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  min-height: 60vh;
+  padding: 3rem 1rem 4rem;
+}
+
+.card {
+  width: 100%;
+  max-width: 440px;
+  padding: 2.5rem;
+  box-sizing: border-box;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.92);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  box-shadow: 0 10px 30px rgba(5, 7, 10, 0.08);
+}
+
+.title {
+  margin: 0 0 0.5rem;
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: #111827;
+}
+
+.subtitle {
+  margin: 0 0 1.75rem;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: #4b5563;
+}
+
+/* Whole-form failure, distinct from the per-field errors below */
+.failure {
+  margin: 0 0 1.25rem;
+  padding: 0.8rem 1rem;
+  border-left: 4px solid #dc2626;
+  border-radius: 4px;
+  background: #fef2f2;
+  color: #991b1b;
+  font-size: 0.92rem;
+  line-height: 1.45;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.label {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+.input {
+  width: 100%;
+  padding: 0.7rem 0.85rem;
+  box-sizing: border-box;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  background: #ffffff;
+  font: inherit;
+  font-size: 0.95rem;
+  color: #111827;
+}
+
+.input:focus {
+  outline: 2px solid #2563eb;
+  outline-offset: 1px;
+  border-color: #2563eb;
+}
+
+.input[aria-invalid='true'] {
+  border-color: #dc2626;
+}
+
+/* Wraps the password input so the reveal button can sit inside it */
+.passwordWrap {
+  position: relative;
+  display: block;
+}
+
+/* Room on the right so long passwords do not run under the button */
+.passwordInput {
+  padding-right: 3rem;
+}
+
+.reveal {
+  position: absolute;
+  top: 50%;
+  right: 0.35rem;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.4rem;
+  height: 2.4rem;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: #64748b;
+  cursor: pointer;
+}
+
+.reveal:hover {
+  color: #111827;
+  background: #f3f4f6;
+}
+
+.revealIcon {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* "Keep me signed in" left, "Forgotten your password?" right */
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.remember {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  color: #1f2937;
+  cursor: pointer;
+}
+
+.forgot {
+  color: #2563eb;
+  font-size: 0.9rem;
+  text-decoration: none;
+}
+
+.forgot:hover {
+  text-decoration: underline;
+}
+
+.submit {
+  padding: 0.85rem 1.5rem;
+  border: 0;
+  border-radius: 8px;
+  background: #2563eb;
+  color: #ffffff;
+  font: inherit;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.submit:hover:not(:disabled) {
+  background: #1d4ed8;
+}
+
+/* While the request is in flight: still readable, clearly not clickable */
+.submit:disabled {
+  background: #93b4f5;
+  cursor: not-allowed;
+}
+
+.error {
+  font-size: 0.82rem;
+  color: #dc2626;
+}
+
+.footer {
+  margin: 1.75rem 0 0;
+  padding-top: 1.5rem;
+  border-top: 1px solid #e5e7eb;
+  font-size: 0.92rem;
+  color: #4b5563;
+  text-align: center;
+}
+
+.footerLink {
+  color: #2563eb;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.footerLink:hover {
+  text-decoration: underline;
+}
+
+.reveal:focus-visible,
+.submit:focus-visible,
+.forgot:focus-visible,
+.footerLink:focus-visible {
+  outline: 3px solid #2563eb;
+  outline-offset: 2px;
+}
+
+@media (max-width: 480px) {
+  .page {
+    padding: 2rem 1rem 3rem;
+  }
+
+  .card {
+    padding: 1.5rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .submit {
+    transition: none;
+  }
+}

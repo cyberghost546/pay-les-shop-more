@@ -1,30 +1,32 @@
 import { NavLink } from 'react-router-dom';
+import { useLanguage } from '../../i18n/useLanguage';
 import styles from './Footer.module.css';
 
+// Headings and labels are translation keys; hrefs are not translated.
 const FOOTER_LINKS = [
   {
-    heading: 'Navigation',
+    heading: 'footer.navigation',
     links: [
-      { label: 'Home', href: '/' },
-      { label: 'Services', href: '/services' },
-      { label: 'Calculator', href: '/calculator' },
-      { label: 'Contact', href: '/contact' },
+      { key: 'nav.home', href: '/' },
+      { key: 'nav.services', href: '/services' },
+      { key: 'nav.calculator', href: '/calculator' },
+      { key: 'nav.contact', href: '/contact' },
     ],
   },
   {
-    heading: 'Company',
+    heading: 'footer.company',
     links: [
-      { label: 'About us', href: '/about-us' },
-      { label: 'Blog', href: '/blog' },
-      { label: 'FAQ', href: '/faq' },
+      { key: 'footer.about', href: '/about-us' },
+      { key: 'footer.blog', href: '/blog' },
+      { key: 'footer.faq', href: '/faq' },
     ],
   },
   {
-    heading: 'Legal',
+    heading: 'footer.legal',
     links: [
-      { label: 'Privacy policy', href: '/privacy' },
-      { label: 'Terms and conditions', href: '/terms' },
-      { label: 'Cookie policy', href: '/cookies' },
+      { key: 'footer.privacy', href: '/privacy' },
+      { key: 'footer.terms', href: '/terms' },
+      { key: 'footer.cookies', href: '/cookies' },
     ],
   },
 ];
@@ -37,6 +39,7 @@ const SOCIAL_LINKS = [
 
 export default function Footer() {
   const year = new Date().getFullYear();
+  const { t } = useLanguage();
 
   return (
     <footer className={styles.footer}>
@@ -47,12 +50,9 @@ export default function Footer() {
             <NavLink to="/" className={styles.logo}>
               PayLesShopMore<span className={styles.dot}>.com</span>
             </NavLink>
-            <p className={styles.tagline}>
-              Shop smarter, save more. Compare prices and find the best deals
-              in one place.
-            </p>
+            <p className={styles.tagline}>{t('footer.tagline')}</p>
 
-            <ul className={styles.social} aria-label="Social media">
+            <ul className={styles.social} aria-label={t('footer.social')}>
               {SOCIAL_LINKS.map((s) => (
                 <li key={s.label}>
                   <a
@@ -69,10 +69,10 @@ export default function Footer() {
           </div>
 
           {/* Link columns */}
-          <nav className={styles.columns} aria-label="Footer navigation">
+          <nav className={styles.columns} aria-label={t('footer.footerNav')}>
             {FOOTER_LINKS.map((col) => (
               <div key={col.heading} className={styles.column}>
-                <h3 className={styles.heading}>{col.heading}</h3>
+                <h3 className={styles.heading}>{t(col.heading)}</h3>
                 <ul className={styles.linkList}>
                   {col.links.map((link) => (
                     <li key={link.href}>
@@ -84,7 +84,7 @@ export default function Footer() {
                             : styles.link
                         }
                       >
-                        {link.label}
+                        {t(link.key)}
                       </NavLink>
                     </li>
                   ))}
@@ -97,9 +97,9 @@ export default function Footer() {
         {/* Bottom bar */}
         <div className={styles.bottom}>
           <p className={styles.copyright}>
-            &copy; {year} PayLesShopMore.com — All rights reserved.
+            &copy; {year} PayLesShopMore.com — {t('footer.rights')}
           </p>
-          <p className={styles.madeIn}>Made in the Netherlands 🇳🇱</p>
+          <p className={styles.madeIn}>{t('footer.madeIn')} 🇳🇱</p>
         </div>
       </div>
     </footer>

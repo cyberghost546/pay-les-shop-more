@@ -1,0 +1,32 @@
+/* src/components/DestinationHero/DestinationHero.module.css */
+
+/* Full-bleed photo banner with the title centred over it */
+.hero {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: clamp(220px, 26vw, 360px);
+  padding: 2rem 1rem;
+  background-color: #0b3f63;
+  background-position: center 55%;
+  background-size: cover;
+  background-repeat: no-repeat;
+}
+
+/* No photo yet: an ocean gradient rather than a stand-in photograph of
+   somewhere else. */
+.heroPlain {
+  background-image: linear-gradient(160deg, #5fb6e8 0%, #1f7fb8 55%, #0b3f63 100%);
+}
+
+.title {
+  margin: 0;
+  color: #ffffff;
+  font-size: clamp(1.7rem, 4vw, 2.8rem);
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  /* These photos are bright behind the text in places */
+  text-shadow: 0 2px 16px rgba(0, 0, 0, 0.55);
+  text-align: center;
+}

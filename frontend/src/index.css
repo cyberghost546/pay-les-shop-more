@@ -1,13 +1,60 @@
+:root {
+  /* One place to change the typeface. The system stack behind Poppins is what
+     renders while the webfont loads, and if it fails to load at all. */
+  --font-sans: 'Poppins', system-ui, -apple-system, 'Segoe UI', Roboto,
+    sans-serif;
+}
 
 body {
   margin: 0;
-  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  font-family: var(--font-sans);
   color: #111827;
+  /* Poppins runs a little airy; a touch more line height suits it */
+  line-height: 1.6;
+  /* Stops the geometric letterforms looking heavy on macOS */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   background: #ffffff;
 }
 
+/* Headings carry the character: tighter leading, slightly tightened tracking
+   so the wide letterforms do not sprawl at large sizes. */
+h1,
+h2,
+h3,
+h4 {
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+}
 
+/* Form controls do not inherit the page font on their own. Most components
+   already set `font: inherit`, this covers anything that does not. */
+input,
+select,
+textarea,
+button {
+  font-family: inherit;
+}
+
+/* Site-wide backdrop: the Willemstad waterfront, veiled so page copy stays
+   readable over it. A fixed pseudo-element rather than
+   `background-attachment: fixed`, which iOS Safari renders badly. */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0.5)),
+    url('./images/stock-photo-view-of-downtown-willemstad-curacao-netherlands-antilles-650249764.jpg');
+  background-position: center, center 42%;
+  background-size: cover;
+  background-repeat: no-repeat;
+}
+
+/* Pages sit above the backdrop rather than painting over it. */
 #root {
+  position: relative;
   min-height: 100vh;
 }
 

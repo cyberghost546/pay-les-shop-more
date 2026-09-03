@@ -9,30 +9,41 @@
   border-bottom: 1px solid #e5e7eb;
 }
 
-/* Centred content row: logo on the left, nav pushed to the right */
+/* Centred content row: logo on the left, nav pushed to the right.
+   Wide and tall so the two sides sit near the edges, as in the design. */
 .inner {
-  max-width: 1200px;
+  position: relative;
+  max-width: 1600px;
   margin: 0 auto;
-  padding: 0 1.5rem;
-  height: 72px;
+  padding: 0 clamp(1.5rem, 4vw, 3.5rem);
+  min-height: 112px;
 
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 2.5rem;
 }
 
 /* Wordmark link back to the home page */
 .logo {
-  font-size: 1.25rem;
+  font-size: clamp(1.05rem, 1.4vw, 1.2rem);
   font-weight: 700;
   color: #111827;
   text-decoration: none;
+  white-space: nowrap;
+}
+
+/* Holds nav + language + account: a row on desktop, a sheet on small screens */
+.panel {
+  display: flex;
+  align-items: center;
+  gap: 2.5rem;
 }
 
 /* Horizontal nav; list bullets and default spacing removed */
 .navList {
   display: flex;
-  gap: 2rem;
+  gap: 2.5rem;
   list-style: none;
   margin: 0;
   padding: 0;
@@ -42,12 +53,18 @@
 .navLink {
   color: #4b5563;
   text-decoration: none;
-  font-size: 0.95rem;
+  font-size: 0.875rem;
   transition: color 0.15s ease;
 }
 
 .navLink:hover {
   color: #111827;
+}
+
+/* Current page, so visitors can see where they are */
+.navLinkActive {
+  color: #111827;
+  font-weight: 600;
 }
 
 /* Log in / Sign up pair at the far right of the header */
@@ -62,7 +79,7 @@
   padding: 0.5rem 0.9rem;
   border-radius: 8px;
   color: #1f2937;
-  font-size: 0.95rem;
+  font-size: 0.875rem;
   font-weight: 600;
   text-decoration: none;
   transition: background 0.15s ease;
@@ -72,13 +89,17 @@
   background: #f3f4f6;
 }
 
-/* Primary action: filled so it reads as the main thing to click */
+/* Primary action: filled so it reads as the main thing to click. Used for
+   both the Sign up link and the Log out button, hence the button resets. */
 .signup {
   padding: 0.5rem 1.1rem;
+  border: 0;
+  font: inherit;
+  cursor: pointer;
   border-radius: 8px;
   background: #2563eb;
   color: #ffffff;
-  font-size: 0.95rem;
+  font-size: 0.875rem;
   font-weight: 600;
   text-decoration: none;
   white-space: nowrap;
@@ -90,18 +111,185 @@
 }
 
 .login:focus-visible,
-.signup:focus-visible {
+.signup:focus-visible,
+.navLink:focus-visible,
+.menuButton:focus-visible {
   outline: 3px solid #2563eb;
   outline-offset: 2px;
 }
 
-/* Narrow screens: drop the nav row down so the buttons keep their place */
-@media (max-width: 720px) {
-  .navList {
-    gap: 1.1rem;
-  }
+/* Hamburger button: hidden until the nav no longer fits on one row */
+.menuButton {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  /* 44px is the minimum comfortable touch target */
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #111827;
+  cursor: pointer;
+}
 
+.menuButton:hover {
+  background: #f3f4f6;
+}
+
+/* Three bars that fold into a cross when the menu is open */
+.menuIcon {
+  position: relative;
+  display: block;
+  width: 20px;
+  height: 14px;
+}
+
+.menuIcon span {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  border-radius: 2px;
+  background: currentColor;
+  transition:
+    transform 0.2s ease,
+    opacity 0.2s ease;
+}
+
+.menuIcon span:nth-child(1) {
+  top: 0;
+}
+
+.menuIcon span:nth-child(2) {
+  top: 6px;
+}
+
+.menuIcon span:nth-child(3) {
+  top: 12px;
+}
+
+.barTop {
+  transform: translateY(6px) rotate(45deg);
+}
+
+.barMiddle {
+  opacity: 0;
+}
+
+.barBottom {
+  transform: translateY(-6px) rotate(-45deg);
+}
+
+/* Sits under the open sheet so a tap outside closes it. The top offset must
+   match the header height below, or the backdrop overlaps the bar itself. */
+.backdrop {
+  display: none;
+  position: fixed;
+  inset: 80px 0 0;
+  z-index: 90;
+  border: 0;
+  padding: 0;
+  background: rgba(5, 7, 10, 0.35);
+  cursor: default;
+}
+
+/* Phones and tablets: collapse the nav behind the hamburger */
+@media (max-width: 900px) {
   .inner {
     padding: 0 1rem;
+    /* A 112px bar eats too much of a phone screen; keep it to 80 so the
+       backdrop offset above stays correct. */
+    min-height: 80px;
+    /* The sheet is positioned against this row */
+    flex-wrap: wrap;
+  }
+
+  .menuButton {
+    display: flex;
+  }
+
+  .backdrop {
+    display: block;
+  }
+
+  .panel {
+    /* Kept in the DOM but hidden, so the toggle can animate it open */
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    z-index: 95;
+
+    display: grid;
+    gap: 1.25rem;
+    padding: 1.25rem 1rem 1.5rem;
+    box-sizing: border-box;
+    background: #ffffff;
+    border-bottom: 1px solid #e5e7eb;
+    box-shadow: 0 14px 28px rgba(5, 7, 10, 0.12);
+
+    /* Collapsed state: invisible and untouchable until opened */
+    visibility: hidden;
+    opacity: 0;
+    transform: translateY(-8px);
+    transition:
+      opacity 0.18s ease,
+      transform 0.18s ease,
+      visibility 0.18s;
+  }
+
+  .panelOpen {
+    visibility: visible;
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* Stack the links, each a full-width row that is easy to hit */
+  .navList {
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .navLink {
+    display: block;
+    padding: 0.85rem 0.25rem;
+    font-size: 0.95rem;
+  }
+
+  .navList li + li .navLink {
+    border-top: 1px solid #f1f5f9;
+  }
+
+  /* Account buttons share the row, full width and thumb-sized */
+  .account {
+    gap: 0.75rem;
+  }
+
+  .login,
+  .signup {
+    flex: 1 1 0;
+    padding: 0.75rem 1rem;
+    text-align: center;
+  }
+
+  .login {
+    border: 1px solid #e5e7eb;
+  }
+}
+
+/* Very small phones: the wordmark needs to give up some size */
+@media (max-width: 420px) {
+  .logo {
+    font-size: 1.05rem;
+  }
+}
+
+/* Respect a reduced-motion preference */
+@media (prefers-reduced-motion: reduce) {
+  .panel,
+  .menuIcon span {
+    transition: none;
   }
 }

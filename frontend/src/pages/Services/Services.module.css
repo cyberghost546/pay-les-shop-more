@@ -153,6 +153,7 @@
   list-style: none;
 }
 
+/* Slightly translucent so the page backdrop tints the panel */
 .card {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -160,6 +161,11 @@
   align-items: start;
   padding: 2rem;
   border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.9);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  box-shadow: 0 10px 30px rgba(5, 7, 10, 0.06);
 }
 
 .cardTitle {

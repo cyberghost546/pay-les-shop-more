@@ -1,0 +1,139 @@
+/* src/components/ShopAndShip/ShopAndShip.module.css */
+
+.section {
+  max-width: 1400px;
+  margin: 2.5rem auto 3rem;
+  padding: 0 1rem;
+}
+
+.sectionTitle {
+  margin: 0 0 1.75rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #e5e7eb;
+  font-size: clamp(1.2rem, 2.2vw, 1.6rem);
+  font-weight: 800;
+  color: #111827;
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Copy on the left, image strip flush against the right edge */
+.card {
+  display: grid;
+  grid-template-columns: 1fr 100px;
+  overflow: hidden;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.9);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  box-shadow: 0 10px 30px rgba(5, 7, 10, 0.06);
+}
+
+/* A column so the button can be pushed to the bottom of every card */
+.body {
+  display: flex;
+  flex-direction: column;
+  padding: 2rem;
+}
+
+.cardTitle {
+  margin: 0 0 1.5rem;
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #111827;
+}
+
+.text {
+  margin: 0 0 2rem;
+  font-size: 1rem;
+  line-height: 1.6;
+  color: #1f2937;
+}
+
+/* margin-top:auto keeps the buttons aligned when the copy runs short */
+.button {
+  align-self: flex-start;
+  margin-top: auto;
+  padding: 0.85rem 1.6rem;
+  background: #29abe2;
+  color: #0b2b3d;
+  font-size: 1rem;
+  font-weight: 700;
+  text-decoration: none;
+  transition: background 0.15s ease;
+}
+
+.button:hover {
+  background: #1c93c6;
+}
+
+.button:focus-visible {
+  outline: 3px solid #0b2b3d;
+  outline-offset: 2px;
+}
+
+/* Announced to screen readers, invisible on screen: without it every card
+   would just say "Lees meer" with no clue where it goes. */
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.strip {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Placeholder until the real artwork lands in src/images/ */
+.stripSlot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem 0.5rem;
+  background: #f1f5f9;
+  border-left: 1px solid #e5e7eb;
+  color: #64748b;
+  font-size: 0.72rem;
+  line-height: 1.3;
+  text-align: center;
+}
+
+@media (max-width: 1100px) {
+  .cards {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Narrow phones: the strip would squeeze the copy, so drop it to the top */
+@media (max-width: 560px) {
+  .card {
+    grid-template-columns: 1fr;
+  }
+
+  .strip,
+  .stripSlot {
+    order: -1;
+    height: 140px;
+    border-left: 0;
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  .body {
+    padding: 1.5rem;
+  }
+}

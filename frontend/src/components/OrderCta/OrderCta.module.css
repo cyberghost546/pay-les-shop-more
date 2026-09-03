@@ -1,0 +1,171 @@
+/* src/components/OrderCta/OrderCta.module.css */
+
+/* Dark panel on the left, video on the right */
+.section {
+  display: grid;
+  grid-template-columns: 3fr 2fr;
+  gap: 1.25rem;
+  max-width: 1400px;
+  margin: 3rem auto;
+  padding: 0 1rem;
+  align-items: stretch;
+}
+
+.panel {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  padding: clamp(1.5rem, 4vw, 3.5rem);
+  background: #05070a;
+}
+
+.copy {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+}
+
+/* Two lines, two weights: the accent half is the one that carries colour */
+.title {
+  margin: 0;
+  font-size: clamp(1.5rem, 3.2vw, 2.5rem);
+  font-weight: 400;
+  line-height: 1.15;
+  letter-spacing: 0.01em;
+}
+
+.titleAccent {
+  display: block;
+  color: #29abe2;
+}
+
+.titleRest {
+  display: block;
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.rule {
+  width: min(260px, 100%);
+  height: 1px;
+  margin: 1.5rem 0 2rem;
+  border: 0;
+  background: rgba(255, 255, 255, 0.35);
+}
+
+/* Pill button with a soft glow, as in the design */
+.button {
+  padding: 0.9rem 2.2rem;
+  border-radius: 999px;
+  background: #29abe2;
+  color: #05070a;
+  font-size: 0.95rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-decoration: none;
+  box-shadow: 0 0 24px rgba(41, 171, 226, 0.45);
+  transition:
+    background 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.button:hover {
+  background: #47bcef;
+  box-shadow: 0 0 32px rgba(41, 171, 226, 0.65);
+}
+
+.button:focus-visible {
+  outline: 3px solid #ffffff;
+  outline-offset: 3px;
+}
+
+.body {
+  margin: 0;
+  align-self: center;
+  color: #e8eaed;
+  font-size: 1rem;
+  line-height: 1.75;
+}
+
+/* Video thumbnail: a link until an embed replaces it */
+.video {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100%;
+  background-color: #111827;
+  background-position: center;
+  background-size: cover;
+}
+
+.play {
+  display: block;
+  color: #ffffff;
+  transition: transform 0.15s ease;
+}
+
+.play svg {
+  width: 64px;
+  height: 64px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.2;
+}
+
+.video:hover .play {
+  transform: scale(1.08);
+}
+
+.video:focus-visible {
+  outline: 3px solid #29abe2;
+  outline-offset: 3px;
+}
+
+/* Placeholder until the real video is in place */
+.videoSlot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 240px;
+  padding: 1.5rem;
+  box-sizing: border-box;
+  border: 2px dashed #cbd5e1;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.6);
+  color: #64748b;
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+@media (max-width: 1000px) {
+  .section {
+    grid-template-columns: 1fr;
+  }
+
+  .videoSlot,
+  .video {
+    min-height: 220px;
+    aspect-ratio: 16 / 9;
+  }
+}
+
+/* The two-column panel is too tight for phones */
+@media (max-width: 700px) {
+  .panel {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+
+  .rule {
+    margin: 1rem 0 1.5rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .button,
+  .play {
+    transition: none;
+  }
+}

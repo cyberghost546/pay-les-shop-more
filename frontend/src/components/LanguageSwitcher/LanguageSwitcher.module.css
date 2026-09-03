@@ -1,0 +1,96 @@
+/* src/components/LanguageSwitcher/LanguageSwitcher.module.css */
+
+/* Fixed strip on the right edge, vertically centred. Sits below the header's
+   z-index (100) so an open mobile menu still covers it. */
+.rail {
+  position: fixed;
+  top: 50%;
+  right: 0;
+  transform: translateY(-50%);
+  z-index: 80;
+
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: 0.75rem 0.6rem;
+  border-radius: 12px 0 0 12px;
+  background: #29abe2;
+  box-shadow: -4px 0 18px rgba(5, 7, 10, 0.18);
+}
+
+.circle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* 44px is the minimum comfortable touch target */
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  /* Lighter than the rail, so the circles read as buttons on it */
+  background: rgba(255, 255, 255, 0.18);
+  color: #ffffff;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease,
+    transform 0.15s ease;
+}
+
+.circle:hover {
+  background: rgba(255, 255, 255, 0.32);
+  transform: scale(1.06);
+}
+
+/* Selected language: inverted, so it reads at a glance */
+.active {
+  background: #ffffff;
+  color: #14387f;
+}
+
+.active:hover {
+  background: #ffffff;
+  color: #14387f;
+}
+
+.circle:focus-visible {
+  outline: 3px solid #ffffff;
+  outline-offset: 3px;
+}
+
+/* Phones: park it at the bottom-right as a horizontal strip. A vertical rail
+   at mid-height covers content on a small screen. */
+@media (max-width: 640px) {
+  .rail {
+    top: auto;
+    bottom: 0;
+    right: 0;
+    left: auto;
+    transform: none;
+    flex-direction: row;
+    gap: 0.5rem;
+    padding: 0.5rem 0.6rem;
+    border-radius: 12px 0 0 0;
+  }
+
+  .circle {
+    width: 40px;
+    height: 40px;
+    font-size: 0.72rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .circle {
+    transition: none;
+  }
+
+  .circle:hover {
+    transform: none;
+  }
+}

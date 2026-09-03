@@ -1,0 +1,99 @@
+/* src/pages/Destination/Destination.module.css */
+
+/* The banner lives in components/DestinationHero, shared with the index page */
+
+/* "How does it work?" — solid white band, so the site backdrop does not show
+   through behind the copy. Runs the full width of the page. */
+.how {
+  background: #ffffff;
+  padding: 4rem 1rem 4.5rem;
+  text-align: center;
+}
+
+.howInner {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.howTitle {
+  margin: 0 0 1rem;
+  font-size: clamp(1.4rem, 3vw, 2rem);
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  color: #111827;
+}
+
+.howSubtitle {
+  margin: 0 0 3.5rem;
+  font-size: 1rem;
+  color: #1f2937;
+}
+
+.steps {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 2.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  text-align: center;
+}
+
+.step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.icon {
+  display: block;
+  margin-bottom: 1.5rem;
+  color: #29abe2;
+}
+
+.icon svg {
+  width: 64px;
+  height: 64px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.stepTitle {
+  margin: 0 0 0.9rem;
+  font-size: 1.15rem;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  color: #111827;
+}
+
+.stepText {
+  margin: 0;
+  max-width: 22rem;
+  font-size: 0.95rem;
+  line-height: 1.65;
+  color: #374151;
+}
+
+@media (max-width: 900px) {
+  .steps {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 2.5rem 1.5rem;
+  }
+}
+
+@media (max-width: 560px) {
+  .steps {
+    grid-template-columns: 1fr;
+  }
+
+  .how {
+    padding: 2.5rem 1rem 3rem;
+  }
+
+  .howSubtitle {
+    margin-bottom: 2.5rem;
+  }
+}

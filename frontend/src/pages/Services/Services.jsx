@@ -1,12 +1,13 @@
 // src/pages/Services/Services.jsx
 import { Link } from 'react-router-dom';
 import containerShip from '../../images/container-ship.webp';
+import { useLanguage } from '../../i18n/useLanguage';
 import styles from './Services.module.css';
 
 // Inline SVGs: public/icons.svg only holds leftover Vite starter logos.
 const HIGHLIGHTS = [
   {
-    label: 'Vrijstelling van btw',
+    labelKey: 'services.highlights.vat',
     icon: (
       <svg className={styles.icon} viewBox="0 0 24 24" aria-hidden="true">
         <path d="M3 12a6 6 0 0 1 6-6h4a6 6 0 0 1 5.2 3H21v4h-2.2a6 6 0 0 1-1.8 2.2V19h-3v-1.2H12V19H9v-2.3A6 6 0 0 1 6 13H4.5A1.5 1.5 0 0 1 3 11.5Z" />
@@ -16,7 +17,7 @@ const HIGHLIGHTS = [
     ),
   },
   {
-    label: 'Unieke producten',
+    labelKey: 'services.highlights.products',
     icon: (
       <svg className={styles.icon} viewBox="0 0 24 24" aria-hidden="true">
         <path d="m2 11 3-3 4.2 1.3a2 2 0 0 0 1.6-.2L13 8l6 4.5" />
@@ -27,7 +28,7 @@ const HIGHLIGHTS = [
     ),
   },
   {
-    label: 'Verzorgd transport',
+    labelKey: 'services.highlights.transport',
     icon: (
       <svg className={styles.icon} viewBox="0 0 24 24" aria-hidden="true">
         <path d="M2 7h11v9H2z" />
@@ -63,18 +64,20 @@ const ISLANDS = [
 ];
 
 export default function Services() {
+  const { t } = useLanguage();
+
   return (
     <>
       <section className={styles.banner}>
         <div className={styles.titlePanel}>
-          <p className={styles.eyebrow}>ONZE</p>
-          <h1 className={styles.title}>DIENSTEN</h1>
+          <p className={styles.eyebrow}>{t('services.eyebrow')}</p>
+          <h1 className={styles.title}>{t('services.title')}</h1>
           <hr className={styles.rule} />
           <p className={styles.breadcrumb}>
             <Link to="/" className={styles.crumbLink}>
-              Home
+              {t('nav.home')}
             </Link>{' '}
-            &raquo; Diensten
+            &raquo; {t('services.breadcrumb')}
           </p>
         </div>
 
@@ -87,22 +90,22 @@ export default function Services() {
 
       <ul className={styles.highlights}>
         {HIGHLIGHTS.map((item) => (
-          <li key={item.label} className={styles.highlight}>
+          <li key={item.labelKey} className={styles.highlight}>
             {item.icon}
-            {item.label}
+            {t(item.labelKey)}
           </li>
         ))}
       </ul>
 
       <section className={styles.services}>
-        <h2 className={styles.sectionTitle}>Onze diensten</h2>
+        <h2 className={styles.sectionTitle}>{t('services.sectionTitle')}</h2>
 
         <ul className={styles.cards}>
           {ISLANDS.map((island) => (
             <li key={island.name} className={styles.card}>
               <div>
                 <h3 className={styles.cardTitle}>
-                  Onze diensten voor {island.name}
+                  {t('services.forIsland')} {island.name}
                 </h3>
                 <ul className={styles.serviceList}>
                   {island.services.map((service) => (
