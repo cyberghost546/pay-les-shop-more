@@ -1,0 +1,1173 @@
+/* src/pages/Dashboard/Dashboard.module.css
+ *
+ * One stylesheet for the whole dashboard. The customer-facing pages get a
+ * module each because they look different from one another; the back office is
+ * deliberately uniform — every page is a heading, a filter row and a table,
+ * and they should be indistinguishable apart from the columns.
+ *
+ * The shell is an application rather than a page: a fixed dark bar across the
+ * top, a fixed navigation column on the left, and the content scrolling on its
+ * own between them.
+ */
+
+/* --------------------------------------------------------------- app shell */
+
+.app {
+  --topbar-height: 48px;
+  --sidebar-width: 232px;
+
+  /* The site's palette, stated once here rather than spelled out forty times
+     down the file. */
+  --navy: #0b2545;
+  --navy-deep: #071a30;
+  --cyan: #0ea5e9;
+  --cyan-bright: #38bdf8;
+  --muted: #64748b;
+  --line: #e2e8f0;
+  --ground: #f4f7fb;
+
+  /* The site's photographic backdrop is switched off behind the dashboard:
+     staff read dense tables here for an hour at a time. */
+  position: relative;
+  min-height: 100vh;
+  background: var(--ground);
+}
+
+/* Covers the page's own background, including the body::before photograph. */
+.app::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background: var(--ground);
+}
+
+.topbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  height: var(--topbar-height);
+  background: linear-gradient(90deg, var(--navy-deep), var(--navy));
+  box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.12);
+}
+
+.brand {
+  flex-shrink: 0;
+  width: var(--sidebar-width);
+  padding: 0 1rem;
+  box-sizing: border-box;
+  color: #ffffff;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: var(--topbar-height);
+  text-decoration: none;
+  background: rgba(0, 0, 0, 0.25);
+}
+
+/* The .com is part of the name, dimmed rather than dropped — the same
+   treatment the site footer gives it. */
+.brandDot {
+  color: var(--cyan-bright);
+  font-weight: 500;
+}
+
+.searchForm {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+}
+
+.searchIcon {
+  position: absolute;
+  left: 1rem;
+  display: flex;
+  color: #7f9bb8;
+  pointer-events: none;
+}
+
+.topSearch {
+  width: 100%;
+  padding: 0.4rem 1rem 0.4rem 2.5rem;
+  border: 0;
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+  font: inherit;
+  font-size: 0.9rem;
+}
+
+.topSearch::placeholder {
+  color: #7f9bb8;
+}
+
+.topSearch:focus {
+  outline: 2px solid var(--cyan-bright);
+  outline-offset: -2px;
+}
+
+.topRight {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  padding: 0 1rem;
+  flex-shrink: 0;
+}
+
+.who {
+  color: #9fb4c9;
+  font-size: 0.85rem;
+  white-space: nowrap;
+  /* Hidden on narrow screens, where the bar has no room to spare. */
+}
+
+.signOut {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: #ffffff;
+  font: inherit;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.signOut:hover {
+  text-decoration: underline;
+}
+
+/* The hamburger, phones only. */
+.navToggle {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: #ffffff;
+  cursor: pointer;
+}
+
+.navToggleBars,
+.navToggleBars::before,
+.navToggleBars::after {
+  display: block;
+  width: 18px;
+  height: 2px;
+  border-radius: 1px;
+  background: currentColor;
+}
+
+.navToggleBars {
+  position: relative;
+}
+
+.navToggleBars::before,
+.navToggleBars::after {
+  content: '';
+  position: absolute;
+  left: 0;
+}
+
+.navToggleBars::before {
+  top: -6px;
+}
+
+.navToggleBars::after {
+  top: 6px;
+}
+
+.body {
+  display: flex;
+  padding-top: var(--topbar-height);
+}
+
+/* ------------------------------------------------------------------ sidebar */
+
+.sidebar {
+  position: fixed;
+  top: var(--topbar-height);
+  bottom: 0;
+  left: 0;
+  z-index: 20;
+  width: var(--sidebar-width);
+  padding: 1rem 0.75rem 1.5rem;
+  box-sizing: border-box;
+  background: #ffffff;
+  border-right: 1px solid var(--line);
+  /* Its own scrollbar: a long list of quick views must not push the page. */
+  overflow-y: auto;
+}
+
+.navList {
+  margin: 0 0 1.25rem;
+  padding: 0;
+  list-style: none;
+}
+
+.navLink {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  color: #475569;
+  font-size: 0.92rem;
+  text-decoration: none;
+}
+
+.navLink:hover {
+  background: #eef4fb;
+  color: var(--navy);
+}
+
+.navLinkActive,
+.navLinkActive:hover {
+  background: #e0f2fe;
+  color: #075985;
+  font-weight: 600;
+}
+
+/* The label takes the slack, which pushes any count pill to the right edge. */
+.navLabel {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.navHeading {
+  margin: 0 0 0.4rem;
+  padding: 0 0.75rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.navFoot {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 1rem 0.75rem 0;
+  border-top: 1px solid var(--line);
+}
+
+.navFootLink {
+  color: #4b5563;
+  font-size: 0.85rem;
+  text-decoration: none;
+}
+
+.navFootLink:hover {
+  text-decoration: underline;
+}
+
+.backdrop {
+  display: none;
+}
+
+/* --------------------------------------------------------------- content */
+
+.main {
+  flex: 1 1 auto;
+  min-width: 0; /* lets a wide table scroll instead of stretching the flex row */
+  margin-left: var(--sidebar-width);
+  padding: 1.5rem 2rem 4rem;
+}
+
+.pageHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-bottom: 0.9rem;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.pageTitle {
+  margin: 0;
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  font-weight: 700;
+  color: var(--navy);
+}
+
+.pageActions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.action,
+.rangeSelect {
+  padding: 0.35rem 0.75rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  background: #ffffff;
+  font: inherit;
+  font-size: 0.88rem;
+  color: #374151;
+  cursor: pointer;
+}
+
+.action:hover,
+.rangeSelect:hover {
+  border-color: #9ca3af;
+  background: #f9fafb;
+}
+
+.action:focus-visible,
+.rangeSelect:focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: 1px;
+}
+
+/* The page heading area on the list pages, which have a subtitle. */
+.head {
+  padding-bottom: 0.9rem;
+  margin-bottom: 1.25rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.title {
+  margin: 0 0 0.35rem;
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  font-weight: 700;
+  color: var(--navy);
+}
+
+.subtitle {
+  margin: 0;
+  color: #4b5563;
+  font-size: 0.95rem;
+  max-width: 70ch;
+}
+
+/* ------------------------------------------------------------------- chart */
+
+.chartFigure {
+  margin: 0 0 2rem;
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+  margin-bottom: 0.75rem;
+  font-size: 0.85rem;
+  color: #4b5563;
+}
+
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.legendSwatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.legendTotal {
+  color: #111827;
+  font-variant-numeric: tabular-nums;
+}
+
+.chartBox {
+  padding: 0.75rem 0.5rem 0.5rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.chart {
+  display: block;
+  width: 100%;
+  /* Fixed height, width fluid: the viewBox scales non-uniformly on purpose so
+     the chart keeps a readable aspect on every screen. */
+  height: 280px;
+  touch-action: pan-y;
+}
+
+.gridline {
+  stroke: #eceff3;
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+.guideline {
+  stroke: #cbd5e1;
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+  vector-effect: non-scaling-stroke;
+}
+
+.axisLabel {
+  fill: #9ca3af;
+  font-size: 11px;
+  font-family: inherit;
+}
+
+.readout {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 1.1rem;
+  min-height: 1.5rem;
+  margin: 0.5rem 0 0;
+  padding: 0 0.4rem;
+  font-size: 0.85rem;
+  color: #4b5563;
+}
+
+.readoutItem {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.readoutHint {
+  color: #9ca3af;
+}
+
+/* ------------------------------------------------------------------- cards */
+
+.card {
+  padding: 1.25rem 1.35rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+/* auto-fit rather than a fixed count: the row reflows on a laptop screen
+   without a media query per breakpoint. */
+.statGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.stat {
+  display: block;
+  padding: 1.1rem 1.25rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #ffffff;
+  color: inherit;
+  text-decoration: none;
+}
+
+/* The stats are links to the list they summarise, so they lift on hover the
+   way the rest of the site's cards do. */
+.stat:hover {
+  border-color: #bae6fd;
+  box-shadow: 0 6px 18px rgba(5, 7, 10, 0.06);
+}
+
+.statLabel {
+  margin: 0 0 0.35rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #6b7280;
+}
+
+.statValue {
+  margin: 0;
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1.1;
+  color: var(--navy);
+  /* Keeps 9 and 108 on the same baseline as the row reflows. */
+  font-variant-numeric: tabular-nums;
+}
+
+.statNote {
+  margin: 0.35rem 0 0;
+  font-size: 0.85rem;
+  color: #6b7280;
+}
+
+/* The number that means "someone has to do something about this". */
+.statUrgent .statValue {
+  color: #b45309;
+}
+
+.section {
+  margin-bottom: 2rem;
+}
+
+.sectionHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.sectionTitle {
+  margin: 0;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--navy);
+}
+
+.sectionLink {
+  color: var(--cyan);
+  font-size: 0.88rem;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.sectionLink:hover {
+  text-decoration: underline;
+}
+
+.columns {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 1.25rem;
+  margin-bottom: 2rem;
+}
+
+.cardTitle {
+  margin: 0 0 0.9rem;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--navy);
+}
+
+.feed {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.feedItem {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.65rem 0;
+  border-top: 1px solid #f3f4f6;
+}
+
+.feedItem:first-child {
+  border-top: 0;
+}
+
+.feedMain {
+  min-width: 0;
+}
+
+.feedTitle {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #111827;
+  /* One line per row: the feed is a glance, the list page is the detail. */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.feedMeta {
+  margin: 0.1rem 0 0;
+  font-size: 0.85rem;
+  color: #6b7280;
+}
+
+.feedAside {
+  flex-shrink: 0;
+  text-align: right;
+  font-size: 0.82rem;
+  color: #6b7280;
+  white-space: nowrap;
+}
+
+.feedFoot {
+  margin: 0.9rem 0 0;
+}
+
+.breakdown {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin: 0;
+  font-size: 0.85rem;
+  color: #6b7280;
+}
+
+/* ----------------------------------------------------------------- toolbar */
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.search {
+  flex: 1 1 240px;
+}
+
+.searchInput,
+.select {
+  width: 100%;
+  padding: 0.5rem 0.7rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  background: #ffffff;
+  font: inherit;
+  font-size: 0.92rem;
+  color: #111827;
+}
+
+.searchInput:focus,
+.select:focus,
+.rowSelect:focus {
+  outline: none;
+  border-color: var(--cyan);
+  box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.18);
+}
+
+.filter {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.filterLabel {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: #6b7280;
+}
+
+/* ------------------------------------------------------------------ tables */
+
+/* The scroll container, not the table: a narrow screen scrolls the columns
+   sideways instead of the whole page. */
+.tableWrap {
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.table th {
+  padding: 0.7rem 0.9rem;
+  border-bottom: 2px solid var(--line);
+  text-align: left;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.table td {
+  padding: 0.7rem 0.9rem;
+  border-bottom: 1px solid #f1f3f5;
+  color: #374151;
+  vertical-align: top;
+}
+
+.table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.table tbody tr:hover {
+  background: #f4f9ff;
+}
+
+.primaryCell {
+  font-weight: 600;
+  color: var(--navy);
+}
+
+.mutedCell {
+  color: #6b7280;
+  font-size: 0.85rem;
+}
+
+.numberCell {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.dateCell {
+  white-space: nowrap;
+  color: #6b7280;
+  font-size: 0.85rem;
+}
+
+/* A message or note in a table cell: readable, but never so wide it pushes
+   the columns after it off screen. */
+.excerpt {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  max-width: 42ch;
+  color: #4b5563;
+}
+
+.rowSelect {
+  padding: 0.3rem 0.5rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  background: #ffffff;
+  font: inherit;
+  font-size: 0.85rem;
+  color: #111827;
+}
+
+.rowSelect:disabled {
+  opacity: 0.6;
+}
+
+.rowButton {
+  padding: 0.3rem 0.7rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  background: #ffffff;
+  font: inherit;
+  font-size: 0.83rem;
+  color: #374151;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.rowButton:hover:not(:disabled) {
+  border-color: #9ca3af;
+  background: #f9fafb;
+}
+
+.rowButton:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.rowButtonDone {
+  border-color: #bbf7d0;
+  background: #f0fdf4;
+  color: #15803d;
+}
+
+.link {
+  color: var(--cyan);
+  font-size: 0.85rem;
+}
+
+/* A button that reads as a link: "Read all" under a clamped message. Styled
+   as a button rather than an <a> because it changes what is on screen instead
+   of navigating anywhere. */
+.linkButton {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 0.85rem;
+  color: var(--cyan);
+  cursor: pointer;
+}
+
+.linkButton:hover {
+  text-decoration: underline;
+}
+
+/* Rows nobody has dealt with yet, marked down the left edge so an unhandled
+   message is findable without reading the status column. */
+.rowUnhandled td:first-child {
+  box-shadow: inset 3px 0 0 #f59e0b;
+}
+
+/* --------------------------------------------------------------- customers */
+
+/* E-mail and phone each have their own column now. A long address wraps
+   rather than stretching the table; a phone number is short enough that it
+   never needs to. */
+.contactCell {
+  overflow-wrap: anywhere;
+  font-size: 0.87rem;
+}
+
+/* Initials beside a name: the same device the site header uses, so a person
+   looks like a person in both places. */
+.person {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+}
+
+.personAvatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #2563eb, #0ea5e9);
+  color: #ffffff;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.tagRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin-top: 0.25rem;
+}
+
+/* The username is typed rather than read, so it is set in a typeface where
+   l, 1 and I do not look alike. */
+.mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.83rem;
+  overflow-wrap: anywhere;
+}
+
+.address {
+  font-size: 0.86rem;
+  line-height: 1.45;
+}
+
+/* A customer with several addresses gets a rule between them, so two do not
+   read as one four-line address. */
+.address + .address {
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px dashed var(--line);
+}
+
+.addressLabel {
+  display: inline-block;
+  margin-bottom: 0.1rem;
+  padding: 0.05rem 0.4rem;
+  border-radius: 4px;
+  background: #f1f5f9;
+  color: #475569;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+/* ------------------------------------------------------------------ badges */
+
+.badge {
+  display: inline-block;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.neutral {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+/* Amber: waiting on us. */
+.attention {
+  background: #fff8e6;
+  color: #92400e;
+}
+
+/* Blue: under way, nothing to do. */
+.progress {
+  background: #e0f2fe;
+  color: #075985;
+}
+
+/* Green: finished. */
+.done {
+  background: #f0fdf4;
+  color: #15803d;
+}
+
+/* Grey-red: cancelled or declined. Not an error — just closed. */
+.off {
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+.countPill {
+  min-width: 1.35rem;
+  padding: 0.05rem 0.4rem;
+  border-radius: 999px;
+  background: #f59e0b;
+  color: #ffffff;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+
+/* ---------------------------------------------------------------- messages */
+
+.banner {
+  margin: 0 0 1rem;
+  padding: 0.7rem 1rem;
+  border-left: 4px solid currentColor;
+  border-radius: 4px;
+  font-size: 0.9rem;
+}
+
+.banner_info {
+  border-color: #2563eb;
+  background: #eff6ff;
+  color: #1e40af;
+}
+
+.banner_error {
+  border-color: #dc2626;
+  background: #fef2f2;
+  color: #991b1b;
+}
+
+.empty {
+  margin: 0;
+  padding: 2.5rem 1rem;
+  border: 1px dashed #cbd5e1;
+  border-radius: 8px;
+  background: #ffffff;
+  text-align: center;
+  color: #6b7280;
+}
+
+/* -------------------------------------------------------------- pagination */
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 1.25rem;
+}
+
+.pageButton {
+  padding: 0.4rem 0.9rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  background: #ffffff;
+  font: inherit;
+  font-size: 0.88rem;
+  color: #374151;
+  cursor: pointer;
+}
+
+.pageButton:hover:not(:disabled) {
+  border-color: #9ca3af;
+}
+
+.pageButton:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.pageStatus {
+  font-size: 0.86rem;
+  color: #6b7280;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ------------------------------------------------------------------ shared */
+
+/* Visible to screen readers, not on screen. Used for labels on controls whose
+   meaning is otherwise carried by their position in a table. */
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* ---------------------------------------------------------- narrow screens */
+
+@media (max-width: 900px) {
+  .app {
+    --sidebar-width: 0px;
+  }
+
+  .brand {
+    width: auto;
+    background: none;
+    padding-right: 0.5rem;
+  }
+
+  .navToggle {
+    display: flex;
+  }
+
+  .who {
+    display: none;
+  }
+
+  /* The sidebar slides in over the content rather than pushing it, so the
+     tables keep the whole width on a phone. */
+  .sidebar {
+    width: 240px;
+    transform: translateX(-100%);
+    transition: transform 0.18s ease;
+    box-shadow: 0 10px 30px rgba(5, 7, 10, 0.15);
+  }
+
+  .sidebarOpen {
+    transform: translateX(0);
+  }
+
+  .backdrop {
+    display: block;
+    position: fixed;
+    inset: var(--topbar-height) 0 0;
+    z-index: 15;
+    border: 0;
+    padding: 0;
+    background: rgba(5, 7, 10, 0.35);
+  }
+
+  .main {
+    margin-left: 0;
+    padding: 1.25rem 1rem 3rem;
+  }
+}
+
+/* ---------------------------------------------------------------- bookings */
+
+/* The expanded booking, below the table. A form crammed into a table cell is
+   unusable, and this one has a whole A4 sheet behind it. */
+.detail {
+  margin-top: 1.25rem;
+  padding: 1.5rem;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #ffffff;
+}
+
+.detailTitle {
+  margin: 0 0 1.25rem;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--navy);
+}
+
+/* The four fields the counter fills in, set apart from what the sender
+   declared so nobody edits the wrong half. */
+.officeBox {
+  margin-bottom: 1.5rem;
+  padding: 1.1rem 1.25rem;
+  border: 1px solid #bae6fd;
+  border-radius: 10px;
+  background: #f0f9ff;
+}
+
+.officeHead {
+  margin: 0 0 0.9rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #075985;
+}
+
+.officeGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 0.9rem;
+  margin-bottom: 1rem;
+}
+
+.officeField {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.officeLabel {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #075985;
+}
+
+.officeInput {
+  width: 100%;
+  padding: 0.45rem 0.6rem;
+  box-sizing: border-box;
+  border: 1px solid #bae6fd;
+  border-radius: 6px;
+  background: #ffffff;
+  font: inherit;
+  font-size: 0.88rem;
+  color: var(--navy);
+}
+
+.officeInput:focus {
+  outline: none;
+  border-color: var(--cyan);
+  box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.18);
+}
+
+.detailGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+  margin: 0;
+}
+
+.detailWide {
+  grid-column: 1 / -1;
+}
+
+.detailGrid dt {
+  margin-bottom: 0.2rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.detailGrid dd {
+  margin: 0;
+  font-size: 0.92rem;
+  line-height: 1.55;
+  color: #334155;
+}
+
+/* The typed signature, shown as the deliberate act it stands in for. */
+.signed {
+  font-family: 'Segoe Script', 'Brush Script MT', cursive;
+  font-size: 1.05rem;
+  color: var(--navy);
+}

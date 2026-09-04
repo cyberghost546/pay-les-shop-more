@@ -292,3 +292,13 @@
     transition: none;
   }
 }
+
+/* The way out of the "you already have an account" message. Underlined rather
+   than only coloured: it sits on a red panel, where colour alone would not
+   read as a link. */
+.failureLink {
+  color: inherit;
+  font-weight: 600;
+  text-decoration: underline;
+  white-space: nowrap;
+}

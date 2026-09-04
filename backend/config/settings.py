@@ -88,6 +88,8 @@ INSTALLED_APPS = [
     # Local apps
     'accounts',
     'enquiries',
+    'bookings',
+    'staff',
 ]
 
 # Must be set before the first migration is applied: Django cannot swap the
@@ -235,6 +237,14 @@ REST_FRAMEWORK = {
         # Blunt but effective against credential stuffing on login/signup.
         'anon': '60/hour',
         'login': '10/hour',
+        # Password resets send mail to an address the requester types in, so
+        # an open one is a way to have this site spam a stranger. Tighter than
+        # login, and counted per IP address.
+        'password_reset': '5/hour',
+        # The public tracking lookup. Generous for someone refreshing their
+        # own shipment, tight enough that walking the tracking-number space
+        # is not practical.
+        'tracking': '40/hour',
         # The public contact and quote forms. Generous enough for a real
         # visitor sending a few enquiries, tight enough to make the forms a
         # poor spam target.
@@ -292,6 +302,41 @@ if not DEBUG:
     SECURE_CONTENT_TYPE_NOSNIFF = True
     # Behind a proxy or load balancer that terminates TLS.
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+
+# ---------------------------------------------------------------------------
+# E-mail
+# ---------------------------------------------------------------------------
+
+# Only used for password resets so far. In development the message is printed
+# to the console, so a reset link can be followed without an SMTP server or a
+# real inbox anywhere in the loop.
+EMAIL_BACKEND = os.environ.get(
+    "DJANGO_EMAIL_BACKEND",
+    "django.core.mail.backends.console.EmailBackend"
+    if DEBUG
+    else "django.core.mail.backends.smtp.EmailBackend",
+)
+
+EMAIL_HOST = os.environ.get("EMAIL_HOST", "")
+EMAIL_PORT = int(os.environ.get("EMAIL_PORT", 587))
+EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "")
+EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "")
+EMAIL_USE_TLS = env_flag("EMAIL_USE_TLS", default=True)
+
+DEFAULT_FROM_EMAIL = os.environ.get(
+    "DJANGO_FROM_EMAIL", "PayLesShopMore.com <noreply@paylesshopmore.com>"
+)
+
+# Where the React app lives, for building the link in a reset e-mail. It has
+# to be absolute — the reader opens it from their mail client, which has no
+# idea what host the API is on.
+FRONTEND_URL = os.environ.get("DJANGO_FRONTEND_URL", "http://localhost:5173").rstrip("/")
+
+# How long a reset link stays valid. Django's default is three days, which is
+# a long time for a link that is one e-mail account away from being someone
+# else's way in. An hour is enough to read the mail and act on it.
+PASSWORD_RESET_TIMEOUT = int(os.environ.get("DJANGO_PASSWORD_RESET_TIMEOUT", 3600))
 
 
 # ---------------------------------------------------------------------------

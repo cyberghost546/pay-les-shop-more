@@ -1,49 +1,84 @@
 /* src/components/Header/Header.module.css */
 
-/* Site header: pinned to the top of the viewport while the page scrolls */
+/* Site header: pinned to the top of the viewport while the page scrolls.
+ *
+ * The bar has two jobs, and the spacing says which is which: navigation on
+ * the left of the hairline, the visitor's own account on the right. Gaps
+ * inside a group are small, gaps between groups are large — that difference
+ * is what makes six links read as one menu rather than nine loose words.
+ */
 .header {
   position: sticky;
   top: 0;
   z-index: 100;
-  background: #ffffff;
-  border-bottom: 1px solid #e5e7eb;
+  background: rgba(255, 255, 255, 0.88);
+  /* The site has a photograph behind it; frosting rather than a flat white
+     slab keeps the bar from looking pasted on. */
+  -webkit-backdrop-filter: saturate(180%) blur(12px);
+  backdrop-filter: saturate(180%) blur(12px);
+  border-bottom: 1px solid #e8ecf1;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
-/* Centred content row: logo on the left, nav pushed to the right.
-   Wide and tall so the two sides sit near the edges, as in the design. */
+/* Once the page has moved, the bar separates itself from what slides under
+   it — a shadow rather than a heavier line, which would darken the whole
+   top of the page. */
+.condensed {
+  border-bottom-color: transparent;
+  box-shadow: 0 1px 3px rgba(11, 37, 69, 0.08), 0 8px 24px rgba(11, 37, 69, 0.06);
+}
+
 .inner {
   position: relative;
   max-width: 1600px;
   margin: 0 auto;
-  padding: 0 clamp(1.5rem, 4vw, 3.5rem);
-  min-height: 112px;
+  padding: 0 clamp(1.25rem, 3vw, 2.75rem);
+  /* Was 112px, which left a lot of empty air above and below a 14px row.
+     84px is generous without the bar becoming the loudest thing on screen. */
+  min-height: 84px;
 
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 2.5rem;
+  gap: 2rem;
+  transition: min-height 0.2s ease;
+}
+
+/* Gives a little height back once the visitor is reading. */
+.condensed .inner {
+  min-height: 68px;
 }
 
 /* Wordmark link back to the home page */
 .logo {
   font-size: clamp(1.05rem, 1.4vw, 1.2rem);
-  font-weight: 700;
-  color: #111827;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: #0b2545;
   text-decoration: none;
   white-space: nowrap;
 }
 
-/* Holds nav + language + account: a row on desktop, a sheet on small screens */
+/* Part of the name, but not the part that carries it — the same treatment
+   the footer gives it. */
+.logoDot {
+  color: #94a3b8;
+  font-weight: 600;
+}
+
+/* Holds nav + account: a row on desktop, a sheet on small screens */
 .panel {
   display: flex;
   align-items: center;
-  gap: 2.5rem;
+  gap: 1.5rem;
 }
 
-/* Horizontal nav; list bullets and default spacing removed */
 .navList {
   display: flex;
-  gap: 2.5rem;
+  align-items: center;
+  /* Half the old 2.5rem. Nav items are one group and should sit closer to
+     each other than to anything else on the bar. */
+  gap: 1.5rem;
   list-style: none;
   margin: 0;
   padding: 0;
@@ -51,71 +86,191 @@
 
 /* Nav items sit muted by default and darken on hover */
 .navLink {
-  color: #4b5563;
+  position: relative;
+  display: block;
+  padding: 0.35rem 0;
+  color: #5a6b80;
   text-decoration: none;
-  font-size: 0.875rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  white-space: nowrap;
   transition: color 0.15s ease;
 }
 
 .navLink:hover {
-  color: #111827;
+  color: #0b2545;
 }
 
-/* Current page, so visitors can see where they are */
+/* The current page, marked with a rule under it.
+ *
+ * Deliberately not a heavier font: bolding the active item changes how wide
+ * the word is, so every link after it shifts sideways as you navigate. The
+ * underline costs no width. */
+.navLink::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -2px;
+  height: 2px;
+  border-radius: 2px;
+  background: #2563eb;
+  transform: scaleX(0);
+  transform-origin: center;
+  transition: transform 0.18s ease;
+}
+
 .navLinkActive {
-  color: #111827;
-  font-weight: 600;
+  color: #0b2545;
 }
 
-/* Log in / Sign up pair at the far right of the header */
+.navLinkActive::after {
+  transform: scaleX(1);
+}
+
+/* The boundary between navigation and account. */
+.divider {
+  width: 1px;
+  height: 26px;
+  background: #e2e8f0;
+  flex-shrink: 0;
+}
+
 .account {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.5rem;
 }
 
-/* Secondary action: text-only so it does not compete with Sign up */
-.login {
-  padding: 0.5rem 0.9rem;
+/* ------------------------------------------------------------- signed in */
+
+/* The staff shortcut. Outlined, so it is clearly a place to go without
+   competing with the wordmark or shouting like a filled button. */
+.dashboard {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.45rem 0.8rem;
+  border: 1px solid #dbe3ec;
   border-radius: 8px;
-  color: #1f2937;
-  font-size: 0.875rem;
+  color: #1d4ed8;
+  font-size: 0.85rem;
   font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.dashboard:hover {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+}
+
+.dashboardIcon {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+}
+
+/* Name and initials. A person, not a menu item. */
+.identity {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.3rem 0.6rem 0.3rem 0.3rem;
+  border-radius: 999px;
+  color: #0b2545;
   text-decoration: none;
   transition: background 0.15s ease;
 }
 
-.login:hover {
-  background: #f3f4f6;
+.identity:hover {
+  background: #f1f5f9;
 }
 
-/* Primary action: filled so it reads as the main thing to click. Used for
-   both the Sign up link and the Log out button, hence the button resets. */
-.signup {
-  padding: 0.5rem 1.1rem;
+.avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #2563eb, #0ea5e9);
+  color: #ffffff;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.identityName {
+  font-size: 0.875rem;
+  font-weight: 600;
+  white-space: nowrap;
+  /* A long name must not push Log out off the bar. */
+  max-width: 14ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ---------------------------------------------------------------- actions */
+
+/* Quiet action: Log in when signed out, Log out when signed in. Neither is
+   the main thing anyone came here to do. */
+.quiet {
+  padding: 0.5rem 0.85rem;
   border: 0;
+  border-radius: 8px;
+  background: none;
   font: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #5a6b80;
+  text-decoration: none;
+  white-space: nowrap;
   cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.quiet:hover {
+  background: #f1f5f9;
+  color: #0b2545;
+}
+
+/* The one filled button on the bar, and only when there is a main action to
+   fill — signing up. A signed-in visitor sees no filled button at all. */
+.primary {
+  padding: 0.55rem 1.15rem;
+  border: 0;
   border-radius: 8px;
   background: #2563eb;
   color: #ffffff;
+  font: inherit;
   font-size: 0.875rem;
   font-weight: 600;
   text-decoration: none;
   white-space: nowrap;
-  transition: background 0.15s ease;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.15s ease;
 }
 
-.signup:hover {
+.primary:hover {
   background: #1d4ed8;
+  transform: translateY(-1px);
 }
 
-.login:focus-visible,
-.signup:focus-visible,
+.quiet:focus-visible,
+.primary:focus-visible,
+.dashboard:focus-visible,
+.identity:focus-visible,
 .navLink:focus-visible,
+.logo:focus-visible,
 .menuButton:focus-visible {
   outline: 3px solid #2563eb;
   outline-offset: 2px;
+  border-radius: 8px;
 }
 
 /* Hamburger button: hidden until the nav no longer fits on one row */
@@ -130,7 +285,7 @@
   border: 1px solid #e5e7eb;
   border-radius: 8px;
   background: #ffffff;
-  color: #111827;
+  color: #0b2545;
   cursor: pointer;
 }
 
@@ -187,7 +342,7 @@
 .backdrop {
   display: none;
   position: fixed;
-  inset: 80px 0 0;
+  inset: 72px 0 0;
   z-index: 90;
   border: 0;
   padding: 0;
@@ -196,14 +351,18 @@
 }
 
 /* Phones and tablets: collapse the nav behind the hamburger */
-@media (max-width: 900px) {
+@media (max-width: 1100px) {
   .inner {
     padding: 0 1rem;
-    /* A 112px bar eats too much of a phone screen; keep it to 80 so the
+    /* A tall bar eats too much of a phone screen; keep it to 72 so the
        backdrop offset above stays correct. */
-    min-height: 80px;
+    min-height: 72px;
     /* The sheet is positioned against this row */
     flex-wrap: wrap;
+  }
+
+  .condensed .inner {
+    min-height: 72px;
   }
 
   .menuButton {
@@ -212,6 +371,12 @@
 
   .backdrop {
     display: block;
+  }
+
+  /* The hairline is a device for a horizontal row; stacked, the sheet's own
+     borders already do the separating. */
+  .divider {
+    display: none;
   }
 
   .panel {
@@ -223,7 +388,7 @@
     z-index: 95;
 
     display: grid;
-    gap: 1.25rem;
+    gap: 1rem;
     padding: 1.25rem 1rem 1.5rem;
     box-sizing: border-box;
     background: #ffffff;
@@ -249,6 +414,7 @@
   /* Stack the links, each a full-width row that is easy to hit */
   .navList {
     flex-direction: column;
+    align-items: stretch;
     gap: 0;
   }
 
@@ -258,23 +424,56 @@
     font-size: 0.95rem;
   }
 
+  /* The underline is a desktop indicator; in a stacked list a left bar reads
+     better and does not sit under the row below. */
+  .navLink::after {
+    left: -0.5rem;
+    right: auto;
+    top: 0.6rem;
+    bottom: 0.6rem;
+    width: 3px;
+    height: auto;
+    transform: scaleY(0);
+  }
+
+  .navLinkActive::after {
+    transform: scaleY(1);
+  }
+
   .navList li + li .navLink {
     border-top: 1px solid #f1f5f9;
   }
 
-  /* Account buttons share the row, full width and thumb-sized */
+  /* Account block becomes its own row, separated from the links above it. */
   .account {
-    gap: 0.75rem;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    padding-top: 0.9rem;
+    border-top: 1px solid #e8ecf1;
   }
 
-  .login,
-  .signup {
+  .identity,
+  .dashboard {
+    flex: 1 1 100%;
+    justify-content: flex-start;
+  }
+
+  .dashboard {
+    padding: 0.7rem 0.9rem;
+  }
+
+  .identityName {
+    max-width: none;
+  }
+
+  .quiet,
+  .primary {
     flex: 1 1 0;
     padding: 0.75rem 1rem;
     text-align: center;
   }
 
-  .login {
+  .quiet {
     border: 1px solid #e5e7eb;
   }
 }
@@ -288,8 +487,15 @@
 
 /* Respect a reduced-motion preference */
 @media (prefers-reduced-motion: reduce) {
+  .header,
+  .inner,
   .panel,
+  .navLink::after,
   .menuIcon span {
     transition: none;
+  }
+
+  .primary:hover {
+    transform: none;
   }
 }

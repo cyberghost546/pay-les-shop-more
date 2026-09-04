@@ -1,0 +1,56 @@
+/* src/components/StatsBand/StatsBand.module.css */
+
+.band {
+  background: linear-gradient(180deg, #0b2545 0%, #123a63 100%);
+  color: #ffffff;
+}
+
+.inner {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 3rem 1.25rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 2rem 1rem;
+  text-align: center;
+}
+
+.stat {
+  /* A hairline between columns rather than a card each: the four are one
+     statement, not four separate claims. */
+  border-left: 1px solid rgba(255, 255, 255, 0.12);
+  padding: 0 1rem;
+}
+
+.stat:first-child {
+  border-left: 0;
+}
+
+.value {
+  margin: 0 0 0.35rem;
+  font-size: clamp(2rem, 5vw, 2.9rem);
+  font-weight: 800;
+  line-height: 1;
+  color: #38bdf8;
+  /* Stops the digits jittering sideways while the number counts up. */
+  font-variant-numeric: tabular-nums;
+}
+
+.label {
+  margin: 0;
+  font-size: 0.92rem;
+  color: #b9cbe0;
+}
+
+.loading {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: #7f9bb8;
+  font-size: 0.9rem;
+}
+
+@media (max-width: 640px) {
+  .stat {
+    border-left: 0;
+  }
+}

@@ -45,3 +45,33 @@ export async function signUp({ firstName, lastName, email, phone, password }) {
 export async function signOut() {
   return request('/auth/logout/', { method: 'POST' });
 }
+
+/**
+ * Step one of a reset: ask for the e-mail with the link in it.
+ *
+ * Succeeds whether or not the address belongs to an account — the server
+ * answers identically either way, so that this cannot be used to find out who
+ * has registered. The page says "if that address is registered…" for the same
+ * reason, and must not be changed to promise that a mail is on its way.
+ *
+ * @param {{ email: string, language?: string }} details
+ */
+export async function requestPasswordReset({ email, language }) {
+  return request('/auth/password-reset/', {
+    method: 'POST',
+    // The mail is written in whichever language the visitor is reading.
+    body: { email, language: language ?? '' },
+  });
+}
+
+/**
+ * Step two: the new password, with the two halves of the link.
+ *
+ * @param {{ uid: string, token: string, password: string }} details
+ */
+export async function confirmPasswordReset({ uid, token, password }) {
+  return request('/auth/password-reset/confirm/', {
+    method: 'POST',
+    body: { uid, token, new_password: password },
+  });
+}

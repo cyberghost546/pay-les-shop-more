@@ -144,92 +144,258 @@
   color: #111827;
 }
 
-.cards {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 2.5rem;
-  margin: 0;
-  padding: 0;
-  list-style: none;
+/* --------------------------------------------------------------- sections */
+
+.section {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 3.5rem 1.25rem;
 }
 
-/* Slightly translucent so the page backdrop tints the panel */
-.card {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1rem;
-  align-items: start;
-  padding: 2rem;
-  border: 1px solid #e5e7eb;
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.9);
-  -webkit-backdrop-filter: blur(6px);
-  backdrop-filter: blur(6px);
-  box-shadow: 0 10px 30px rgba(5, 7, 10, 0.06);
-}
-
-.cardTitle {
-  margin: 0 0 1.1rem;
-  font-size: 1rem;
-  font-weight: 700;
-  color: #111827;
-}
-
-.serviceList {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.serviceItem {
-  margin-bottom: 0.5rem;
-}
-
-/* The ↳ marker sits in the gutter, matching the reference design */
-.serviceLink {
-  color: #38a0dc;
-  text-decoration: none;
-  font-size: 0.95rem;
-}
-
-.serviceLink::before {
-  content: '\21B3';
-  margin-right: 0.6rem;
-  color: #6cbf3f;
-}
-
-.serviceLink:hover {
-  text-decoration: underline;
-}
-
-/* Slot for the island silhouette — replace with a real <img> */
-.mapSlot {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 240px;
-  padding: 1rem;
-  box-sizing: border-box;
-  border: 2px dashed #cbd5e1;
-  border-radius: 8px;
-  color: #64748b;
-  font-size: 0.85rem;
+.sectionHead {
+  max-width: 60ch;
+  margin: 0 auto 2.25rem;
   text-align: center;
 }
 
-.mapImage {
+.sectionLead {
+  margin: 0.75rem 0 0;
+  font-size: 1rem;
+  line-height: 1.7;
+  color: #4b5563;
+}
+
+/* --------------------------------------------------------- service cards */
+
+.serviceGrid,
+.islandGrid,
+.shopList {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.serviceGrid {
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.25rem;
+}
+
+.serviceCard {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  box-sizing: border-box;
+  padding: 1.75rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  background: #ffffff;
+  color: inherit;
+  text-decoration: none;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+
+/* Only the cards that are links lift; the rest would be promising something
+   they do not do. */
+a.serviceCard:hover {
+  transform: translateY(-4px);
+  border-color: #bae6fd;
+  box-shadow: 0 16px 36px rgba(11, 37, 69, 0.1);
+}
+
+.serviceIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  margin-bottom: 1.1rem;
+  border-radius: 12px;
+  background: #e0f2fe;
+  color: #0b2545;
+}
+
+.serviceIcon svg {
+  width: 26px;
+  height: 26px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+a.serviceCard:hover .serviceIcon {
+  background: #0ea5e9;
+  color: #ffffff;
+}
+
+.serviceTitle {
+  margin: 0 0 0.5rem;
+  font-size: 1.12rem;
+  font-weight: 700;
+  color: #0b2545;
+}
+
+.serviceText {
+  margin: 0;
+  /* Pushes any "learn more" to the bottom, so the links line up across cards
+     whose descriptions run to different lengths. */
+  flex: 1 1 auto;
+  font-size: 0.94rem;
+  line-height: 1.6;
+  color: #4b5563;
+}
+
+.serviceMore {
+  margin-top: 1.25rem;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #0ea5e9;
+}
+
+/* -------------------------------------------------------------- islands */
+
+.islandGrid {
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1.25rem;
+}
+
+.islandCard {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  background: #ffffff;
+  text-decoration: none;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.islandCard:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 16px 36px rgba(11, 37, 69, 0.12);
+}
+
+.islandImage {
   width: 100%;
-  object-fit: contain;
+  height: 150px;
+  /* The photographs are different shapes; cover crops them to one height
+     rather than letting the row of cards go ragged. */
+  object-fit: cover;
 }
 
-@media (max-width: 1100px) {
-  .cards {
-    grid-template-columns: 1fr;
-  }
+.islandBody {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 0.6rem;
+  padding: 1rem 1.15rem 1.15rem;
 }
 
-@media (max-width: 640px) {
-  .card {
-    grid-template-columns: 1fr;
+.islandName {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #0b2545;
+}
+
+.islandMore {
+  font-size: 0.86rem;
+  font-weight: 700;
+  color: #0ea5e9;
+}
+
+/* ---------------------------------------------------------------- shops */
+
+.shopList {
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 0.6rem;
+}
+
+.shop {
+  padding: 0.8rem 1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #f8fafc;
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: #334155;
+  text-align: center;
+}
+
+/* ------------------------------------------------------------------ cta */
+
+.cta {
+  padding: 4rem 1.25rem;
+  background:
+    radial-gradient(700px 300px at 50% 0%, rgba(56, 189, 248, 0.2), transparent 65%),
+    linear-gradient(160deg, #0b2545 0%, #071a30 100%);
+  color: #ffffff;
+  text-align: center;
+}
+
+.ctaTitle {
+  margin: 0 0 0.75rem;
+  font-size: clamp(1.6rem, 3.6vw, 2.2rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.ctaBody {
+  max-width: 52ch;
+  margin: 0 auto 2rem;
+  font-size: 1.02rem;
+  line-height: 1.7;
+  color: #b9cbe0;
+}
+
+.ctaButtons {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.75rem;
+}
+
+.ctaPrimary,
+.ctaGhost {
+  padding: 0.85rem 1.7rem;
+  border-radius: 10px;
+  font-size: 1rem;
+  font-weight: 700;
+  text-decoration: none;
+  transition: transform 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+}
+
+.ctaPrimary {
+  border: 2px solid #0ea5e9;
+  background: #0ea5e9;
+  color: #04121f;
+}
+
+.ctaPrimary:hover {
+  background: #38bdf8;
+  border-color: #38bdf8;
+  transform: translateY(-2px);
+}
+
+.ctaGhost {
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  color: #ffffff;
+}
+
+.ctaGhost:hover {
+  border-color: #ffffff;
+  background: rgba(255, 255, 255, 0.08);
+  transform: translateY(-2px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  a.serviceCard:hover,
+  .islandCard:hover,
+  .ctaPrimary:hover,
+  .ctaGhost:hover {
+    transform: none;
   }
 }

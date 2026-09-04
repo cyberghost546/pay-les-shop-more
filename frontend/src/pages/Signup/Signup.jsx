@@ -91,7 +91,41 @@ const FAILURE_KEYS = {
   [AUTH_ERRORS.EMAIL_TAKEN]: 'signup.errors.taken',
   [AUTH_ERRORS.UNAVAILABLE]: 'signup.errors.offline',
   [AUTH_ERRORS.RATE_LIMITED]: 'signup.errors.tooMany',
+  // Without this, anything the server rejected that the form did not catch
+  // first — a password on the common-passwords list, a phone number the
+  // validator did not like — fell through to the offline message and told
+  // people to come back later, when what they need is to change one field.
+  [AUTH_ERRORS.VALIDATION]: 'signup.errors.invalid',
 };
+
+// The API names its fields in snake_case and phrases its messages in English.
+// Both are mapped here onto the form's own field names and translation keys,
+// so something the server rejected appears under the right input, in the
+// language the visitor is reading.
+const SERVER_FIELDS = {
+  email: { field: 'email', key: 'signup.errors.emailInvalid' },
+  // username is the e-mail address; the form has no username input.
+  username: { field: 'email', key: 'signup.errors.emailInvalid' },
+  phone_number: { field: 'phone', key: 'signup.errors.phoneInvalid' },
+  // The form already enforces the length, so anything the server still
+  // objects to is the password being guessable: too common, all digits, or
+  // too close to the name or e-mail address.
+  password: { field: 'password', key: 'signup.errors.passwordWeak' },
+  first_name: { field: 'firstName', key: 'signup.errors.firstNameRequired' },
+  last_name: { field: 'lastName', key: 'signup.errors.lastNameRequired' },
+};
+
+/** Server field errors, in the shape the form already renders. */
+function serverFieldErrors(fields) {
+  const mapped = {};
+
+  for (const name of Object.keys(fields ?? {})) {
+    const entry = SERVER_FIELDS[name];
+    if (entry) mapped[entry.field] = entry.key;
+  }
+
+  return mapped;
+}
 
 export default function Signup() {
   const [form, setForm] = useState(EMPTY_FORM);
@@ -104,6 +138,9 @@ export default function Signup() {
   const navigate = useNavigate();
 
   const score = scorePassword(form.password);
+  // The address is the field at fault, so it is marked as invalid even though
+  // the message itself sits in the banner with its link.
+  const isTaken = failureKey === 'signup.errors.taken';
 
   function handleChange(event) {
     const { name, type, value, checked } = event.target;
@@ -143,6 +180,10 @@ export default function Signup() {
       // account rather than back to the login form.
       navigate('/profile', { replace: true });
     } catch (error) {
+      // Whatever the server objected to, shown against the field it belongs
+      // to. The duplicate address is the exception: it gets the banner below,
+      // which is the only place a link to the login page fits.
+      setErrors(serverFieldErrors(error.fields));
       setFailureKey(FAILURE_KEYS[error.code] ?? 'signup.errors.offline');
       // Never keep passwords around after a failed attempt.
       setForm((current) => ({ ...current, password: '', confirm: '' }));
@@ -160,7 +201,15 @@ export default function Signup() {
         {/* role="alert" so a screen reader announces the failure as it appears */}
         {failureKey && (
           <p className={styles.failure} role="alert">
-            {t(failureKey)}
+            {t(failureKey)}{' '}
+            {/* An address that is already registered is not really an error —
+                the visitor has an account and is on the wrong page. Saying so
+                without offering the way across leaves them stuck. */}
+            {isTaken && (
+              <Link to="/login" state={{ email: form.email.trim() }} className={styles.failureLink}>
+                {t('signup.errors.takenLogin')}
+              </Link>
+            )}
           </p>
         )}
 
@@ -222,7 +271,7 @@ export default function Signup() {
               value={form.email}
               onChange={handleChange}
               autoComplete="email"
-              aria-invalid={Boolean(errors.email)}
+              aria-invalid={Boolean(errors.email) || isTaken}
               aria-describedby={errors.email ? 'signup-email-error' : undefined}
             />
             {errors.email && (

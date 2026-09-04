@@ -37,7 +37,16 @@ const FAILURE_KEYS = {
 };
 
 export default function Login() {
-  const [form, setForm] = useState(EMPTY_FORM);
+  const location = useLocation();
+
+  // Signup sends the address along when it turns out to be registered
+  // already, so the visitor does not type it a second time. Read once, as the
+  // initial value — this is a starting point for the field, not a value the
+  // page keeps in sync with the route.
+  const [form, setForm] = useState(() => ({
+    ...EMPTY_FORM,
+    email: location.state?.email ?? '',
+  }));
   const [errors, setErrors] = useState({});
   const [failureKey, setFailureKey] = useState(null);
   const [busy, setBusy] = useState(false);
@@ -45,7 +54,6 @@ export default function Login() {
   const { t } = useLanguage();
   const { signIn } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
 
   function handleChange(event) {
     const { name, type, value, checked } = event.target;
@@ -96,6 +104,14 @@ export default function Login() {
       <div className={styles.card}>
         <h1 className={styles.title}>{t('login.title')}</h1>
         <p className={styles.subtitle}>{t('login.subtitle')}</p>
+
+        {/* Sent here by the reset page, which deliberately does not sign
+            anyone in — without this the trip would look like it failed. */}
+        {location.state?.passwordReset && (
+          <p className={styles.success} role="status">
+            {t('passwordReset.done')}
+          </p>
+        )}
 
         {/* role="alert" so a screen reader announces the failure as it appears */}
         {failureKey && (
@@ -192,7 +208,13 @@ export default function Login() {
               {t('login.remember')}
             </label>
 
-            <Link to="/forgot-password" className={styles.forgot}>
+            <Link
+              to="/forgot-password"
+              // Carries whatever they have already typed, so the next page
+              // does not ask for it again.
+              state={{ email: form.email.trim() }}
+              className={styles.forgot}
+            >
               {t('login.forgot')}
             </Link>
           </div>

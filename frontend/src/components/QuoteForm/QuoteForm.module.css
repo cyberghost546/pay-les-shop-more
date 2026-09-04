@@ -1,58 +1,85 @@
-/* src/components/QuoteForm/QuoteForm.module.css */
+/* src/components/QuoteForm/QuoteForm.module.css
+ *
+ * The quote request form. It closes every island page, so it is the last
+ * thing a visitor sees before deciding whether to bother — it gets a card and
+ * the site's own blue rather than the flat grey slab it used to be.
+ */
 
-/* Full-width grey band, as in the design */
 .section {
-  background: #f5f5f5;
   padding: 4rem 1rem 5rem;
+  background: linear-gradient(180deg, #ffffff 0%, #eef4fb 100%);
 }
 
 .inner {
-  max-width: 1100px;
+  max-width: 900px;
   margin: 0 auto;
 }
 
+.head {
+  margin-bottom: 1.75rem;
+  text-align: center;
+}
+
+/* Which island this quote is for. The form is per-destination and never said
+   so; somebody who scrolled straight down had no way to tell. */
+.forIsland {
+  display: inline-block;
+  margin: 0 0 0.9rem;
+  padding: 0.3rem 0.9rem;
+  border-radius: 999px;
+  background: #e0f2fe;
+  color: #075985;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
 .title {
-  margin: 0 0 1.5rem;
-  font-size: clamp(1.4rem, 3vw, 1.9rem);
+  margin: 0 0 0.6rem;
+  font-size: clamp(1.6rem, 3.4vw, 2.2rem);
   font-weight: 800;
-  letter-spacing: 0.01em;
-  color: #111827;
+  letter-spacing: -0.015em;
+  color: #0b2545;
 }
 
 .intro {
-  margin: 0 0 0.35rem;
-  font-size: 0.95rem;
-  color: #1f2937;
+  max-width: 56ch;
+  margin: 0 auto;
+  font-size: 1rem;
+  line-height: 1.65;
+  color: #4b5563;
 }
 
-/* Second line is the caveat, so it is tinted rather than plain body colour */
-.introNote {
-  margin: 0 0 2.5rem;
-  font-size: 0.95rem;
-  color: #1d4ed8;
+.card {
+  padding: 2rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  background: #ffffff;
+  box-shadow: 0 18px 44px rgba(11, 37, 69, 0.08);
+}
+
+/* ------------------------------------------------------------- messages */
+
+.failure,
+.success {
+  margin: 0 0 1.5rem;
+  padding: 0.85rem 1.1rem;
+  border-left: 4px solid currentColor;
+  border-radius: 4px;
+  font-size: 0.93rem;
+  line-height: 1.55;
 }
 
 .failure {
-  margin: 0 0 1.5rem;
-  padding: 0.8rem 1rem;
-  border-left: 4px solid #dc2626;
-  border-radius: 4px;
   background: #fef2f2;
   color: #991b1b;
-  font-size: 0.92rem;
 }
 
-/* Confirmation after a successful submission */
 .success {
-  margin: 0 0 1.5rem;
-  padding: 0.8rem 1rem;
-  border-left: 4px solid #6cbf3f;
-  border-radius: 4px;
-  background: #f2fbef;
-  color: #14532d;
-  font-size: 0.92rem;
-  line-height: 1.45;
+  background: #f0fdf4;
+  color: #15803d;
 }
+
+/* ---------------------------------------------------------------- fields */
 
 .form {
   display: flex;
@@ -60,11 +87,10 @@
   gap: 1.5rem;
 }
 
-/* The three name/email fields share one line */
 .row {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 1.5rem;
+  gap: 1rem;
 }
 
 .field {
@@ -74,58 +100,98 @@
 }
 
 .label {
-  font-size: 0.9rem;
-  color: #1f2937;
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #0b2545;
 }
 
 .required {
   color: #dc2626;
 }
 
+/* Says so plainly rather than leaving people to infer it from the absence of
+   an asterisk. */
+.optional {
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: #94a3b8;
+}
+
 .input,
 .textarea {
   width: 100%;
-  padding: 0.85rem 1rem;
+  padding: 0.75rem 0.9rem;
   box-sizing: border-box;
-  border: 1px solid #d4d4d4;
-  border-radius: 6px;
+  border: 1px solid #cbd5e1;
+  border-radius: 9px;
   background: #ffffff;
   font: inherit;
   font-size: 0.95rem;
-  color: #111827;
-}
-
-.textarea {
-  resize: vertical;
-  min-height: 220px;
-  line-height: 1.6;
+  color: #0f172a;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .input:focus,
 .textarea:focus {
-  outline: 2px solid #2563eb;
-  outline-offset: 1px;
+  outline: none;
   border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
 }
 
 .input[aria-invalid='true'] {
   border-color: #dc2626;
 }
 
-/* File row: hidden native input, styled trigger, then the chosen name */
-.upload {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-  padding: 0.5rem 0.75rem;
-  border: 1px solid #d4d4d4;
-  border-radius: 6px;
-  background: #ffffff;
+.textarea {
+  /* Vertical only: a textarea dragged wider breaks the card's layout. */
+  resize: vertical;
+  min-height: 150px;
+  line-height: 1.6;
 }
 
-/* Not display:none — that would take it out of the tab order and break the
-   keyboard path to the file picker. */
+.error {
+  font-size: 0.82rem;
+  color: #dc2626;
+}
+
+/* -------------------------------------------------------------- dropzone */
+
+.dropzone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1.75rem 1.25rem;
+  border: 2px dashed #cbd5e1;
+  border-radius: 12px;
+  background: #f8fafc;
+  text-align: center;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+/* While a file is over the area, so the drop target is unmistakable. */
+.dropzoneActive {
+  border-color: #2563eb;
+  background: #eff6ff;
+}
+
+.dropzoneFilled {
+  border-style: solid;
+  border-color: #bae6fd;
+  background: #ffffff;
+  padding: 1rem 1.25rem;
+}
+
+.dropzoneError {
+  border-color: #dc2626;
+  background: #fef2f2;
+}
+
+/* Visually hidden but still a real, focusable input — which is what keeps the
+   keyboard and the browser's own file picker working. */
 .fileInput {
   position: absolute;
   width: 1px;
@@ -134,106 +200,149 @@
   pointer-events: none;
 }
 
+.uploadIcon svg,
+.fileIcon svg {
+  width: 26px;
+  height: 26px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.uploadIcon {
+  color: #94a3b8;
+}
+
+.dropText {
+  margin: 0;
+  font-size: 0.95rem;
+  color: #475569;
+}
+
+/* A label styled as a button: clicking it opens the picker, because it points
+   at the real input. */
 .browse {
-  padding: 0.45rem 1rem;
-  border: 1px solid #cbd5e1;
-  border-radius: 4px;
-  background: #f3f4f6;
-  color: #1f2937;
-  font-size: 0.9rem;
-  font-weight: 600;
+  color: #2563eb;
+  font-weight: 700;
+  text-decoration: underline;
   cursor: pointer;
 }
 
 .browse:hover {
-  background: #e5e7eb;
+  color: #1d4ed8;
 }
 
-/* Focus lands on the hidden input, so the ring has to be drawn on its label */
-.fileInput:focus-visible + .browse {
+.fileInput:focus-visible + .browse,
+.fileInput:focus-visible ~ * .browse {
   outline: 3px solid #2563eb;
   outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.hint {
+  margin: 0;
+  font-size: 0.82rem;
+  color: #94a3b8;
+}
+
+/* The chosen file, once there is one. */
+.chosen {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  text-align: left;
+}
+
+.fileIcon {
+  flex-shrink: 0;
+  color: #0ea5e9;
+}
+
+.fileMeta {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 .fileName {
-  flex: 1 1 auto;
-  min-width: 0;
-  font-size: 0.9rem;
-  color: #4b5563;
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: #0f172a;
   /* Long filenames must not stretch the row */
   overflow-wrap: anywhere;
 }
 
+.fileSize {
+  font-size: 0.8rem;
+  color: #94a3b8;
+}
+
 .removeFile {
-  padding: 0.3rem 0.6rem;
-  border: 0;
-  border-radius: 4px;
-  background: transparent;
-  color: #dc2626;
+  flex-shrink: 0;
+  padding: 0.35rem 0.75rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 7px;
+  background: #ffffff;
   font: inherit;
-  font-size: 0.85rem;
+  font-size: 0.83rem;
   font-weight: 600;
+  color: #b91c1c;
   cursor: pointer;
 }
 
 .removeFile:hover {
+  border-color: #fecaca;
   background: #fef2f2;
 }
 
-.hint {
-  font-size: 0.82rem;
-  color: #6b7280;
-}
-
-.error {
-  font-size: 0.82rem;
-  color: #dc2626;
-}
-
-.multiple {
+/* One instruction about extra files, where the decision is made. */
+.note {
   margin: 0;
-  font-size: 0.95rem;
-  color: #1d4ed8;
+  font-size: 0.85rem;
+  line-height: 1.6;
+  color: #64748b;
 }
 
 .mailLink {
-  color: #1d4ed8;
+  color: #2563eb;
   font-weight: 600;
 }
 
-/* Announced to screen readers; the visible label is the placeholder */
-.srOnly {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip-path: inset(50%);
-  white-space: nowrap;
+/* --------------------------------------------------------------- actions */
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
 }
 
 .submit {
-  align-self: flex-start;
-  padding: 0.85rem 2.5rem;
+  padding: 0.9rem 2.25rem;
   border: 0;
-  border-radius: 999px;
-  background: #29abe2;
+  /* The site's blue and its 10px radius, rather than a cyan pill that
+     appeared nowhere else. */
+  border-radius: 10px;
+  background: #2563eb;
   color: #ffffff;
   font: inherit;
-  font-size: 0.9rem;
+  font-size: 1rem;
   font-weight: 700;
-  letter-spacing: 0.08em;
   cursor: pointer;
-  transition: background 0.15s ease;
+  transition: background 0.15s ease, transform 0.15s ease;
 }
 
 .submit:hover:not(:disabled) {
-  background: #1c93c6;
+  background: #1d4ed8;
+  transform: translateY(-1px);
 }
 
 .submit:disabled {
-  background: #a5d6ee;
+  background: #93b4f5;
   cursor: not-allowed;
 }
 
@@ -241,6 +350,12 @@
 .removeFile:focus-visible {
   outline: 3px solid #2563eb;
   outline-offset: 2px;
+}
+
+.requiredNote {
+  margin: 0;
+  font-size: 0.82rem;
+  color: #94a3b8;
 }
 
 @media (max-width: 800px) {
@@ -251,10 +366,14 @@
   .section {
     padding: 3rem 1rem;
   }
+
+  .card {
+    padding: 1.5rem 1.25rem;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .submit {
-    transition: none;
+  .submit:hover:not(:disabled) {
+    transform: none;
   }
 }

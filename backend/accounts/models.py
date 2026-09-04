@@ -246,6 +246,15 @@ class Package(models.Model):
     shipped_at = models.DateTimeField(null=True, blank=True)
     delivered_at = models.DateTimeField(null=True, blank=True)
 
+    # What the customer is told to expect, set by staff when the shipment is
+    # booked. A real field rather than a guess derived from the status: an
+    # arrival date invented by arithmetic is a promise nobody made.
+    estimated_arrival = models.DateField(
+        null=True,
+        blank=True,
+        help_text="Shown on the public tracking page. Leave empty if not known yet.",
+    )
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -259,6 +268,42 @@ class Package(models.Model):
 
     def __str__(self):
         return f"{self.tracking_number} ({self.get_status_display()})"
+
+    @property
+    def progress(self):
+        """How far along the journey is, 0-100, for a progress bar.
+
+        A reading of the status rather than a measurement — the status is the
+        only thing actually known — so the numbers are the even spacing of the
+        stages, not a claim about distance covered or time elapsed.
+        """
+        return {
+            self.Status.QUOTED: 5,
+            self.Status.PAID: 20,
+            self.Status.PURCHASED: 35,
+            self.Status.IN_TRANSIT: 60,
+            self.Status.ARRIVED: 80,
+            self.Status.DELIVERED: 100,
+            # Nothing is under way, so nothing is part-done.
+            self.Status.CANCELLED: 0,
+        }.get(self.status, 0)
+
+    @property
+    def destination_label(self):
+        """Where it is going, at country level and no finer.
+
+        The public tracking page shows this. The street address is on the row
+        as well, and deliberately never leaves the server for an anonymous
+        caller — a tracking number is not a credential.
+        """
+        if self.delivery_address_id and self.delivery_address:
+            return self.delivery_address.get_country_display()
+
+        # The address the package was actually sent to is frozen as text; its
+        # last line is the country. Used when the address row itself is gone,
+        # which happens when the customer erases their account.
+        lines = [line for line in self.delivery_address_text.splitlines() if line.strip()]
+        return lines[-1].strip() if lines else ""
 
     def save(self, *args, **kwargs):
         """Freeze the delivery address the first time the package is saved."""

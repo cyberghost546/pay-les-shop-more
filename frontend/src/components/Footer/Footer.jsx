@@ -9,6 +9,8 @@ const FOOTER_LINKS = [
     links: [
       { key: 'nav.home', href: '/' },
       { key: 'nav.services', href: '/services' },
+      { key: 'nav.tracking', href: '/tracking' },
+      { key: 'nav.booking', href: '/booking' },
       { key: 'nav.calculator', href: '/calculator' },
       { key: 'nav.contact', href: '/contact' },
     ],

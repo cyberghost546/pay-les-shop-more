@@ -1,0 +1,310 @@
+/* src/components/TrackingPanel/TrackingPanel.module.css */
+
+.panel {
+  --navy: #0b2545;
+  --cyan: #0ea5e9;
+
+  padding: 1.75rem;
+  box-sizing: border-box;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  background: #ffffff;
+  box-shadow: 0 18px 44px rgba(11, 37, 69, 0.1);
+}
+
+/* In the hero the panel sits over the dark gradient, so it gets a glassy
+   treatment rather than a flat white slab. */
+.hero {
+  border-color: rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.06);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+  box-shadow: 0 24px 60px rgba(2, 8, 20, 0.35);
+}
+
+.title {
+  margin: 0 0 0.3rem;
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--navy);
+}
+
+.subtitle {
+  margin: 0 0 1.1rem;
+  font-size: 0.9rem;
+  color: #64748b;
+}
+
+.hero .title {
+  color: #ffffff;
+}
+
+.hero .subtitle {
+  color: #b9cbe0;
+}
+
+.form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.field {
+  flex: 1 1 240px;
+  min-width: 0;
+}
+
+.input {
+  width: 100%;
+  padding: 0.8rem 1rem;
+  box-sizing: border-box;
+  border: 1px solid #cbd5e1;
+  border-radius: 9px;
+  background: #ffffff;
+  font: inherit;
+  font-size: 1rem;
+  /* Tracking numbers are read character by character; a little tracking
+     between them makes them far easier to check against a label. */
+  letter-spacing: 0.03em;
+  color: #0f172a;
+}
+
+.input:focus {
+  outline: 2px solid var(--cyan);
+  outline-offset: 1px;
+  border-color: var(--cyan);
+}
+
+.input[aria-invalid='true'] {
+  border-color: #dc2626;
+}
+
+.hero .input {
+  border-color: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
+.hero .input::placeholder {
+  color: #94a9c0;
+}
+
+.submit {
+  flex: 0 0 auto;
+  padding: 0.8rem 1.6rem;
+  border: 0;
+  border-radius: 9px;
+  background: var(--cyan);
+  color: #04121f;
+  font: inherit;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+
+.submit:hover:not(:disabled) {
+  background: #38bdf8;
+  transform: translateY(-1px);
+}
+
+.submit:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.result {
+  margin-top: 1rem;
+}
+
+.hint {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  font-size: 0.86rem;
+  color: #94a3b8;
+}
+
+.spinner {
+  width: 0.9rem;
+  height: 0.9rem;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.error {
+  margin: 0;
+  padding: 0.75rem 1rem;
+  border-left: 4px solid #dc2626;
+  border-radius: 4px;
+  background: #fef2f2;
+  color: #991b1b;
+  font-size: 0.9rem;
+}
+
+.hero .error {
+  background: rgba(220, 38, 38, 0.14);
+  color: #fecaca;
+}
+
+/* ------------------------------------------------------------- the result */
+
+.shipment {
+  padding-top: 0.25rem;
+  /* Slides in rather than appearing: the panel grows, and a jump is jarring
+     when the eye is already on the button that caused it. */
+  animation: reveal 0.35s ease both;
+}
+
+@keyframes reveal {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shipment {
+    animation: none;
+  }
+
+  .spinner {
+    animation-duration: 2s;
+  }
+}
+
+.shipmentHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-bottom: 0.9rem;
+  margin-bottom: 0.9rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.hero .shipmentHead {
+  border-bottom-color: rgba(255, 255, 255, 0.14);
+}
+
+.shipmentLabel,
+.factLabel {
+  margin: 0 0 0.15rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #94a3b8;
+}
+
+.shipmentNumber {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  color: var(--navy);
+}
+
+.hero .shipmentNumber,
+.hero .factValue {
+  color: #ffffff;
+}
+
+.badge {
+  flex-shrink: 0;
+  padding: 0.25rem 0.7rem;
+  border-radius: 999px;
+  background: #e0f2fe;
+  color: #075985;
+  font-size: 0.8rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.badgeDone {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.badgeOff {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 0.9rem;
+  margin-bottom: 1.1rem;
+}
+
+.factValue {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.progressRow {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.progressTrack {
+  flex: 1 1 auto;
+  height: 8px;
+  border-radius: 999px;
+  background: #e2e8f0;
+  overflow: hidden;
+}
+
+.hero .progressTrack {
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.progressBar {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--cyan), #22d3ee);
+  transition: width 0.6s ease;
+}
+
+.progressValue {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #64748b;
+  font-variant-numeric: tabular-nums;
+}
+
+.hero .progressValue {
+  color: #b9cbe0;
+}
+
+.note {
+  margin: 1.25rem 0 0;
+  font-size: 0.78rem;
+  line-height: 1.5;
+  color: #94a3b8;
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

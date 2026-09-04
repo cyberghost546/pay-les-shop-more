@@ -1,99 +1,348 @@
-/* src/pages/Destination/Destination.module.css */
+/* src/pages/Destination/Destination.module.css
+ *
+ * The island page: a hero, the facts people ask for first, the four stages of
+ * an order as an alternating timeline, and the questions the contact form
+ * gets most.
+ */
 
-/* The banner lives in components/DestinationHero, shared with the index page */
+/* ----------------------------------------------------------------- facts */
 
-/* "How does it work?" — solid white band, so the site backdrop does not show
-   through behind the copy. Runs the full width of the page. */
+/* A dark strip directly under the hero. Four short answers, before any
+   explanation — most visitors want the crossing time and nothing else. */
+.facts {
+  background: linear-gradient(180deg, #0b2545 0%, #123a63 100%);
+  color: #ffffff;
+}
+
+.factList {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 2rem 1.25rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 1.5rem 1rem;
+}
+
+.fact {
+  padding: 0 1rem;
+  border-left: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.fact:first-child {
+  border-left: 0;
+}
+
+.factLabel {
+  margin: 0 0 0.3rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #7f9bb8;
+}
+
+.factValue {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+/* ---------------------------------------------------------------- stages */
+
 .how {
   background: #ffffff;
-  padding: 4rem 1rem 4.5rem;
-  text-align: center;
 }
 
 .howInner {
-  max-width: 1200px;
+  max-width: 880px;
   margin: 0 auto;
+  padding: 4rem 1.25rem;
 }
 
-.howTitle {
-  margin: 0 0 1rem;
-  font-size: clamp(1.4rem, 3vw, 2rem);
-  font-weight: 800;
-  letter-spacing: 0.01em;
-  color: #111827;
-}
-
-.howSubtitle {
-  margin: 0 0 3.5rem;
-  font-size: 1rem;
-  color: #1f2937;
-}
-
-.steps {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 2.5rem;
-  margin: 0;
-  padding: 0;
-  list-style: none;
+.howHead {
+  margin-bottom: 3rem;
   text-align: center;
 }
 
-.step {
-  display: flex;
-  flex-direction: column;
+.eyebrow {
+  margin: 0 0 0.7rem;
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #0ea5e9;
+}
+
+.howTitle {
+  margin: 0 0 0.75rem;
+  font-size: clamp(1.6rem, 3.4vw, 2.3rem);
+  font-weight: 800;
+  letter-spacing: -0.015em;
+  color: #0b2545;
+}
+
+.howSubtitle {
+  margin: 0;
+  font-size: 1.02rem;
+  line-height: 1.7;
+  color: #4b5563;
+}
+
+.stages {
+  position: relative;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* The rail the markers sit on, down the middle on a wide screen. */
+.stages::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 2px;
+  margin-left: -1px;
+  background: linear-gradient(180deg, #e0f2fe, #bae6fd, #e0f2fe);
+}
+
+.stage {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 64px 1fr;
   align-items: center;
+  gap: 0;
+  padding: 1rem 0;
 }
 
-.icon {
-  display: block;
-  margin-bottom: 1.5rem;
-  color: #29abe2;
+.stageMarker {
+  grid-column: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 2px solid #bae6fd;
+  z-index: 1;
 }
 
-.icon svg {
-  width: 64px;
-  height: 64px;
+.stageIcon svg {
+  width: 26px;
+  height: 26px;
   fill: none;
   stroke: currentColor;
-  stroke-width: 2;
+  stroke-width: 2.2;
   stroke-linecap: round;
   stroke-linejoin: round;
 }
 
-.stepTitle {
-  margin: 0 0 0.9rem;
-  font-size: 1.15rem;
-  font-weight: 800;
-  letter-spacing: 0.01em;
-  color: #111827;
+/* The customer's steps and ours read differently, so the two are coloured
+   apart — the page is partly about how little the customer has to do. */
+.stageYours .stageMarker {
+  border-color: #bae6fd;
+  color: #0369a1;
 }
 
-.stepText {
+.stageOurs .stageMarker {
+  border-color: #0b2545;
+  background: #0b2545;
+  color: #ffffff;
+}
+
+.stageBody {
+  padding: 0 2rem;
+}
+
+/* Odd stages sit left of the rail, even stages right. */
+.stage:nth-child(odd) .stageBody {
+  grid-column: 1;
+  text-align: right;
+}
+
+.stage:nth-child(even) .stageBody {
+  grid-column: 3;
+}
+
+.stageWho {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0 0 0.35rem;
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #0ea5e9;
+}
+
+.stage:nth-child(odd) .stageWho {
+  justify-content: flex-end;
+}
+
+.stageOurs .stageWho {
+  color: #0b2545;
+}
+
+.stageNumber {
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  background: #f1f5f9;
+  color: #64748b;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+}
+
+.stageTitle {
+  margin: 0 0 0.4rem;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #0b2545;
+}
+
+.stageText {
   margin: 0;
-  max-width: 22rem;
   font-size: 0.95rem;
   line-height: 1.65;
-  color: #374151;
+  color: #4b5563;
 }
 
-@media (max-width: 900px) {
-  .steps {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 2.5rem 1.5rem;
+/* ------------------------------------------------------------------- faq */
+
+.faq {
+  background: #f8fafc;
+  border-top: 1px solid #e2e8f0;
+}
+
+.faqInner {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 4rem 1.25rem;
+}
+
+.faqTitle {
+  margin: 0 0 2rem;
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  font-weight: 800;
+  color: #0b2545;
+  text-align: center;
+}
+
+.faqList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.faqItem {
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #ffffff;
+  overflow: hidden;
+}
+
+.faqQuestion {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.1rem 1.25rem;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #0b2545;
+  cursor: pointer;
+  /* Removes the default disclosure triangle; the chevron below replaces it. */
+  list-style: none;
+}
+
+.faqQuestion::-webkit-details-marker {
+  display: none;
+}
+
+.faqQuestion:hover {
+  background: #f8fafc;
+}
+
+.faqChevron {
+  flex-shrink: 0;
+  width: 10px;
+  height: 10px;
+  border-right: 2px solid #94a3b8;
+  border-bottom: 2px solid #94a3b8;
+  transform: rotate(45deg) translate(-2px, -2px);
+  transition: transform 0.2s ease;
+}
+
+.faqItem[open] .faqChevron {
+  transform: rotate(-135deg) translate(-2px, -2px);
+}
+
+.faqAnswer {
+  margin: 0;
+  padding: 0 1.25rem 1.25rem;
+  font-size: 0.95rem;
+  line-height: 1.7;
+  color: #4b5563;
+}
+
+.faqMore {
+  margin: 1.75rem 0 0;
+  text-align: center;
+  font-size: 0.95rem;
+  color: #64748b;
+}
+
+.faqLink {
+  color: #0ea5e9;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.faqLink:hover {
+  text-decoration: underline;
+}
+
+/* --------------------------------------------------------- narrow screens */
+
+@media (max-width: 720px) {
+  .fact {
+    border-left: 0;
+    padding: 0;
+  }
+
+  /* The timeline straightens out: rail on the left, everything beside it. */
+  .stages::before {
+    left: 28px;
+  }
+
+  .stage {
+    grid-template-columns: 56px 1fr;
+    align-items: start;
+    gap: 1rem;
+    padding: 0.75rem 0;
+  }
+
+  .stageMarker {
+    grid-column: 1;
+  }
+
+  .stage:nth-child(odd) .stageBody,
+  .stage:nth-child(even) .stageBody {
+    grid-column: 2;
+    padding: 0;
+    text-align: left;
+  }
+
+  .stage:nth-child(odd) .stageWho {
+    justify-content: flex-start;
   }
 }
 
-@media (max-width: 560px) {
-  .steps {
-    grid-template-columns: 1fr;
-  }
-
-  .how {
-    padding: 2.5rem 1rem 3rem;
-  }
-
-  .howSubtitle {
-    margin-bottom: 2.5rem;
+@media (prefers-reduced-motion: reduce) {
+  .faqChevron {
+    transition: none;
   }
 }

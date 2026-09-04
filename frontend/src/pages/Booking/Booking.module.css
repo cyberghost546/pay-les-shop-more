@@ -1,0 +1,448 @@
+/* src/pages/Booking/Booking.module.css
+ *
+ * The booking form. Long by nature — the paper version is a dense A4 — so the
+ * work here is making it feel shorter than it is: one card per section of the
+ * original, generous spacing inside each, and choices as tappable cards
+ * rather than radio dots.
+ */
+
+.page {
+  --navy: #0b2545;
+  --navy-deep: #071a30;
+  --cyan: #0ea5e9;
+  --blue: #2563eb;
+  --ink: #0f172a;
+  --muted: #64748b;
+  --line: #e2e8f0;
+  --ground: #f4f7fb;
+
+  background: var(--ground);
+  padding-bottom: 4rem;
+}
+
+/* ---------------------------------------------------------------- banner */
+
+.banner {
+  padding: 3rem 1.25rem;
+  background:
+    radial-gradient(700px 300px at 80% 10%, rgba(56, 189, 248, 0.2), transparent 62%),
+    linear-gradient(160deg, var(--navy-deep) 0%, var(--navy) 60%, #123a63 100%);
+  color: #ffffff;
+}
+
+.bannerInner {
+  max-width: 860px;
+  margin: 0 auto;
+}
+
+.eyebrow {
+  margin: 0 0 0.6rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #38bdf8;
+}
+
+.title {
+  margin: 0 0 0.8rem;
+  font-size: clamp(1.8rem, 4vw, 2.6rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.12;
+}
+
+.lead {
+  max-width: 58ch;
+  margin: 0;
+  font-size: 1.02rem;
+  line-height: 1.65;
+  color: #b9cbe0;
+}
+
+/* ------------------------------------------------------------------ form */
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 2rem 1.25rem 0;
+}
+
+.card {
+  /* A fieldset, so the legend is a real one and screen readers announce which
+     section each control belongs to. */
+  min-width: 0;
+  margin: 0;
+  padding: 1.75rem;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: #ffffff;
+  box-shadow: 0 10px 30px rgba(11, 37, 69, 0.05);
+
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.legend {
+  /* float, so the legend behaves like a heading inside a flex fieldset —
+     browsers lay a real legend out in their own way otherwise. */
+  float: left;
+  width: 100%;
+  margin: 0 0 0.5rem;
+  padding: 0 0 0.85rem;
+  border-bottom: 1px solid var(--line);
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--navy);
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  min-width: 0;
+}
+
+.label {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--navy);
+}
+
+.required {
+  color: #dc2626;
+}
+
+.input {
+  width: 100%;
+  padding: 0.7rem 0.9rem;
+  box-sizing: border-box;
+  border: 1px solid #cbd5e1;
+  border-radius: 9px;
+  background: #ffffff;
+  font: inherit;
+  font-size: 0.95rem;
+  color: var(--ink);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--cyan);
+  box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.18);
+}
+
+.input[aria-invalid='true'] {
+  border-color: #dc2626;
+}
+
+.textarea {
+  resize: vertical;
+  line-height: 1.6;
+}
+
+.hint {
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+.error {
+  font-size: 0.82rem;
+  color: #dc2626;
+}
+
+/* --------------------------------------------------------------- choices */
+
+/* The paper form's tick boxes. Cards rather than radio dots: they are the
+   fastest thing on the form to answer and should be the easiest to hit. */
+.choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.choice {
+  padding: 0.55rem 1rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 999px;
+  background: #ffffff;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #475569;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+
+.choice:hover {
+  border-color: #94a3b8;
+}
+
+.choiceOn {
+  border-color: var(--cyan);
+  background: #e0f2fe;
+  color: #075985;
+}
+
+/* Hidden but focusable, so arrow keys still move through the group. */
+.choiceInput {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.choiceInput:focus-visible + * ,
+.choice:focus-within {
+  outline: 3px solid var(--cyan);
+  outline-offset: 2px;
+}
+
+/* ------------------------------------------------------------- checkboxes */
+
+.check {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  font-size: 0.93rem;
+  line-height: 1.5;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.check input {
+  margin-top: 0.15rem;
+  width: 1.05rem;
+  height: 1.05rem;
+  flex-shrink: 0;
+  accent-color: var(--blue);
+}
+
+.subChecks {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  padding: 1rem 1.1rem;
+  border-left: 3px solid #bae6fd;
+  border-radius: 0 8px 8px 0;
+  background: #f0f9ff;
+}
+
+/* ----------------------------------------------------------------- money */
+
+.money {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.moneySign {
+  position: absolute;
+  left: 0.9rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--muted);
+  pointer-events: none;
+}
+
+.moneyInput {
+  padding-left: 2rem;
+}
+
+/* ----------------------------------------------------------------- terms */
+
+.terms {
+  border-color: #cbd5e1;
+  background: #fbfdff;
+}
+
+.termsText {
+  max-height: 220px;
+  overflow-y: auto;
+  padding: 1rem 1.15rem;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #ffffff;
+  font-size: 0.86rem;
+  line-height: 1.65;
+  color: #475569;
+}
+
+.termsText p {
+  margin: 0 0 0.8rem;
+}
+
+.termsText p:last-child {
+  margin-bottom: 0;
+}
+
+/* The typed signature. Set apart from the other inputs so it reads as the
+   deliberate act it stands in for. */
+.signature {
+  max-width: 26rem;
+  font-size: 1.15rem;
+  font-family: 'Segoe Script', 'Brush Script MT', cursive;
+  letter-spacing: 0.02em;
+}
+
+/* --------------------------------------------------------------- actions */
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+  padding-bottom: 1rem;
+}
+
+.submit {
+  padding: 0.95rem 2.5rem;
+  border: 0;
+  border-radius: 10px;
+  background: var(--blue);
+  color: #ffffff;
+  font: inherit;
+  font-size: 1.02rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+
+.submit:hover:not(:disabled) {
+  background: #1d4ed8;
+  transform: translateY(-1px);
+}
+
+.submit:disabled {
+  background: #93b4f5;
+  cursor: not-allowed;
+}
+
+.submit:focus-visible {
+  outline: 3px solid var(--cyan);
+  outline-offset: 2px;
+}
+
+.officeNote {
+  flex: 1 1 260px;
+  margin: 0;
+  font-size: 0.84rem;
+  line-height: 1.55;
+  color: var(--muted);
+}
+
+.failure {
+  margin: 0;
+  padding: 0.85rem 1.1rem;
+  border-left: 4px solid #dc2626;
+  border-radius: 4px;
+  background: #fef2f2;
+  color: #991b1b;
+  font-size: 0.93rem;
+}
+
+/* ------------------------------------------------------------ confirmation */
+
+.done {
+  max-width: 560px;
+  margin: 4rem auto;
+  padding: 2.5rem 2rem;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: #ffffff;
+  box-shadow: 0 18px 44px rgba(11, 37, 69, 0.08);
+  text-align: center;
+}
+
+.doneMark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  margin-bottom: 1.25rem;
+  border-radius: 50%;
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.doneMark svg {
+  width: 28px;
+  height: 28px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.doneTitle {
+  margin: 0 0 0.7rem;
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--navy);
+}
+
+.doneBody {
+  margin: 0 0 1.25rem;
+  font-size: 1rem;
+  line-height: 1.65;
+  color: var(--muted);
+}
+
+.doneRef {
+  margin: 0 0 1.75rem;
+  padding: 0.75rem 1rem;
+  border-radius: 9px;
+  background: var(--ground);
+  font-size: 0.95rem;
+  color: var(--ink);
+}
+
+.doneLink {
+  display: inline-block;
+  padding: 0.8rem 1.75rem;
+  border-radius: 10px;
+  background: var(--blue);
+  color: #ffffff;
+  font-size: 0.98rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.doneLink:hover {
+  background: #1d4ed8;
+}
+
+/* --------------------------------------------------------- narrow screens */
+
+@media (max-width: 640px) {
+  .row {
+    grid-template-columns: 1fr;
+  }
+
+  .card {
+    padding: 1.35rem 1.1rem;
+  }
+
+  .submit {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .submit:hover:not(:disabled) {
+    transform: none;
+  }
+}

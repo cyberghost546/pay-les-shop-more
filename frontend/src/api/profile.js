@@ -25,6 +25,9 @@ function toProfile(data) {
     country: address.country ?? 'CW',
     addressId: address.id ?? null,
     memberSince: data.date_joined,
+    // Decides whether the header shows a link to the dashboard. Not a
+    // permission: the staff API checks the flag itself on every request.
+    isStaff: Boolean(data.is_staff),
     addresses: data.addresses ?? [],
     notifications: {
       shipping: data.notify_shipping ?? true,

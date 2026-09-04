@@ -20,12 +20,16 @@ export class ApiError extends Error {
   /**
    * @param {string} code one of API_ERRORS
    * @param {object} [fields] per-field messages from the server, if any
+   * @param {number} [status] the HTTP status, when there was a response. Lets
+   *   a caller tell apart two failures that share a code — a 404 from the
+   *   tracking lookup means "no such shipment", not "the site is down".
    */
-  constructor(code, fields = null) {
+  constructor(code, fields = null, status = null) {
     super(code);
     this.name = 'ApiError';
     this.code = code;
     this.fields = fields;
+    this.status = status;
   }
 }
 
@@ -85,16 +89,21 @@ export async function request(path, { method = 'GET', body, formData } = {}) {
 
   if (response.ok) return data;
 
-  if (response.status === 401) throw new ApiError(API_ERRORS.INVALID_CREDENTIALS);
-  if (response.status === 403) throw new ApiError(API_ERRORS.UNAUTHENTICATED);
-  if (response.status === 429) throw new ApiError(API_ERRORS.RATE_LIMITED);
+  const { status } = response;
 
-  if (response.status === 400) {
-    // A duplicate email comes back as a field error; the forms show a
-    // dedicated message for it.
-    if (data?.email) throw new ApiError(API_ERRORS.EMAIL_TAKEN, data);
-    throw new ApiError(API_ERRORS.VALIDATION, data);
+  if (status === 401) throw new ApiError(API_ERRORS.INVALID_CREDENTIALS, null, status);
+  if (status === 403) throw new ApiError(API_ERRORS.UNAUTHENTICATED, null, status);
+  if (status === 429) throw new ApiError(API_ERRORS.RATE_LIMITED, null, status);
+
+  if (status === 400) {
+    // The server says so explicitly. Inferring it from "there is an error on
+    // the email field" was wrong: "enter a valid e-mail address" is also an
+    // error on that field, and needs the opposite advice.
+    if (data?.code === 'email_taken') {
+      throw new ApiError(API_ERRORS.EMAIL_TAKEN, data, status);
+    }
+    throw new ApiError(API_ERRORS.VALIDATION, data, status);
   }
 
-  throw new ApiError(API_ERRORS.UNAVAILABLE);
+  throw new ApiError(API_ERRORS.UNAVAILABLE, null, status);
 }

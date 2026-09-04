@@ -1,40 +1,69 @@
 // src/components/Contact/Contact.jsx
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import willemstad from '../../images/stock-photo-view-of-downtown-willemstad-curacao-netherlands-antilles-650249764.jpg';
 import { sendContactMessage } from '../../api/contact';
 import { API_ERRORS } from '../../api/client';
 import { useLanguage } from '../../i18n/useLanguage';
 import styles from './Contact.module.css';
 
-// Address block: label in the left column, value on the right. Only the labels
-// translate — a street name and a phone number read the same in every language.
-// `lines` keeps the street and town on separate rows, as in the design.
-const DETAILS = [
-  {
-    labelKey: 'contact.details.address',
-    lines: ['Hertzstraat 10 | 2652 XX', 'Berkel en Rodenrijs'],
-  },
-  {
-    labelKey: 'contact.details.phone',
-    lines: ['+31 10 767 0 371'],
-    href: 'tel:+31107670371',
-  },
-  {
-    labelKey: 'contact.details.email',
-    lines: ['info@paylesshopmore.com'],
-    href: 'mailto:info@paylesshopmore.com',
-  },
-];
+const OFFICE = {
+  street: 'Hertzstraat 10',
+  postcode: '2652 XX',
+  town: 'Berkel en Rodenrijs',
+  phone: '+31 10 767 0 371',
+  phoneHref: 'tel:+31107670371',
+  email: 'info@paylesshopmore.com',
+};
 
-// Google Maps embed centred on the office (Carib Intertrans).
-const MAP_QUERY = 'Hertzstraat 10, 2652 XX Berkel en Rodenrijs';
+// Google Maps embed centred on the office.
+const MAP_QUERY = `${OFFICE.street}, ${OFFICE.postcode} ${OFFICE.town}`;
 const MAP_SRC = `https://www.google.com/maps?q=${encodeURIComponent(
   MAP_QUERY,
 )}&output=embed`;
 const MAP_LINK = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
   MAP_QUERY,
 )}`;
+
+// The three ways to reach the company, as cards. Only the labels translate — a
+// street name and a phone number read the same in every language.
+const METHODS = [
+  {
+    id: 'email',
+    labelKey: 'contact.details.email',
+    value: OFFICE.email,
+    href: `mailto:${OFFICE.email}`,
+    icon: (
+      <>
+        <rect x="3" y="5" width="18" height="14" rx="2" />
+        <path d="m3.5 6.5 8.5 6 8.5-6" />
+      </>
+    ),
+  },
+  {
+    id: 'phone',
+    labelKey: 'contact.details.phone',
+    value: OFFICE.phone,
+    href: OFFICE.phoneHref,
+    icon: (
+      <>
+        <path d="M7 3.5h3l1.5 4-2 1.5a11 11 0 0 0 5.5 5.5l1.5-2 4 1.5v3a2 2 0 0 1-2.2 2A16.5 16.5 0 0 1 5 5.7 2 2 0 0 1 7 3.5Z" />
+      </>
+    ),
+  },
+  {
+    id: 'address',
+    labelKey: 'contact.details.address',
+    value: `${OFFICE.street}, ${OFFICE.postcode} ${OFFICE.town}`,
+    href: MAP_LINK,
+    external: true,
+    icon: (
+      <>
+        <path d="M12 2.5a7 7 0 0 1 7 7c0 5-7 12-7 12s-7-7-7-12a7 7 0 0 1 7-7Z" />
+        <circle cx="12" cy="9.5" r="2.6" />
+      </>
+    ),
+  },
+];
 
 const EMPTY_FORM = {
   name: '',
@@ -48,6 +77,8 @@ const EMPTY_FORM = {
 // Deliberately loose: catches typos, not every RFC-legal address.
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
+const MIN_MESSAGE = 10;
+
 // Returns translation keys rather than messages, so an error already on screen
 // follows the visitor when they change language.
 function validate({ name, email, message }) {
@@ -59,7 +90,7 @@ function validate({ name, email, message }) {
   else if (!EMAIL_PATTERN.test(email.trim()))
     errors.email = 'contact.errors.emailInvalid';
 
-  if (message.trim().length < 10) errors.message = 'contact.errors.message';
+  if (message.trim().length < MIN_MESSAGE) errors.message = 'contact.errors.message';
 
   return errors;
 }
@@ -108,7 +139,7 @@ export default function Contact() {
         name: form.name.trim(),
         email: form.email.trim(),
         // The subject is stored as an index; send the label, which is what
-        // staff read in the admin.
+        // staff read in the dashboard.
         subject: subjects[form.subject],
         message: form.message.trim(),
         language,
@@ -122,31 +153,64 @@ export default function Contact() {
     }
   }
 
+  const remaining = MIN_MESSAGE - form.message.trim().length;
+
   return (
-    <>
-      {/* The Willemstad waterfront sits behind the title; the overlay in the
-          stylesheet keeps the white text readable over the bright photo. */}
-      <section
-        className={styles.banner}
-        style={{ backgroundImage: `url(${willemstad})` }}
-      >
-        <div className={styles.titlePanel}>
+    <main className={styles.page}>
+      {/* A painted band rather than a photograph. It reads as part of the site
+          instead of a stock image, and it keeps the white text legible without
+          an overlay fighting a bright picture underneath. */}
+      <section className={styles.banner}>
+        <div className={styles.bannerInner}>
           <p className={styles.eyebrow}>{t('contact.eyebrow')}</p>
           <h1 className={styles.title}>{t('contact.title')}</h1>
-          <hr className={styles.rule} />
+          <p className={styles.lead}>{t('contact.lead')}</p>
           <p className={styles.breadcrumb}>
             <Link to="/" className={styles.crumbLink}>
               {t('nav.home')}
             </Link>{' '}
-            &raquo; {t('contact.breadcrumb')}
+            <span aria-hidden="true">›</span> {t('contact.breadcrumb')}
           </p>
         </div>
       </section>
 
-      <section className={styles.content}>
-        <h2 className={styles.sectionTitle}>{t('contact.formTitle')}</h2>
+      {/* The three ways to reach us, above the form — most people want one of
+          these rather than to fill anything in. */}
+      <section className={styles.methods} aria-label={t('contact.addressTitle')}>
+        {METHODS.map((method) => (
+          <a
+            key={method.id}
+            className={styles.method}
+            href={method.href}
+            {...(method.external
+              ? { target: '_blank', rel: 'noopener noreferrer' }
+              : {})}
+          >
+            <span className={styles.methodIcon} aria-hidden="true">
+              <svg viewBox="0 0 24 24">{method.icon}</svg>
+            </span>
+            <span className={styles.methodLabel}>{t(method.labelKey)}</span>
+            <span className={styles.methodValue}>{method.value}</span>
+          </a>
+        ))}
+      </section>
 
-        <div className={styles.grid}>
+      <section className={styles.content}>
+        <div className={styles.card}>
+          <h2 className={styles.formTitle}>{t('contact.formTitle')}</h2>
+
+          {failureKey && (
+            <p className={styles.failure} role="alert">
+              {t(failureKey)}
+            </p>
+          )}
+
+          {sent && (
+            <p className={styles.success} role="status">
+              {t('contact.success')}
+            </p>
+          )}
+
           <form className={styles.form} onSubmit={handleSubmit} noValidate>
             <div className={styles.row}>
               <label className={styles.field}>
@@ -166,9 +230,7 @@ export default function Contact() {
               </label>
 
               <label className={styles.field}>
-                <span className={styles.label}>
-                  {t('contact.fields.email')}
-                </span>
+                <span className={styles.label}>{t('contact.fields.email')}</span>
                 <input
                   className={styles.input}
                   type="email"
@@ -187,7 +249,7 @@ export default function Contact() {
             <label className={styles.field}>
               <span className={styles.label}>{t('contact.fields.subject')}</span>
               <select
-                className={styles.input}
+                className={`${styles.input} ${styles.select}`}
                 name="subject"
                 value={form.subject}
                 onChange={handleChange}
@@ -210,65 +272,27 @@ export default function Contact() {
                 onChange={handleChange}
                 aria-invalid={Boolean(errors.message)}
               />
-              {errors.message && (
+              {errors.message ? (
                 <span className={styles.error}>{t(errors.message)}</span>
+              ) : (
+                // Said before submitting rather than after being refused: the
+                // minimum is the one rule this form has that is not obvious.
+                remaining > 0 &&
+                form.message.length > 0 && (
+                  <span className={styles.counter}>
+                    {t('contact.charactersToGo').replace('{count}', remaining)}
+                  </span>
+                )
               )}
             </label>
 
             <button type="submit" className={styles.submit} disabled={busy}>
               {busy ? t('contact.sending') : t('contact.submit')}
             </button>
-
-            {failureKey && (
-              <p className={styles.failure} role="alert">
-                {t(failureKey)}
-              </p>
-            )}
-
-            {sent && (
-              <p className={styles.success} role="status">
-                {t('contact.success')}
-              </p>
-            )}
           </form>
-
-          <aside className={styles.details}>
-            <h3 className={styles.detailsTitle}>
-              {t('contact.addressTitle')}
-            </h3>
-
-            <dl className={styles.detailList}>
-              {DETAILS.map((item) => (
-                <div key={item.labelKey} className={styles.detail}>
-                  <dt className={styles.detailLabel}>{t(item.labelKey)}</dt>
-                  <dd className={styles.detailValue}>
-                    {item.href ? (
-                      <a href={item.href} className={styles.detailLink}>
-                        {item.lines[0]}
-                      </a>
-                    ) : (
-                      item.lines.map((line) => <span key={line}>{line}</span>)
-                    )}
-                  </dd>
-                </div>
-              ))}
-            </dl>
-
-            <a
-              className={styles.mapLink}
-              href={MAP_LINK}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              {t('contact.openInMaps')}
-            </a>
-          </aside>
         </div>
-      </section>
 
-      {/* The map sits in a panel styled like the form above it */}
-      <section className={styles.mapSection} aria-label={t('contact.mapLabel')}>
-        <div className={styles.mapPanel}>
+        <aside className={styles.mapCard}>
           <iframe
             className={styles.map}
             src={MAP_SRC}
@@ -277,8 +301,23 @@ export default function Contact() {
             referrerPolicy="no-referrer-when-downgrade"
             allowFullScreen
           />
-        </div>
+          <div className={styles.mapFoot}>
+            <p className={styles.mapAddress}>
+              <b>{OFFICE.street}</b>
+              <br />
+              {OFFICE.postcode} {OFFICE.town}
+            </p>
+            <a
+              className={styles.mapLink}
+              href={MAP_LINK}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {t('contact.openInMaps')} <span aria-hidden="true">↗</span>
+            </a>
+          </div>
+        </aside>
       </section>
-    </>
+    </main>
   );
 }

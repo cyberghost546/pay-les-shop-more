@@ -3,11 +3,17 @@
 from django.contrib.auth import get_user_model
 from django.urls import reverse
 from rest_framework import status
-from rest_framework.test import APITestCase
+
+from config.testing import ThrottleFreeAPITestCase
 
 from .models import Address, Package
 
 User = get_user_model()
+
+
+# Named locally because every test class in this file already uses the name,
+# and the shared base carries the explanation.
+ApiTestCase = ThrottleFreeAPITestCase
 
 
 def make_user(username="jdoe", email="jan@example.com"):
@@ -21,7 +27,7 @@ def make_user(username="jdoe", email="jan@example.com"):
     )
 
 
-class SignupTests(APITestCase):
+class SignupTests(ApiTestCase):
     url = reverse("signup")
 
     def test_creates_account_and_signs_in(self):
@@ -80,9 +86,79 @@ class SignupTests(APITestCase):
         )
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
+    def test_duplicate_email_is_reported_with_a_stable_code(self):
+        """The frontend offers "log in instead" off the back of this code.
 
-class LoginTests(APITestCase):
+        Reading it from the message text, or from "there is an error on the
+        email field", both break: the message is English and version-specific,
+        and an invalid address is also an error on that field.
+        """
+        make_user()
+        response = self.client.post(
+            self.url,
+            {
+                "username": "jan@example.com",
+                "first_name": "Ander",
+                "last_name": "Persoon",
+                "email": "jan@example.com",
+                "phone_number": "+599 9 111 2222",
+                "password": "a-long-enough-password",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data.get("code"), "email_taken")
+        # The form has no username input, so an error about one is noise about
+        # a field the visitor cannot see.
+        self.assertNotIn("username", response.data)
+
+    def test_an_invalid_address_is_not_reported_as_taken(self):
+        response = self.client.post(
+            self.url,
+            {
+                "username": "newbie",
+                "first_name": "Nieuwe",
+                "last_name": "Klant",
+                "email": "not-an-address",
+                "phone_number": "+599 9 111 2222",
+                "password": "a-long-enough-password",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("email", response.data)
+        self.assertNotIn("code", response.data)
+
+    def test_a_guessable_password_is_reported_on_the_password_field(self):
+        """Long enough to pass the form's own check, still refused here.
+
+        The frontend shows this against the password field. It used to fall
+        through to "try again later", which is advice that never helps.
+        """
+        response = self.client.post(
+            self.url,
+            {
+                "username": "newbie",
+                "first_name": "Nieuwe",
+                "last_name": "Klant",
+                "email": "nieuw@example.com",
+                "phone_number": "+599 9 111 2222",
+                "password": "password1234",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("password", response.data)
+        self.assertNotIn("code", response.data)
+        self.assertEqual(User.objects.count(), 0)
+
+
+class LoginTests(ApiTestCase):
     def setUp(self):
+        super().setUp()
         self.user = make_user()
 
     def test_valid_credentials_sign_in(self):
@@ -98,6 +174,58 @@ class LoginTests(APITestCase):
         response = self.client.post(
             reverse("login"),
             {"username": "jdoe", "password": "wrong-password-entirely"},
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_an_account_can_be_reached_by_its_email_address(self):
+        """The login form only ever sends an e-mail address.
+
+        A staff account made with createsuperuser has a username that is not
+        an address, so without this nobody could sign in to one — which is
+        every account that needs the dashboard.
+        """
+        staff = User.objects.create_user(
+            username="Christopher",
+            email="chris@example.com",
+            first_name="Chris",
+            last_name="Molina",
+            phone_number="+599 9 123 4567",
+            password="a-long-enough-password",
+            is_staff=True,
+        )
+
+        response = self.client.post(
+            reverse("login"),
+            {"username": staff.email, "password": "a-long-enough-password"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue(response.data["is_staff"])
+
+    def test_the_address_is_matched_regardless_of_case(self):
+        response = self.client.post(
+            reverse("login"),
+            {"username": "JAN@Example.COM", "password": "a-long-enough-password"},
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_the_username_itself_still_works(self):
+        """Signup-created accounts, where username and address are the same."""
+        response = self.client.post(
+            reverse("login"),
+            {"username": "jdoe", "password": "a-long-enough-password"},
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_a_known_address_with_the_wrong_password_is_still_refused(self):
+        """The lookup finds the account; it must not stand in for the check."""
+        response = self.client.post(
+            reverse("login"),
+            {"username": "jan@example.com", "password": "wrong-password-entirely"},
             format="json",
         )
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
@@ -119,8 +247,9 @@ class LoginTests(APITestCase):
         self.assertEqual(wrong_password.data, no_such_user.data)
 
 
-class ProfileTests(APITestCase):
+class ProfileTests(ApiTestCase):
     def setUp(self):
+        super().setUp()
         self.user = make_user()
 
     def test_requires_authentication(self):
@@ -158,8 +287,9 @@ class ProfileTests(APITestCase):
         self.assertEqual(self.user.username, "jdoe")
 
 
-class PasswordChangeTests(APITestCase):
+class PasswordChangeTests(ApiTestCase):
     def setUp(self):
+        super().setUp()
         self.user = make_user()
         self.client.force_authenticate(self.user)
 
@@ -190,8 +320,9 @@ class PasswordChangeTests(APITestCase):
         self.assertTrue(self.user.check_password("a-brand-new-long-password"))
 
 
-class AddressAccessTests(APITestCase):
+class AddressAccessTests(ApiTestCase):
     def setUp(self):
+        super().setUp()
         self.user = make_user()
         self.other = make_user(username="other", email="other@example.com")
 
@@ -245,8 +376,9 @@ class AddressAccessTests(APITestCase):
         self.assertEqual(self.user.addresses.count(), 2)
 
 
-class PackageAccessTests(APITestCase):
+class PackageAccessTests(ApiTestCase):
     def setUp(self):
+        super().setUp()
         self.user = make_user()
         self.other = make_user(username="other", email="other@example.com")
 
@@ -274,8 +406,9 @@ class PackageAccessTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
 
-class NotificationPreferenceTests(APITestCase):
+class NotificationPreferenceTests(ApiTestCase):
     def setUp(self):
+        super().setUp()
         self.user = make_user()
         self.client.force_authenticate(self.user)
 
@@ -300,10 +433,11 @@ class NotificationPreferenceTests(APITestCase):
         self.assertFalse(self.user.notify_shipping)
 
 
-class AccountDeleteTests(APITestCase):
+class AccountDeleteTests(ApiTestCase):
     url = reverse("account-delete")
 
     def setUp(self):
+        super().setUp()
         self.user = make_user()
         self.client.force_authenticate(self.user)
 

@@ -12,6 +12,8 @@ import styles from './Header.module.css';
 const NAV_LINKS = [
   { key: 'nav.home', href: '/' },
   { key: 'nav.services', href: '/services' },
+  { key: 'nav.tracking', href: '/tracking' },
+  { key: 'nav.booking', href: '/booking' },
   { key: 'nav.calculator', href: '/calculator' },
   { key: 'nav.contact', href: '/contact' },
 ];
@@ -28,8 +30,22 @@ const DESTINATION_LINKS = [
 
 const MENU_ID = 'primary-navigation';
 
+// How far down the page before the bar condenses.
+const CONDENSE_AFTER = 24;
+
+/** "Christopher Molina" becomes "CM". */
+function initialsOf(name) {
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0].toUpperCase())
+    .join('');
+}
+
 export default function Header() {
   const [open, setOpen] = useState(false);
+  const [condensed, setCondensed] = useState(false);
   const { t } = useLanguage();
   const { isAuthenticated, user, signOut } = useAuth();
   const navigate = useNavigate();
@@ -58,12 +74,30 @@ export default function Header() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [open]);
 
+  // The bar gives back some height once the visitor starts reading, and picks
+  // up a shadow so it separates from whatever scrolls under it.
+  useEffect(() => {
+    function handleScroll() {
+      setCondensed(window.scrollY > CONDENSE_AFTER);
+    }
+
+    handleScroll();
+    // passive: this never calls preventDefault, and saying so keeps it off
+    // the browser's critical path for scrolling.
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const name = user?.name?.trim() || '';
+
   return (
     // .header spans the full width so its background/border reach both edges.
-    <header className={styles.header}>
+    <header
+      className={condensed ? `${styles.header} ${styles.condensed}` : styles.header}
+    >
       <div className={styles.inner}>
-        <Link to="/" className={styles.logo}>
-          PayLesShopMore.com
+        <Link to="/" className={styles.logo} onClick={close}>
+          PayLesShopMore<span className={styles.logoDot}>.com</span>
         </Link>
 
         {/* Hamburger: hidden on wide screens, where the nav shows in full */}
@@ -122,28 +156,56 @@ export default function Header() {
             </ul>
           </nav>
 
-          {/* Signed in: a link to the account and a way out. Signed out:
-              quiet "Log in", solid "Sign up" as the primary call. */}
+          {/* A hairline between "where can I go" and "who am I". Without it
+              the account links read as four more nav items. */}
+          <span className={styles.divider} aria-hidden="true" />
+
           <div className={styles.account}>
             {isAuthenticated ? (
               <>
-                <Link to="/profile" className={styles.login} onClick={close}>
-                  {user?.name?.trim() || t('account.profile')}
+                {/* Staff only, and only a shortcut — the dashboard's own
+                    guard and the API both check the flag again. Untranslated
+                    on purpose: the back office is English throughout. */}
+                {user?.isStaff && (
+                  <Link to="/dashboard" className={styles.dashboard} onClick={close}>
+                    <svg
+                      className={styles.dashboardIcon}
+                      viewBox="0 0 24 24"
+                      aria-hidden="true"
+                    >
+                      <rect x="3" y="3" width="7.5" height="7.5" rx="1.5" />
+                      <rect x="13.5" y="3" width="7.5" height="7.5" rx="1.5" />
+                      <rect x="3" y="13.5" width="7.5" height="7.5" rx="1.5" />
+                      <rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.5" />
+                    </svg>
+                    Dashboard
+                  </Link>
+                )}
+
+                {/* The account itself: initials and a name, which reads as a
+                    person rather than as another destination in the nav. */}
+                <Link to="/profile" className={styles.identity} onClick={close}>
+                  <span className={styles.avatar} aria-hidden="true">
+                    {initialsOf(name || user?.email || '?')}
+                  </span>
+                  <span className={styles.identityName}>
+                    {name || t('account.profile')}
+                  </span>
                 </Link>
-                <button
-                  type="button"
-                  className={styles.signup}
-                  onClick={handleSignOut}
-                >
+
+                {/* Quiet: ending a session is the least important thing on
+                    this bar, and the filled style belongs to whatever the
+                    main action is. When signed in there is not one. */}
+                <button type="button" className={styles.quiet} onClick={handleSignOut}>
                   {t('account.logout')}
                 </button>
               </>
             ) : (
               <>
-                <Link to="/login" className={styles.login} onClick={close}>
+                <Link to="/login" className={styles.quiet} onClick={close}>
                   {t('account.login')}
                 </Link>
-                <Link to="/signup" className={styles.signup} onClick={close}>
+                <Link to="/signup" className={styles.primary} onClick={close}>
                   {t('account.signup')}
                 </Link>
               </>

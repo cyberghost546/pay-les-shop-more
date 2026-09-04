@@ -10,11 +10,13 @@ from django.middleware.csrf import get_token
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.utils.decorators import method_decorator
 from rest_framework import generics, mixins, status, viewsets
+from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 
+from .emails import send_password_reset
 from .models import Address, Package
 from .serializers import (
     AccountDeleteSerializer,
@@ -22,6 +24,8 @@ from .serializers import (
     LoginSerializer,
     PackageSerializer,
     PasswordChangeSerializer,
+    PasswordResetConfirmSerializer,
+    PasswordResetRequestSerializer,
     SignupSerializer,
     UserSerializer,
 )
@@ -41,6 +45,20 @@ class CsrfView(APIView):
         return Response({"csrfToken": get_token(request)})
 
 
+def taken_email(errors):
+    """True when signup failed because the address is already registered.
+
+    DRF keeps the reason on each message as a `code`, so this reads that
+    rather than matching on the English text of the message — which changes
+    with the Django version and with the active language.
+    """
+    for field in ("email", "username"):
+        for message in errors.get(field, []):
+            if getattr(message, "code", None) == "unique":
+                return True
+    return False
+
+
 class SignupView(generics.CreateAPIView):
     serializer_class = SignupSerializer
     permission_classes = [AllowAny]
@@ -49,7 +67,24 @@ class SignupView(generics.CreateAPIView):
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
+
+        if not serializer.is_valid():
+            errors = dict(serializer.errors)
+
+            if taken_email(errors):
+                # The frontend sets username to the e-mail address, so one
+                # duplicate produces two errors. The visitor never typed a
+                # username; telling them one is taken is noise about a field
+                # that is not on their screen.
+                errors.pop("username", None)
+                # A stable code, so the frontend can offer "log in instead"
+                # rather than guessing from which fields happen to have
+                # errors — "enter a valid e-mail address" is also an error on
+                # `email`, and means something completely different.
+                errors["code"] = "email_taken"
+
+            raise ValidationError(errors)
+
         user = serializer.save()
 
         # Log the new customer straight in, so they do not have to type the
@@ -123,6 +158,58 @@ class PasswordChangeView(APIView):
         # the customer out of the tab they are sitting in. This keeps them in.
         update_session_auth_hash(request, user)
 
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class PasswordResetRequestView(APIView):
+    """Step one: "I have forgotten my password".
+
+    Always answers 204, whether or not the address belongs to an account.
+    Answering differently would turn this into a way to ask the site which
+    e-mail addresses are registered — the same reason the login endpoint gives
+    one message for a wrong password and an unknown user.
+
+    That is also why nothing here reports a mail failure: the response must not
+    depend on anything that only happens when the account exists.
+    """
+
+    permission_classes = [AllowAny]
+    throttle_scope = "password_reset"
+    throttle_classes = [ScopedRateThrottle]
+
+    def post(self, request):
+        serializer = PasswordResetRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        user = serializer.account()
+        if user is not None:
+            send_password_reset(user, serializer.validated_data.get("language", ""))
+
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class PasswordResetConfirmView(APIView):
+    """Step two: the new password, with the link's uid and token."""
+
+    permission_classes = [AllowAny]
+    throttle_scope = "password_reset"
+    throttle_classes = [ScopedRateThrottle]
+
+    def post(self, request):
+        serializer = PasswordResetConfirmSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        user = serializer.validated_data["user"]
+        user.set_password(serializer.validated_data["new_password"])
+        user.save()
+
+        # Deliberately not logged in afterwards. Someone holding the link has
+        # proved they can read the mailbox, which is what earns them the right
+        # to set a password — not the right to be signed in without using it.
+        #
+        # Saving the new hash also invalidates every existing session for this
+        # account, which is the point when the reason for the reset was that
+        # somebody else had got in.
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 

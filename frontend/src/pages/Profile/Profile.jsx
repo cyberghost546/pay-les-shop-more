@@ -1,5 +1,6 @@
 // src/pages/Profile/Profile.jsx
 import { useEffect, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   USING_PLACEHOLDER_DATA,
   changePassword,
@@ -10,6 +11,7 @@ import {
   updateProfile,
 } from '../../api/profile';
 import { AUTH_ERRORS } from '../../api/auth';
+import { useAuth } from '../../auth/useAuth';
 import Loading from '../../components/Loading/Loading';
 import ConnectionError from '../../components/ConnectionError/ConnectionError';
 import { useLanguage } from '../../i18n/useLanguage';
@@ -82,8 +84,73 @@ function initialsOf(name) {
     .join('');
 }
 
+// One per section, so a glance down the page tells the sections apart. Same
+// family as the rest of the site: 24-box, no fill, 1.9 stroke, round caps.
+function SectionIcon({ name }) {
+  const paths = {
+    details: (
+      <>
+        <circle cx="12" cy="8" r="3.8" />
+        <path d="M4.5 20v-1.6A4.9 4.9 0 0 1 9.4 13.5h5.2a4.9 4.9 0 0 1 4.9 4.9V20" />
+      </>
+    ),
+    address: (
+      <>
+        <path d="M12 2.5a7 7 0 0 1 7 7c0 5-7 12-7 12s-7-7-7-12a7 7 0 0 1 7-7Z" />
+        <circle cx="12" cy="9.5" r="2.6" />
+      </>
+    ),
+    password: (
+      <>
+        <rect x="4.5" y="10.5" width="15" height="10" rx="2" />
+        <path d="M8 10.5V7.2a4 4 0 0 1 8 0v3.3" />
+        <circle cx="12" cy="15.5" r="1.2" />
+      </>
+    ),
+    notifications: (
+      <>
+        <path d="M6 10a6 6 0 0 1 12 0c0 4 1.5 5.5 1.5 5.5h-15S6 14 6 10Z" />
+        <path d="M10 18.5a2 2 0 0 0 4 0" />
+      </>
+    ),
+    danger: (
+      <>
+        <path d="M12 3.5 21 19H3Z" />
+        <path d="M12 10v4" />
+        <circle cx="12" cy="16.6" r=".9" fill="currentColor" stroke="none" />
+      </>
+    ),
+  };
+
+  return (
+    <svg
+      className={styles.sectionIcon}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.9"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      {paths[name]}
+    </svg>
+  );
+}
+
+// The order they appear in, for the side navigation.
+const SECTIONS = [
+  { id: 'details', labelKey: 'profile.sections.details' },
+  { id: 'address', labelKey: 'profile.sections.address' },
+  { id: 'password', labelKey: 'profile.sections.password' },
+  { id: 'notifications', labelKey: 'profile.sections.notifications' },
+  { id: 'danger', labelKey: 'profile.sections.danger' },
+];
+
 export default function Profile() {
   const { t, language } = useLanguage();
+  const { signOut } = useAuth();
+  const navigate = useNavigate();
 
   const [profile, setProfile] = useState(null);
   const [details, setDetails] = useState(null);
@@ -285,6 +352,19 @@ export default function Profile() {
     month: 'long',
   }).format(new Date(profile.memberSince));
 
+  async function handleSignOut() {
+    setBusy((current) => ({ ...current, logout: true }));
+
+    try {
+      await signOut();
+    } finally {
+      // Home rather than staying put: this page needs an account, so the
+      // route guard would bounce them to the login form the moment the
+      // session went away.
+      navigate('/', { replace: true });
+    }
+  }
+
   // Rendered under every form; null when that section has nothing to report.
   function statusFor(section) {
     const value = status[section];
@@ -302,10 +382,6 @@ export default function Profile() {
 
   return (
     <main className={styles.page}>
-      <header className={styles.head}>
-        <h1 className={styles.title}>{t('profile.title')}</h1>
-        <p className={styles.subtitle}>{t('profile.subtitle')}</p>
-      </header>
 
       {/* Removed automatically once profile.js talks to a real server */}
       {USING_PLACEHOLDER_DATA && (
@@ -314,22 +390,73 @@ export default function Profile() {
         </p>
       )}
 
-      <div className={styles.layout}>
-        <aside className={styles.summary}>
+      {/* The identity leads the page rather than sitting in a sidebar: it is
+          the answer to "whose account is this", which is the first thing
+          anyone checks. */}
+      <section className={styles.identity}>
+        <div className={styles.identityInner}>
           <span className={styles.avatar} aria-hidden="true">
             {initialsOf(details.name)}
           </span>
-          <p className={styles.summaryName}>{details.name}</p>
-          <p className={styles.summaryEmail}>{details.email}</p>
-          <p className={styles.summaryMeta}>
-            {t('profile.memberSince')} {memberSince}
-          </p>
-        </aside>
+          <div className={styles.identityText}>
+            <h1 className={styles.identityName}>{details.name}</h1>
+            <p className={styles.identityEmail}>{details.email}</p>
+            <p className={styles.identityMeta}>
+              {t('profile.memberSince')} {memberSince}
+              {profile.isStaff && (
+                <span className={styles.staffBadge}>Staff</span>
+              )}
+            </p>
+          </div>
+
+          <div className={styles.identityActions}>
+            {/* Staff only. Like the header's link this is a shortcut, not a
+                permission — the dashboard has its own guard and the staff API
+                checks the flag again on every request. Untranslated, because
+                the back office is English throughout. */}
+            {profile.isStaff && (
+              <Link to="/dashboard" className={styles.dashboardLink}>
+                Dashboard
+              </Link>
+            )}
+            <button
+              type="button"
+              className={styles.logout}
+              onClick={handleSignOut}
+              disabled={busy.logout}
+            >
+              {t('account.logout')}
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <div className={styles.layout}>
+        {/* Five sections is enough that jumping beats scrolling. */}
+        <nav className={styles.sideNav} aria-label={t('profile.title')}>
+          {SECTIONS.map((section) => (
+            <a
+              key={section.id}
+              href={`#${section.id}`}
+              className={
+                section.id === 'danger'
+                  ? `${styles.sideLink} ${styles.sideLinkDanger}`
+                  : styles.sideLink
+              }
+            >
+              <SectionIcon name={section.id} />
+              {t(section.labelKey)}
+            </a>
+          ))}
+        </nav>
 
         <div className={styles.sections}>
           {/* Personal details */}
-          <section className={styles.card}>
-            <h2 className={styles.cardTitle}>{t('profile.sections.details')}</h2>
+          <section className={styles.card} id="details">
+            <h2 className={styles.cardTitle}>
+              <SectionIcon name="details" />
+              {t('profile.sections.details')}
+            </h2>
 
             <form className={styles.form} onSubmit={handleDetailsSubmit} noValidate>
               <label className={styles.field}>
@@ -391,8 +518,11 @@ export default function Profile() {
           </section>
 
           {/* Delivery address */}
-          <section className={styles.card}>
-            <h2 className={styles.cardTitle}>{t('profile.sections.address')}</h2>
+          <section className={styles.card} id="address">
+            <h2 className={styles.cardTitle}>
+              <SectionIcon name="address" />
+              {t('profile.sections.address')}
+            </h2>
 
             <form className={styles.form} onSubmit={handleAddressSubmit} noValidate>
               <label className={styles.field}>
@@ -465,8 +595,11 @@ export default function Profile() {
           </section>
 
           {/* Change password */}
-          <section className={styles.card}>
-            <h2 className={styles.cardTitle}>{t('profile.sections.password')}</h2>
+          <section className={styles.card} id="password">
+            <h2 className={styles.cardTitle}>
+              <SectionIcon name="password" />
+              {t('profile.sections.password')}
+            </h2>
 
             <form
               className={styles.form}
@@ -548,8 +681,9 @@ export default function Profile() {
           </section>
 
           {/* Notification preferences */}
-          <section className={styles.card}>
+          <section className={styles.card} id="notifications">
             <h2 className={styles.cardTitle}>
+              <SectionIcon name="notifications" />
               {t('profile.sections.notifications')}
             </h2>
 
@@ -558,8 +692,12 @@ export default function Profile() {
                 {NOTIFICATION_KEYS.map((key) => (
                   <li key={key}>
                     <label className={styles.toggle}>
+                      {/* A real checkbox, hidden but focusable, with the
+                          switch drawn beside it — so the keyboard, the label
+                          click and the screen reader all behave normally. */}
                       <input
                         type="checkbox"
+                        className={styles.toggleInput}
                         checked={notifications[key]}
                         onChange={(event) =>
                           setNotifications((current) => ({
@@ -568,7 +706,12 @@ export default function Profile() {
                           }))
                         }
                       />
-                      {t(`profile.notifications.${key}`)}
+                      <span className={styles.switch} aria-hidden="true">
+                        <span className={styles.switchThumb} />
+                      </span>
+                      <span className={styles.toggleLabel}>
+                        {t(`profile.notifications.${key}`)}
+                      </span>
                     </label>
                   </li>
                 ))}
@@ -588,8 +731,11 @@ export default function Profile() {
 
           {/* Deleting is irreversible, so it is visually separated and needs a
               second, explicit confirmation. */}
-          <section className={`${styles.card} ${styles.danger}`}>
-            <h2 className={styles.cardTitle}>{t('profile.sections.danger')}</h2>
+          <section className={`${styles.card} ${styles.danger}`} id="danger">
+            <h2 className={styles.cardTitle}>
+              <SectionIcon name="danger" />
+              {t('profile.sections.danger')}
+            </h2>
             <p className={styles.dangerText}>{t('profile.dangerText')}</p>
 
             {deleted ? (
