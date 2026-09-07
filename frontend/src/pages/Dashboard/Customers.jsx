@@ -1,16 +1,20 @@
 // src/pages/Dashboard/Customers.jsx
+import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import Loading from '../../components/Loading/Loading';
 import ConnectionError from '../../components/ConnectionError/ConnectionError';
-import { listCustomers } from '../../api/staff';
+import { CUSTOMER_ROLES, listCustomers, setCustomerRole } from '../../api/staff';
+import { useAuth } from '../../auth/useAuth';
 import { useCollection } from './useCollection';
 import { formatDate } from './format';
 import {
+  Banner,
   Empty,
   FilterSelect,
   Pagination,
   SearchInput,
   StatusBadge,
+  StatusSelect,
   Toolbar,
 } from './ui';
 import styles from './Dashboard.module.css';
@@ -19,6 +23,14 @@ const ERASED_OPTIONS = [
   { value: 'false', label: 'Active accounts' },
   { value: 'true', label: 'Erased accounts' },
 ];
+
+/** Why the role select is fixed on this row, in the words that fit the case. */
+function whyRoleIsFixed(customer, isSelf) {
+  if (isSelf) return 'Your own account';
+  if (customer.is_superuser) return 'Superuser — managed in the Django admin';
+  if (customer.is_erased) return 'Erased account';
+  return '';
+}
 
 /** "Voorbeeld Klant" becomes "VK". */
 function initialsOf(name) {
@@ -51,6 +63,10 @@ function AddressLines({ address }) {
 
 export default function Customers() {
   const [params] = useSearchParams();
+  // Only to word the greyed-out row: e-mail is unique, so it identifies the
+  // signed-in account well enough for a label. Which rows are actually locked
+  // is the server's `can_change_role`, not this.
+  const { user } = useAuth();
 
   const list = useCollection(
     listCustomers,
@@ -58,14 +74,37 @@ export default function Customers() {
     params.get('search') ?? '',
   );
 
+  const [savingId, setSavingId] = useState(null);
+  const [error, setError] = useState('');
+
+  async function changeRole(customer, role) {
+    setSavingId(customer.id);
+    setError('');
+
+    try {
+      // The response is the whole row, including a recomputed
+      // can_change_role, so the table updates without a refetch.
+      list.replaceRow(await setCustomerRole(customer.id, role));
+    } catch (caught) {
+      setError(
+        caught?.status === 403
+          ? 'That account’s role cannot be changed from here.'
+          : 'That change could not be saved. Check the connection and try again.',
+      );
+    } finally {
+      setSavingId(null);
+    }
+  }
+
   return (
     <>
       <header className={styles.head}>
         <h1 className={styles.title}>Customers</h1>
         <p className={styles.subtitle}>
           Everyone with an account, with their addresses and how many shipments
-          they have. Read-only — personal data is changed in the Django admin,
-          or by the customer on their own profile.
+          they have. The role is the only thing editable here — an admin can
+          reach this dashboard and everything in it. Personal data is changed
+          in the Django admin, or by the customer on their own profile.
         </p>
       </header>
 
@@ -92,6 +131,8 @@ export default function Customers() {
         />
       </Toolbar>
 
+      <Banner tone="error">{error}</Banner>
+
       {list.state === 'loading' && <Loading inline />}
       {list.state === 'error' && <ConnectionError inline onRetry={list.reload} />}
 
@@ -110,6 +151,7 @@ export default function Customers() {
                   <th scope="col">Addresses</th>
                   <th scope="col">Shipments</th>
                   <th scope="col">Joined</th>
+                  <th scope="col">Role</th>
                 </tr>
               </thead>
               <tbody>
@@ -184,6 +226,33 @@ export default function Customers() {
 
                     <td className={styles.dateCell}>
                       {formatDate(customer.date_joined)}
+                    </td>
+
+                    <td>
+                      {/* can_change_role comes from the server, which refuses
+                          the same three cases itself — your own account, a
+                          superuser, an erased row. Disabling the select is
+                          only so nobody presses a button that was always
+                          going to be refused. */}
+                      {customer.can_change_role ? (
+                        <StatusSelect
+                          label={`Role for ${customer.name}`}
+                          value={customer.is_staff ? 'admin' : 'customer'}
+                          options={CUSTOMER_ROLES}
+                          busy={savingId === customer.id}
+                          onChange={(value) => changeRole(customer, value)}
+                        />
+                      ) : (
+                        <div className={styles.mutedCell}>
+                          <div>{customer.is_staff ? 'Admin' : 'Customer'}</div>
+                          <div className={styles.roleReason}>
+                            {whyRoleIsFixed(
+                              customer,
+                              Boolean(user?.email) && user.email === customer.email,
+                            )}
+                          </div>
+                        </div>
+                      )}
                     </td>
                   </tr>
                 ))}

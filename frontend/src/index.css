@@ -36,23 +36,7 @@ button {
   font-family: inherit;
 }
 
-/* Site-wide backdrop: the Willemstad waterfront, veiled so page copy stays
-   readable over it. A fixed pseudo-element rather than
-   `background-attachment: fixed`, which iOS Safari renders badly. */
-body::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  background-image:
-    linear-gradient(rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0.5)),
-    url('./images/stock-photo-view-of-downtown-willemstad-curacao-netherlands-antilles-650249764.jpg');
-  background-position: center, center 42%;
-  background-size: cover;
-  background-repeat: no-repeat;
-}
-
-/* Pages sit above the backdrop rather than painting over it. */
+/* Pages sit on the plain white ground. */
 #root {
   position: relative;
   min-height: 100vh;

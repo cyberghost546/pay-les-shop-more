@@ -92,15 +92,39 @@ export const BOOKING_STATUSES = [
 ];
 
 /**
- * Customers, with their addresses and shipment counts. Read-only: the API
- * offers no write here, because changing somebody's personal data belongs in
- * the Django admin rather than in a list screen.
+ * Customers, with their addresses and shipment counts. Their personal data is
+ * read-only here - changing a name or an e-mail belongs in the Django admin
+ * rather than in a list screen. The role is the exception; see below.
  *
  * @param {{ search?: string, erased?: string, staff?: string, ordering?: string, page?: number }} filters
  */
 export async function listCustomers(filters) {
   return toPage(await request(`/staff/customers/${query(filters)}`));
 }
+
+/**
+ * Makes an account an admin, or puts it back to a plain customer. Answers with
+ * the whole customer row, so the table can swap it in without a refetch.
+ *
+ * The server refuses your own account, a superuser and an erased one - each
+ * row carries `can_change_role` saying so up front, which is what the select
+ * is disabled by. That flag is a hint for the UI: the refusal itself lives on
+ * the server, and holds whatever the browser sends.
+ *
+ * @param {number} id
+ * @param {'admin' | 'customer'} role
+ */
+export async function setCustomerRole(id, role) {
+  return request(`/staff/customers/${id}/role/`, {
+    method: 'POST',
+    body: { role },
+  });
+}
+
+export const CUSTOMER_ROLES = [
+  { value: 'admin', label: 'Admin' },
+  { value: 'customer', label: 'Customer' },
+];
 
 export async function updatePackage(id, changes) {
   return request(`/staff/packages/${id}/`, { method: 'PATCH', body: changes });

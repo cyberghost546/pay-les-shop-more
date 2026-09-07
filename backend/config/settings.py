@@ -89,6 +89,8 @@ INSTALLED_APPS = [
     'accounts',
     'enquiries',
     'bookings',
+    'invoicing',
+    'notifications',
     'staff',
 ]
 
@@ -352,3 +354,47 @@ MEDIA_ROOT = BASE_DIR / 'media'
 # what an upload can cost in memory and disk.
 DATA_UPLOAD_MAX_MEMORY_SIZE = 11 * 1024 * 1024   # 11 MB
 FILE_UPLOAD_MAX_MEMORY_SIZE = 2 * 1024 * 1024    # spool to disk above 2 MB
+
+
+# ---------------------------------------------------------------------------
+# Background tasks (Celery)
+# ---------------------------------------------------------------------------
+
+# Rendering an invoice PDF is slow enough that it must not happen inside the
+# request that approves the invoice — a reviewer pressing Approve should get
+# their answer back immediately, not wait on a document being drawn.
+#
+# The broker URL is the switch. Point it at Redis or RabbitMQ in production
+# and run a worker alongside the web process:
+#
+#     CELERY_BROKER_URL=redis://localhost:6379/0
+#     celery -A config worker --loglevel=info
+CELERY_BROKER_URL = os.environ.get("CELERY_BROKER_URL", "")
+
+# No broker configured means no worker to hand work to, and a .delay() would
+# raise and take the approval down with it. So tasks run inline instead — the
+# same "a fresh clone runs with no setup" choice as the SQLite default and the
+# console e-mail backend, and like those it is a development convenience, not
+# a production mode. Set CELERY_BROKER_URL and this switches itself off.
+CELERY_TASK_ALWAYS_EAGER = not CELERY_BROKER_URL
+
+# When running inline, a failing task raises where it was called rather than
+# being swallowed into a result nobody reads. Tasks scheduled with
+# transaction.on_commit still run after the response body is built, so this
+# does not turn a task failure into a failed approval.
+CELERY_TASK_EAGER_PROPAGATES = False
+
+# Results are not read anywhere — the task's output is a row and a file, not a
+# return value — so there is no result backend to configure.
+CELERY_RESULT_BACKEND = None
+
+# JSON only. Pickle as a task serializer means anything that can write to the
+# queue can run code in the worker.
+CELERY_ACCEPT_CONTENT = ["json"]
+CELERY_TASK_SERIALIZER = "json"
+
+CELERY_TIMEZONE = TIME_ZONE
+
+# A task that has been picked up but not finished goes back on the queue if the
+# worker dies. The invoice tasks are written to be safe to run twice.
+CELERY_TASK_ACKS_LATE = True

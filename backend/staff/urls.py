@@ -10,6 +10,7 @@ router.register("quotes", views.QuoteRequestViewSet, basename="staff-quote")
 router.register("messages", views.ContactMessageViewSet, basename="staff-message")
 router.register("packages", views.PackageViewSet, basename="staff-package")
 router.register("bookings", views.BookingViewSet, basename="staff-booking")
+router.register("invoices", views.InvoiceViewSet, basename="staff-invoice")
 router.register("customers", views.CustomerViewSet, basename="staff-customer")
 
 urlpatterns = [

@@ -9,10 +9,14 @@ once, on a shared base class, rather than remembered per view.
 from datetime import timedelta
 
 from django.contrib.auth import get_user_model
+from django.db import transaction
 from django.db.models import Count, Q
 from django.db.models.functions import TruncDate
+from django.shortcuts import get_object_or_404
 from django.utils import timezone
-from rest_framework import mixins, viewsets
+from rest_framework import mixins, status as http_status, viewsets
+from rest_framework.decorators import action
+from rest_framework.exceptions import APIException, PermissionDenied, ValidationError
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -20,13 +24,19 @@ from accounts.models import Package
 from bookings.models import Booking
 from bookings.serializers import StaffBookingSerializer
 from enquiries.models import ContactMessage, QuoteRequest
+from invoicing.models import InvalidInvoiceTransition, Invoice
+from invoicing.serializers import InvoiceRejectSerializer, StaffInvoiceSerializer
+from invoicing.services import ensure_invoice_for_package
+from notifications.services import notify_shipment_status
 
 from .permissions import IsStaff
 from .serializers import (
+    StaffAddressWriteSerializer,
     StaffContactMessageSerializer,
     StaffCustomerSerializer,
     StaffPackageSerializer,
     StaffQuoteRequestSerializer,
+    StaffRoleSerializer,
 )
 
 User = get_user_model()
@@ -187,16 +197,18 @@ class PackageViewSet(StaffViewSet):
     ordering_fields = ("created_at", "updated_at", "status", "tracking_number")
 
     def perform_update(self, serializer):
-        """Stamp the shipping dates when the status says they happened.
+        """Stamp the shipping dates when the status says they happened, raise
+        the invoice when the package is marked paid, and tell the customer.
 
-        Both are read-only over the API on purpose: they record when a thing
-        actually happened, and deriving them from the status is what keeps
-        them honest. Only ever set, never cleared — moving a package back a
-        step is a correction, and forgetting it shipped at all would lose
+        The dates are read-only over the API on purpose: they record when a
+        thing actually happened, and deriving them from the status is what
+        keeps them honest. Only ever set, never cleared — moving a package back
+        a step is a correction, and forgetting it shipped at all would lose
         information the row already had.
         """
         package = serializer.instance
-        status = serializer.validated_data.get("status", package.status)
+        previous_status = package.status
+        status = serializer.validated_data.get("status", previous_status)
         stamps = {}
 
         if status == Package.Status.IN_TRANSIT and package.shipped_at is None:
@@ -204,7 +216,25 @@ class PackageViewSet(StaffViewSet):
         if status == Package.Status.DELIVERED and package.delivered_at is None:
             stamps["delivered_at"] = timezone.now()
 
-        serializer.save(**stamps)
+        # atomic, so a package is never left marked paid with no invoice behind
+        # it: if raising the invoice fails, the status change goes back too.
+        with transaction.atomic():
+            package = serializer.save(**stamps)
+
+            # Entering PAID is the event, not being in it. Without the
+            # before-and-after comparison, every later edit to a paid package —
+            # a corrected weight, a note — would re-run this.
+            if status == Package.Status.PAID and previous_status != status:
+                ensure_invoice_for_package(package)
+
+            # Every status change is news, not only the one that raises an
+            # invoice. Inside the transaction so a package is never left moved
+            # with no record of the customer having been told; the e-mail
+            # itself is queued on commit, so nothing is sent for a change that
+            # is about to be rolled back. Returns None when the status did not
+            # actually change, which is what keeps a corrected weight or an
+            # added note from being announced as progress.
+            notify_shipment_status(package, previous_status)
 
 
 class BookingViewSet(StaffViewSet):
@@ -231,15 +261,128 @@ class BookingViewSet(StaffViewSet):
     ordering_fields = ("created_at", "updated_at", "status", "shipping_number")
 
 
-class CustomerViewSet(
+class InvoiceTransitionRefused(APIException):
+    """409 rather than 400.
+
+    The request was well formed and the caller was allowed to make it; the
+    invoice simply is not in a state where the move makes sense — usually
+    because somebody else got there first. 400 would tell the React app to
+    highlight a bad field, and there isn't one to highlight.
+    """
+
+    status_code = http_status.HTTP_409_CONFLICT
+    default_detail = "This invoice is not in a state where that is allowed."
+
+
+class InvoiceViewSet(
     mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet
+):
+    """The invoice review queue.
+
+    Read-only plus two actions, rather than the usual StaffViewSet: an invoice's
+    status is not a field staff assign, it is the result of a transition. A
+    PATCH-able status would be a way around the state machine, so there is no
+    update route at all and StaffInvoiceSerializer is read-only end to end.
+
+    Paginated by the project default (PageNumberPagination, 25 a page), so
+    ?page= works here like everywhere else in the dashboard.
+    """
+
+    serializer_class = StaffInvoiceSerializer
+    # IsStaff, the same class the rest of the dashboard uses. It is checked by
+    # DRF before the handler runs, on every request including the two actions
+    # below, and it requires an authenticated, active, is_staff account — so a
+    # signed-in customer POSTing straight to
+    # /api/staff/invoices/3/approve/ gets a 403 and never reaches this code.
+    # The React app hiding the button is not what stops them; this is.
+    permission_classes = [IsStaff]
+
+    # The queue is the default view. Any other status has to be asked for by
+    # name, and only from this list — the same allow-list habit as ?ordering=.
+    DEFAULT_STATUS = Invoice.Status.PENDING_REVIEW
+
+    def base_queryset(self):
+        # select_related, or a page of 25 invoices costs 25 extra queries for
+        # the tracking number and another 25 for the customer.
+        return Invoice.objects.select_related("package", "package__user", "reviewed_by")
+
+    def get_queryset(self):
+        queryset = self.base_queryset()
+
+        # Only the list is narrowed. A detail route addresses one known invoice,
+        # and filtering there would answer 404 for an invoice that plainly
+        # exists — an approve on an already-approved invoice has to come back as
+        # a refusal, not as "no such thing".
+        if self.action != "list":
+            return queryset
+
+        wanted = self.request.query_params.get("status", self.DEFAULT_STATUS)
+        if wanted == "all":
+            return queryset
+        if wanted not in Invoice.Status.values:
+            wanted = self.DEFAULT_STATUS
+
+        return queryset.filter(status=wanted)
+
+    def _transition(self, apply):
+        """Run one transition and answer with the invoice as it now stands.
+
+        select_for_update inside the transaction, so two reviewers pressing the
+        button at the same moment queue up rather than interleave. The model's
+        conditional UPDATE already makes a double approval impossible; the lock
+        turns the loser's race into an orderly wait and a clean refusal.
+        """
+        invoice = self.get_object()
+
+        try:
+            with transaction.atomic():
+                locked = Invoice.objects.select_for_update().get(pk=invoice.pk)
+                apply(locked)
+        except InvalidInvoiceTransition as exc:
+            raise InvoiceTransitionRefused(str(exc))
+
+        return Response(self.get_serializer(self.base_queryset().get(pk=invoice.pk)).data)
+
+    @action(detail=True, methods=["post"])
+    def approve(self, request, pk=None):
+        """PENDING_REVIEW -> APPROVED. Anything else is a 409."""
+        return self._transition(lambda invoice: invoice.approve(request.user))
+
+    @action(detail=True, methods=["post"])
+    def reject(self, request, pk=None):
+        """PENDING_REVIEW -> REJECTED, with a reason. Anything else is a 409."""
+        body = InvoiceRejectSerializer(data=request.data)
+        body.is_valid(raise_exception=True)
+        reason = body.validated_data["rejection_reason"]
+
+        return self._transition(lambda invoice: invoice.reject(request.user, reason))
+
+
+class CustomerViewSet(
+    mixins.ListModelMixin,
+    mixins.RetrieveModelMixin,
+    mixins.UpdateModelMixin,
+    viewsets.GenericViewSet,
 ):
     """Everyone with an account, with their addresses and shipment counts.
 
-    Read-only, unlike the other three: staff look a customer up to check a
-    spelling or find who a package belongs to. Editing somebody's personal
-    data is a heavier action than a list screen should offer, and Django's
-    admin already does it properly.
+    These are the same User and Address rows the customer edits on their own
+    profile page - one record seen from two sides, not a back-office copy of
+    it. A phone number corrected here is the one the customer reads next time
+    they open their profile, and a change they make there is what the next
+    load of this table shows. Nothing has to be kept in step, because there is
+    only ever one row.
+
+    What staff may change is the contact details: name, e-mail, phone, and the
+    delivery address through the `address` action below. Those are the fields
+    the office finds wrong - an agent at the destination cannot arrange a
+    handover against a mistyped number, and the customer has no way of knowing
+    it is mistyped.
+
+    Two things stay out. The username is what somebody types to sign in, and
+    the role moves through the `role` action, which is where its own refusals
+    live. An erased account is refused by both writes below: that row is kept
+    to hold shipment records together and is no longer a person.
     """
 
     serializer_class = StaffCustomerSerializer
@@ -296,6 +439,54 @@ class CustomerViewSet(
             queryset = queryset.order_by(ordering)
 
         return queryset
+
+    @action(detail=True, methods=["post"])
+    def role(self, request, pk=None):
+        """Make an account an admin, or put it back to a plain customer.
+
+        POST {"role": "admin"} or {"role": "customer"}. `is_staff` is the flag
+        being set: the same one IsStaff checks on every request here and the
+        same one that opens Django's own /admin/, so there is one grant rather
+        than two that drift apart.
+
+        Three accounts this refuses to touch, and the reasons are different:
+
+        - your own, because demoting yourself would take the dashboard away
+          mid-click, and promoting yourself is already true;
+        - a superuser, because that account holds more than this screen
+          manages and clearing is_staff would half-lock it out of /admin/
+          while leaving every other permission in place;
+        - an erased one, which is a row kept to hold shipment records
+          together and no longer a person who can sign in at all.
+
+        StaffCustomerSerializer.can_change_role answers the same three
+        questions for the table, so the control is greyed out rather than
+        pressed and refused - but this is the check that holds.
+        """
+        target = self.get_object()
+
+        if target.pk == request.user.pk:
+            raise PermissionDenied("You cannot change your own role.")
+        if target.is_superuser:
+            raise PermissionDenied(
+                "Superuser accounts are managed in the Django admin."
+            )
+        if target.anonymised_at is not None:
+            raise ValidationError("This account has been erased.")
+
+        body = StaffRoleSerializer(data=request.data)
+        body.is_valid(raise_exception=True)
+
+        # Only ever this one column, and only when it actually moves: a repeated
+        # press should not rewrite the row or count as a change.
+        if target.is_staff != body.grants_staff:
+            target.is_staff = body.grants_staff
+            target.save(update_fields=["is_staff", "updated_at"])
+
+        # Back through the list queryset, so the row the table swaps in carries
+        # the same package_count and addresses the rest of them do.
+        fresh = self.get_queryset().get(pk=target.pk)
+        return Response(self.get_serializer(fresh).data)
 
 
 class OverviewView(APIView):

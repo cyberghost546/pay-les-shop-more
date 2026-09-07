@@ -17,9 +17,9 @@
   box-sizing: border-box;
   border: 1px solid #e5e7eb;
   border-radius: 10px;
-  background: rgba(255, 255, 255, 0.92);
-  -webkit-backdrop-filter: blur(6px);
-  backdrop-filter: blur(6px);
+  /* Opaque: the translucency and the blur behind it existed to keep the card
+     readable over the waterfront photo, which this page no longer draws. */
+  background: #ffffff;
   box-shadow: 0 10px 30px rgba(5, 7, 10, 0.08);
 }
 

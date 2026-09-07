@@ -53,6 +53,7 @@ export default function Login() {
   const [revealed, setRevealed] = useState(false);
   const { t } = useLanguage();
   const { signIn } = useAuth();
+
   const navigate = useNavigate();
 
   function handleChange(event) {

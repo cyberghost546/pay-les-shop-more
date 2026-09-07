@@ -386,3 +386,116 @@ class CustomerTests(StaffApiTestCase):
         )
         self.customer.refresh_from_db()
         self.assertEqual(self.customer.first_name, "Voorbeeld")
+
+
+class RoleTests(StaffApiTestCase):
+    """Switching an account between admin and customer.
+
+    The write is one boolean, so what is worth proving is the fence around it:
+    who it refuses, and that a refusal leaves the flag where it was.
+    """
+
+    def setUp(self):
+        super().setUp()
+        self.client.force_authenticate(self.staff)
+
+    def url(self, user):
+        return reverse("staff-customer-role", args=[user.pk])
+
+    def test_a_customer_can_be_made_an_admin(self):
+        response = self.client.post(
+            self.url(self.customer), {"role": "admin"}, format="json"
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue(response.json()["is_staff"])
+        self.customer.refresh_from_db()
+        self.assertTrue(self.customer.is_staff)
+
+    def test_an_admin_can_be_put_back_to_customer(self):
+        other = User.objects.create_user(
+            username="tweede@example.com",
+            email="tweede@example.com",
+            password="a-long-enough-password",
+            phone_number="+599 9 111 2222",
+            is_staff=True,
+        )
+
+        response = self.client.post(self.url(other), {"role": "customer"}, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        other.refresh_from_db()
+        self.assertFalse(other.is_staff)
+
+    def test_the_answer_carries_the_whole_row(self):
+        """The table swaps the row in rather than refetching the page, so the
+        response has to look like a row from the list."""
+        row = self.client.post(
+            self.url(self.customer), {"role": "admin"}, format="json"
+        ).json()
+
+        self.assertEqual(row["package_count"], 1)
+        self.assertEqual(row["username"], "klant@example.com")
+        self.assertIn("addresses", row)
+
+    def test_you_cannot_change_your_own_role(self):
+        response = self.client.post(self.url(self.staff), {"role": "customer"}, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.staff.refresh_from_db()
+        self.assertTrue(self.staff.is_staff)
+
+    def test_a_superuser_is_left_alone(self):
+        root = User.objects.create_superuser(
+            username="root@example.com",
+            email="root@example.com",
+            password="a-long-enough-password",
+            phone_number="+599 9 333 4444",
+        )
+
+        response = self.client.post(self.url(root), {"role": "customer"}, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        root.refresh_from_db()
+        self.assertTrue(root.is_staff)
+
+    def test_an_erased_account_cannot_be_promoted(self):
+        self.customer.anonymise()
+
+        response = self.client.post(
+            self.url(self.customer), {"role": "admin"}, format="json"
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.customer.refresh_from_db()
+        self.assertFalse(self.customer.is_staff)
+
+    def test_an_unknown_role_is_refused(self):
+        response = self.client.post(
+            self.url(self.customer), {"role": "superuser"}, format="json"
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.customer.refresh_from_db()
+        self.assertFalse(self.customer.is_staff)
+
+    def test_a_customer_cannot_promote_themselves(self):
+        """The whole point of the fence: the flag that opens the dashboard is
+        not reachable by anyone who is not already through it."""
+        self.client.force_authenticate(self.customer)
+
+        response = self.client.post(
+            self.url(self.customer), {"role": "admin"}, format="json"
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.customer.refresh_from_db()
+        self.assertFalse(self.customer.is_staff)
+
+    def test_the_row_says_whether_its_role_can_be_changed(self):
+        rows = self.client.get(reverse("staff-customer-list")).json()["results"]
+        by_username = {row["username"]: row for row in rows}
+
+        self.assertTrue(by_username["klant@example.com"]["can_change_role"])
+        # The caller's own row.
+        self.assertFalse(by_username["agent@example.com"]["can_change_role"])

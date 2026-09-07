@@ -10,6 +10,7 @@ import {
 import { getOverview } from '../../api/staff';
 import { useAuth } from '../../auth/useAuth';
 import { CountPill } from './ui';
+import { useSidebarWidth } from './useSidebarWidth';
 import {
   BookmarkIcon,
   BoxIcon,
@@ -94,6 +95,9 @@ export default function DashboardLayout() {
   // Closed on phones until the menu button is pressed; irrelevant on a wide
   // screen, where the sidebar is always visible.
   const [navOpen, setNavOpen] = useState(false);
+  // How wide the navigation column is, dragged by the divider on its right
+  // edge and remembered between visits.
+  const { width: sidebarWidth, resizing, handleProps } = useSidebarWidth();
 
   // Which request this is, so the render below can tell a fresh answer from a
   // stale one without the effect having to set a loading flag itself.
@@ -148,7 +152,14 @@ export default function DashboardLayout() {
   }
 
   return (
-    <div className={styles.app}>
+    <div
+      className={resizing ? `${styles.app} ${styles.resizing}` : styles.app}
+      // Only the user's chosen width is set here. The stylesheet derives
+      // --sidebar-width from it, which lets the narrow-screen media query
+      // override that to 0 — an inline --sidebar-width would outrank the
+      // media query and leave a phone with a 240px margin and no sidebar.
+      style={{ '--sidebar-user-width': `${sidebarWidth}px` }}
+    >
       <header className={styles.topbar}>
         <Link to="/dashboard" className={styles.brand} onClick={closeNav}>
           PayLesShopMore<span className={styles.brandDot}>.com</span>
@@ -256,6 +267,13 @@ export default function DashboardLayout() {
             </Link>
           </div>
         </nav>
+
+        {/* The divider between the sidebar and the page. A sibling of the
+            sidebar rather than a child of it: the sidebar scrolls its own
+            contents, and a handle inside would scroll away with them.
+            Hidden on narrow screens, where the sidebar is an overlay and
+            has no edge to drag. */}
+        <div className={styles.resizer} {...handleProps} />
 
         {/* Tap-anywhere-else backdrop, mobile only */}
         {navOpen && (

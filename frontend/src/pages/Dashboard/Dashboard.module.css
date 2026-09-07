@@ -8,23 +8,51 @@
  * The shell is an application rather than a page: a fixed dark bar across the
  * top, a fixed navigation column on the left, and the content scrolling on its
  * own between them.
+ *
+ * The look is the homepage's, carried inland: the same navy-to-cyan gradient
+ * on the banded surfaces, the same cyan eyebrow rules, 14px card corners, and
+ * the soft navy-tinted shadow rather than a grey one. What is deliberately not
+ * borrowed is the homepage's scale — a marketing page can afford 4.5rem of
+ * padding and a 3.5rem headline; a page holding a 25-row table cannot, and
+ * staff read these for an hour at a time. So this is the homepage's palette
+ * and its shapes at the density an admin screen needs.
  */
 
 /* --------------------------------------------------------------- app shell */
 
 .app {
-  --topbar-height: 48px;
-  --sidebar-width: 232px;
+  --topbar-height: 56px;
 
-  /* The site's palette, stated once here rather than spelled out forty times
-     down the file. */
+  /* The width the user has dragged the divider to. DashboardLayout sets this
+     one inline; everything else reads --sidebar-width below, which is what
+     lets the narrow-screen media query collapse the column to 0 without
+     fighting an inline style it could never outrank. The fallback is what
+     renders if the shell is ever mounted without the hook. */
+  --sidebar-width: var(--sidebar-user-width, 240px);
+
+  /* The homepage's palette, stated once here rather than spelled out forty
+     times down the file. Same values as Home.module.css. */
   --navy: #0b2545;
   --navy-deep: #071a30;
+  --navy-soft: #123a63;
   --cyan: #0ea5e9;
   --cyan-bright: #38bdf8;
+  --ink: #0f172a;
   --muted: #64748b;
   --line: #e2e8f0;
   --ground: #f4f7fb;
+
+  /* The homepage's shadow: tinted navy rather than neutral grey, which is what
+     stops a white card on a blue-grey ground looking like it is floating in
+     smoke. Two depths — a resting one and a lifted one. */
+  --shadow: 0 10px 30px rgba(11, 37, 69, 0.07);
+  --shadow-lift: 0 16px 36px rgba(11, 37, 69, 0.12);
+
+  /* The gradient the homepage hero and its closing CTA are both built from,
+     reused by the topbar and every page banner so the three read as one
+     surface. */
+  --band: radial-gradient(700px 300px at 80% 0%, rgba(56, 189, 248, 0.22), transparent 62%),
+    linear-gradient(160deg, var(--navy-deep) 0%, var(--navy) 55%, var(--navy-soft) 100%);
 
   /* The site's photographic backdrop is switched off behind the dashboard:
      staff read dense tables here for an hour at a time. */
@@ -51,21 +79,33 @@
   display: flex;
   align-items: center;
   height: var(--topbar-height);
-  background: linear-gradient(90deg, var(--navy-deep), var(--navy));
-  box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.12);
+  /* The homepage hero's own gradient, cropped to a bar. */
+  background: var(--band);
+  background-color: var(--navy-deep);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.08), 0 6px 20px rgba(7, 26, 48, 0.28);
 }
 
 .brand {
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
   width: var(--sidebar-width);
-  padding: 0 1rem;
+  height: 100%;
+  padding: 0 1.15rem;
   box-sizing: border-box;
   color: #ffffff;
   font-size: 1rem;
-  font-weight: 700;
-  line-height: var(--topbar-height);
+  font-weight: 800;
+  letter-spacing: -0.01em;
   text-decoration: none;
-  background: rgba(0, 0, 0, 0.25);
+  white-space: nowrap;
+  /* The column follows the sidebar's width, so at the narrow end of the
+     resize range the wordmark can run out of room. Clipped rather than
+     allowed to spill into the search field. */
+  overflow: hidden;
+  /* No black wash any more: the wordmark sits on the gradient like the
+     homepage header's does, separated by a hairline instead. */
+  box-shadow: inset -1px 0 0 rgba(255, 255, 255, 0.1);
 }
 
 /* The .com is part of the name, dimmed rather than dropped — the same
@@ -81,11 +121,12 @@
   min-width: 0;
   display: flex;
   align-items: center;
+  padding: 0 1rem;
 }
 
 .searchIcon {
   position: absolute;
-  left: 1rem;
+  left: 1.75rem;
   display: flex;
   color: #7f9bb8;
   pointer-events: none;
@@ -93,28 +134,39 @@
 
 .topSearch {
   width: 100%;
-  padding: 0.4rem 1rem 0.4rem 2.5rem;
-  border: 0;
+  max-width: 460px;
+  padding: 0.45rem 1rem 0.45rem 2.4rem;
+  /* Rounded and inset rather than a full-bleed slot, which is what makes it
+     read as a control on the band instead of a hole cut through it. */
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 10px;
   background: rgba(255, 255, 255, 0.08);
   color: #ffffff;
   font: inherit;
   font-size: 0.9rem;
+  transition: background 0.15s ease, border-color 0.15s ease;
 }
 
 .topSearch::placeholder {
   color: #7f9bb8;
 }
 
+.topSearch:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
 .topSearch:focus {
-  outline: 2px solid var(--cyan-bright);
-  outline-offset: -2px;
+  outline: none;
+  border-color: var(--cyan-bright);
+  background: rgba(255, 255, 255, 0.14);
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.25);
 }
 
 .topRight {
   display: flex;
   align-items: center;
   gap: 0.9rem;
-  padding: 0 1rem;
+  padding: 0 1.15rem;
   flex-shrink: 0;
 }
 
@@ -125,18 +177,23 @@
   /* Hidden on narrow screens, where the bar has no room to spare. */
 }
 
+/* The homepage's ghost button, at control size. */
 .signOut {
-  padding: 0;
-  border: 0;
+  padding: 0.35rem 0.9rem;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 8px;
   background: none;
   color: #ffffff;
   font: inherit;
-  font-size: 0.9rem;
+  font-size: 0.86rem;
+  font-weight: 600;
   cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
 }
 
 .signOut:hover {
-  text-decoration: underline;
+  border-color: #ffffff;
+  background: rgba(255, 255, 255, 0.1);
 }
 
 /* The hamburger, phones only. */
@@ -196,7 +253,7 @@
   left: 0;
   z-index: 20;
   width: var(--sidebar-width);
-  padding: 1rem 0.75rem 1.5rem;
+  padding: 1.25rem 0.85rem 1.5rem;
   box-sizing: border-box;
   background: #ffffff;
   border-right: 1px solid var(--line);
@@ -205,32 +262,67 @@
 }
 
 .navList {
-  margin: 0 0 1.25rem;
+  margin: 0 0 1.5rem;
   padding: 0;
   list-style: none;
 }
 
 .navLink {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 0.65rem;
-  padding: 0.5rem 0.75rem;
-  border-radius: 6px;
+  gap: 0.7rem;
+  padding: 0.55rem 0.8rem;
+  border-radius: 10px;
   color: #475569;
   font-size: 0.92rem;
   text-decoration: none;
+  /* Clips the active marker below to the pill's rounded corners. Without it
+     the square bar pokes out past the top-left curve as a small nub. */
+  overflow: hidden;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+/* The icon is a flex item like the label is, so by default it shrinks when a
+   row runs tight — and "New quote requests" in a 240px column is tight. A few
+   icons losing a pixel or two is enough to leave the labels starting at
+   different offsets, which is what makes the column look ragged rather than
+   aligned. It has a fixed size and keeps it; the label has min-width: 0 and
+   absorbs the shortfall by ellipsis instead. */
+.navLink > svg {
+  flex-shrink: 0;
 }
 
 .navLink:hover {
-  background: #eef4fb;
+  background: #eff6fd;
   color: var(--navy);
+}
+
+/* Keyboard focus. The pill's own hover tint is not a focus indicator, and the
+   browser default ring is easy to lose against the active item's cyan. */
+.navLink:focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: -2px;
 }
 
 .navLinkActive,
 .navLinkActive:hover {
-  background: #e0f2fe;
+  /* The homepage's pale cyan card tint, with a solid cyan edge — the same
+     accent the service cards take on hover, here meaning "you are here". */
+  background: linear-gradient(90deg, #e0f2fe, #f0f9ff);
   color: #075985;
-  font-weight: 600;
+  font-weight: 700;
+}
+
+.navLinkActive::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 20%;
+  bottom: 20%;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: var(--cyan);
 }
 
 /* The label takes the slack, which pushes any count pill to the right edge. */
@@ -242,21 +334,27 @@
   white-space: nowrap;
 }
 
+/* The homepage's eyebrow: uppercase, heavily tracked, cyan.
+ *
+ * The darker sky rather than --cyan itself. The homepage puts its eyebrow on
+ * navy, where #0ea5e9 is bright enough to carry; here the ground is white and
+ * the same colour falls to about 2.9:1, under the 4.5:1 small text needs. This
+ * shade is the same hue at about 5.9:1. */
 .navHeading {
-  margin: 0 0 0.4rem;
-  padding: 0 0.75rem;
-  font-size: 0.72rem;
+  margin: 0 0 0.5rem;
+  padding: 0 0.8rem;
+  font-size: 0.7rem;
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--muted);
+  color: #0369a1;
 }
 
 .navFoot {
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
-  padding: 1rem 0.75rem 0;
+  gap: 0.5rem;
+  padding: 1rem 0.8rem 0;
   border-top: 1px solid var(--line);
 }
 
@@ -267,11 +365,68 @@
 }
 
 .navFootLink:hover {
+  /* Same reason as .navHeading: --cyan is a navy-ground colour. */
+  color: #0369a1;
   text-decoration: underline;
 }
 
 .backdrop {
   display: none;
+}
+
+/* ----------------------------------------------------------- resize handle */
+
+/* The divider between the sidebar and the page. Sits on the sidebar's border
+   rather than beside it, so nothing shifts when it appears — the visible line
+   is drawn by ::before and the rest of the width is grab area. 9px is roughly
+   the smallest target a pointer finds reliably without hunting. */
+.resizer {
+  position: fixed;
+  top: var(--topbar-height);
+  bottom: 0;
+  left: var(--sidebar-width);
+  z-index: 25;
+  width: 9px;
+  margin-left: -5px;
+  cursor: col-resize;
+  /* Without this a touch drag scrolls the page instead of reaching the
+     pointermove handler. */
+  touch-action: none;
+}
+
+.resizer::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 2px;
+  transform: translateX(-50%);
+  background: var(--cyan);
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+/* The handle is invisible until it is wanted: a permanent line down the page
+   would read as a border with an opinion. */
+.resizer:hover::before,
+.resizer:focus-visible::before,
+.resizing .resizer::before {
+  opacity: 1;
+}
+
+.resizer:focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: -2px;
+}
+
+/* While a drag is in progress the cursor and the no-select apply to the whole
+   shell, not just the 9px strip — the pointer spends the entire drag outside
+   the handle it is captured by. */
+.resizing {
+  cursor: col-resize;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 /* --------------------------------------------------------------- content */
@@ -283,73 +438,119 @@
   padding: 1.5rem 2rem 4rem;
 }
 
+/* ------------------------------------------------------------ page banner */
+
+/* The homepage opens on a navy band with a cyan glow in the top right, and so
+   does every page in here. `.pageHead` is the overview's — it carries the
+   range picker and the export button on the same line — and `.head` is the
+   list pages', which carry a subtitle instead. Same surface, two payloads.
+   Both are set as one shared block so they cannot drift apart. */
+.pageHead,
+.head {
+  position: relative;
+  margin-bottom: 1.75rem;
+  padding: 1.5rem 1.65rem;
+  border-radius: 16px;
+  background: var(--band);
+  background-color: var(--navy-deep);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+/* The cyan eyebrow rule. The homepage puts a word here; the dashboard's page
+   titles are single words already ("Bookings", "Customers"), so an eyebrow
+   repeating them would be noise — the mark alone carries the same signal. */
+.pageHead::before,
+.head::before {
+  content: '';
+  position: absolute;
+  top: 1.6rem;
+  left: 0;
+  width: 4px;
+  height: 1.6rem;
+  border-radius: 0 4px 4px 0;
+  background: var(--cyan-bright);
+}
+
 .pageHead {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  padding-bottom: 0.9rem;
-  margin-bottom: 1.5rem;
-  border-bottom: 1px solid var(--line);
 }
 
-.pageTitle {
+.pageTitle,
+.title {
   margin: 0;
-  font-size: clamp(1.5rem, 3vw, 2rem);
-  font-weight: 700;
-  color: var(--navy);
+  /* The homepage's headline treatment — 800 weight, tightened tracking —
+     at a size a working screen can carry above a table. */
+  font-size: clamp(1.5rem, 2.6vw, 1.9rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  color: #ffffff;
+}
+
+.title {
+  margin-bottom: 0.4rem;
+}
+
+/* The homepage's hero lead colour, which is what keeps this legible on navy
+   without going to full white and competing with the title. */
+.subtitle {
+  margin: 0;
+  max-width: 70ch;
+  font-size: 0.94rem;
+  line-height: 1.65;
+  color: #b9cbe0;
 }
 
 .pageActions {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.6rem;
 }
 
+/* The homepage's ghost button. On the banner these sit on navy, so they take
+   the hero's translucent-white treatment rather than the grey admin one. */
 .action,
 .rangeSelect {
-  padding: 0.35rem 0.75rem;
-  border: 1px solid #cbd5e1;
-  border-radius: 6px;
-  background: #ffffff;
+  padding: 0.5rem 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.08);
   font: inherit;
   font-size: 0.88rem;
-  color: #374151;
+  font-weight: 600;
+  color: #ffffff;
   cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
 }
 
 .action:hover,
 .rangeSelect:hover {
-  border-color: #9ca3af;
-  background: #f9fafb;
+  border-color: #ffffff;
+  background: rgba(255, 255, 255, 0.16);
+  transform: translateY(-1px);
 }
 
 .action:focus-visible,
 .rangeSelect:focus-visible {
-  outline: 2px solid var(--cyan);
-  outline-offset: 1px;
+  outline: 2px solid var(--cyan-bright);
+  outline-offset: 2px;
 }
 
-/* The page heading area on the list pages, which have a subtitle. */
-.head {
-  padding-bottom: 0.9rem;
-  margin-bottom: 1.25rem;
-  border-bottom: 1px solid var(--line);
+/* The select's own drop-down is drawn by the operating system and takes no
+   inherited colour, so its options need a readable ground of their own. */
+.rangeSelect option {
+  color: var(--ink);
+  background: #ffffff;
 }
 
-.title {
-  margin: 0 0 0.35rem;
-  font-size: clamp(1.5rem, 3vw, 2rem);
-  font-weight: 700;
-  color: var(--navy);
-}
-
-.subtitle {
-  margin: 0;
-  color: #4b5563;
-  font-size: 0.95rem;
-  max-width: 70ch;
+.rangePicker {
+  display: flex;
+  align-items: center;
 }
 
 /* ------------------------------------------------------------------- chart */
@@ -376,20 +577,22 @@
 .legendSwatch {
   width: 10px;
   height: 10px;
-  border-radius: 2px;
+  border-radius: 3px;
   flex-shrink: 0;
 }
 
 .legendTotal {
-  color: #111827;
+  color: var(--ink);
+  font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
 
 .chartBox {
-  padding: 0.75rem 0.5rem 0.5rem;
+  padding: 1rem 0.75rem 0.6rem;
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: 14px;
   background: #ffffff;
+  box-shadow: var(--shadow);
 }
 
 .chart {
@@ -402,7 +605,7 @@
 }
 
 .gridline {
-  stroke: #eceff3;
+  stroke: #eef2f7;
   stroke-width: 1;
   vector-effect: non-scaling-stroke;
 }
@@ -415,7 +618,7 @@
 }
 
 .axisLabel {
-  fill: #9ca3af;
+  fill: #94a3b8;
   font-size: 11px;
   font-family: inherit;
 }
@@ -439,16 +642,17 @@
 }
 
 .readoutHint {
-  color: #9ca3af;
+  color: #94a3b8;
 }
 
 /* ------------------------------------------------------------------- cards */
 
 .card {
-  padding: 1.25rem 1.35rem;
+  padding: 1.5rem 1.6rem;
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: 14px;
   background: #ffffff;
+  box-shadow: var(--shadow);
 }
 
 /* auto-fit rather than a fixed count: the row reflows on a laptop screen
@@ -456,55 +660,92 @@
 .statGrid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
-  gap: 1rem;
+  gap: 1.15rem;
   margin-bottom: 2rem;
 }
 
+/* The homepage's service card, carrying a number instead of a paragraph: the
+   same white ground, 14px corners, cyan hover edge and lift. */
 .stat {
+  position: relative;
   display: block;
-  padding: 1.1rem 1.25rem;
+  padding: 1.3rem 1.4rem;
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: 14px;
   background: #ffffff;
+  box-shadow: var(--shadow);
   color: inherit;
   text-decoration: none;
+  overflow: hidden;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+
+/* A cyan hairline along the top edge, drawn in on hover from the left. The
+   homepage's service icons take on cyan the same way. */
+.stat::after {
+  content: '';
+  position: absolute;
+  inset: 0 auto auto 0;
+  width: 100%;
+  height: 3px;
+  background: linear-gradient(90deg, var(--cyan), var(--cyan-bright));
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.25s ease;
 }
 
 /* The stats are links to the list they summarise, so they lift on hover the
    way the rest of the site's cards do. */
 .stat:hover {
+  transform: translateY(-4px);
   border-color: #bae6fd;
-  box-shadow: 0 6px 18px rgba(5, 7, 10, 0.06);
+  box-shadow: var(--shadow-lift);
 }
 
+.stat:hover::after {
+  transform: scaleX(1);
+}
+
+/* The homepage's eyebrow again, at label size. */
 .statLabel {
-  margin: 0 0 0.35rem;
-  font-size: 0.78rem;
-  font-weight: 600;
-  letter-spacing: 0.04em;
+  margin: 0 0 0.5rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.11em;
   text-transform: uppercase;
-  color: #6b7280;
+  color: var(--muted);
 }
 
 .statValue {
   margin: 0;
-  font-size: 2rem;
-  font-weight: 700;
-  line-height: 1.1;
+  font-size: 2.15rem;
+  font-weight: 800;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
   color: var(--navy);
   /* Keeps 9 and 108 on the same baseline as the row reflows. */
   font-variant-numeric: tabular-nums;
 }
 
 .statNote {
-  margin: 0.35rem 0 0;
+  margin: 0.4rem 0 0;
   font-size: 0.85rem;
-  color: #6b7280;
+  color: var(--muted);
 }
 
-/* The number that means "someone has to do something about this". */
+/* The number that means "someone has to do something about this". Amber is
+   the homepage's third colour — the far end of its route map, the parcel tape
+   on the hero illustration — so it is already part of the vocabulary. */
 .statUrgent .statValue {
   color: #b45309;
+}
+
+.statUrgent::after {
+  background: linear-gradient(90deg, #d97706, #f59e0b);
+}
+
+.statUrgent:hover {
+  border-color: #fcd34d;
 }
 
 .section {
@@ -516,19 +757,21 @@
   align-items: baseline;
   justify-content: space-between;
   gap: 1rem;
-  margin-bottom: 0.75rem;
+  margin-bottom: 0.9rem;
 }
 
 .sectionTitle {
   margin: 0;
-  font-size: 1.4rem;
-  font-weight: 700;
+  font-size: 1.3rem;
+  font-weight: 800;
+  letter-spacing: -0.015em;
   color: var(--navy);
 }
 
 .sectionLink {
   color: var(--cyan);
   font-size: 0.88rem;
+  font-weight: 700;
   text-decoration: none;
   white-space: nowrap;
 }
@@ -545,9 +788,10 @@
 }
 
 .cardTitle {
-  margin: 0 0 0.9rem;
-  font-size: 1.05rem;
-  font-weight: 700;
+  margin: 0 0 1rem;
+  font-size: 1.08rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
   color: var(--navy);
 }
 
@@ -561,8 +805,8 @@
   display: flex;
   justify-content: space-between;
   gap: 1rem;
-  padding: 0.65rem 0;
-  border-top: 1px solid #f3f4f6;
+  padding: 0.7rem 0;
+  border-top: 1px solid #f1f5f9;
 }
 
 .feedItem:first-child {
@@ -577,7 +821,7 @@
   margin: 0;
   font-size: 0.95rem;
   font-weight: 600;
-  color: #111827;
+  color: var(--ink);
   /* One line per row: the feed is a glance, the list page is the detail. */
   overflow: hidden;
   text-overflow: ellipsis;
@@ -587,28 +831,33 @@
 .feedMeta {
   margin: 0.1rem 0 0;
   font-size: 0.85rem;
-  color: #6b7280;
+  color: var(--muted);
 }
 
 .feedAside {
   flex-shrink: 0;
   text-align: right;
   font-size: 0.82rem;
-  color: #6b7280;
+  color: var(--muted);
   white-space: nowrap;
 }
 
 .feedFoot {
-  margin: 0.9rem 0 0;
+  margin: 1rem 0 0;
 }
 
 .breakdown {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: 0.3rem;
   margin: 0;
+  padding: 1.1rem 1.35rem;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  /* The homepage's pale panel, the one its route map sidebar sits on. */
+  background: #f8fafc;
   font-size: 0.85rem;
-  color: #6b7280;
+  color: var(--muted);
 }
 
 /* ----------------------------------------------------------------- toolbar */
@@ -618,7 +867,12 @@
   flex-wrap: wrap;
   align-items: flex-end;
   gap: 0.75rem;
-  margin-bottom: 1rem;
+  margin-bottom: 1.15rem;
+  padding: 1rem 1.15rem;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: #ffffff;
+  box-shadow: var(--shadow);
 }
 
 .search {
@@ -628,18 +882,21 @@
 .searchInput,
 .select {
   width: 100%;
-  padding: 0.5rem 0.7rem;
+  padding: 0.55rem 0.75rem;
+  box-sizing: border-box;
   border: 1px solid #cbd5e1;
-  border-radius: 6px;
+  border-radius: 10px;
   background: #ffffff;
   font: inherit;
   font-size: 0.92rem;
-  color: #111827;
+  color: var(--ink);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .searchInput:focus,
 .select:focus,
-.rowSelect:focus {
+.rowSelect:focus,
+.officeInput:focus {
   outline: none;
   border-color: var(--cyan);
   box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.18);
@@ -648,15 +905,15 @@
 .filter {
   display: flex;
   flex-direction: column;
-  gap: 0.2rem;
+  gap: 0.3rem;
 }
 
 .filterLabel {
-  font-size: 0.75rem;
-  font-weight: 600;
-  letter-spacing: 0.03em;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.11em;
   text-transform: uppercase;
-  color: #6b7280;
+  color: var(--muted);
 }
 
 /* ------------------------------------------------------------------ tables */
@@ -666,8 +923,9 @@
 .tableWrap {
   overflow-x: auto;
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: 14px;
   background: #ffffff;
+  box-shadow: var(--shadow);
 }
 
 .table {
@@ -676,21 +934,34 @@
   font-size: 0.9rem;
 }
 
+/* The header row on the homepage's pale panel colour, so the table reads as a
+   card with a lid rather than as a grid drawn on the page. */
 .table th {
-  padding: 0.7rem 0.9rem;
-  border-bottom: 2px solid var(--line);
+  padding: 0.8rem 0.95rem;
+  border-bottom: 1px solid var(--line);
+  background: #f8fafc;
   text-align: left;
-  font-size: 0.78rem;
+  font-size: 0.72rem;
   font-weight: 700;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.11em;
   text-transform: uppercase;
   color: var(--muted);
   white-space: nowrap;
 }
 
+/* The corners have to be put back on the first and last header cells, or the
+   square th background paints over the wrapper's rounding. */
+.table thead tr:first-child th:first-child {
+  border-top-left-radius: 13px;
+}
+
+.table thead tr:first-child th:last-child {
+  border-top-right-radius: 13px;
+}
+
 .table td {
-  padding: 0.7rem 0.9rem;
-  border-bottom: 1px solid #f1f3f5;
+  padding: 0.75rem 0.95rem;
+  border-bottom: 1px solid #f1f5f9;
   color: #374151;
   vertical-align: top;
 }
@@ -699,17 +970,21 @@
   border-bottom: 0;
 }
 
+.table tbody tr {
+  transition: background 0.12s ease;
+}
+
 .table tbody tr:hover {
-  background: #f4f9ff;
+  background: #f0f9ff;
 }
 
 .primaryCell {
-  font-weight: 600;
+  font-weight: 700;
   color: var(--navy);
 }
 
 .mutedCell {
-  color: #6b7280;
+  color: var(--muted);
   font-size: 0.85rem;
 }
 
@@ -720,7 +995,7 @@
 
 .dateCell {
   white-space: nowrap;
-  color: #6b7280;
+  color: var(--muted);
   font-size: 0.85rem;
 }
 
@@ -737,13 +1012,13 @@
 }
 
 .rowSelect {
-  padding: 0.3rem 0.5rem;
+  padding: 0.35rem 0.55rem;
   border: 1px solid #cbd5e1;
-  border-radius: 6px;
+  border-radius: 8px;
   background: #ffffff;
   font: inherit;
   font-size: 0.85rem;
-  color: #111827;
+  color: var(--ink);
 }
 
 .rowSelect:disabled {
@@ -751,20 +1026,23 @@
 }
 
 .rowButton {
-  padding: 0.3rem 0.7rem;
+  padding: 0.35rem 0.8rem;
   border: 1px solid #cbd5e1;
-  border-radius: 6px;
+  border-radius: 8px;
   background: #ffffff;
   font: inherit;
   font-size: 0.83rem;
+  font-weight: 600;
   color: #374151;
   cursor: pointer;
   white-space: nowrap;
+  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
 }
 
 .rowButton:hover:not(:disabled) {
-  border-color: #9ca3af;
-  background: #f9fafb;
+  border-color: var(--cyan);
+  background: #f0f9ff;
+  color: #075985;
 }
 
 .rowButton:disabled {
@@ -781,6 +1059,7 @@
 .link {
   color: var(--cyan);
   font-size: 0.85rem;
+  font-weight: 600;
 }
 
 /* A button that reads as a link: "Read all" under a clamped message. Styled
@@ -792,6 +1071,7 @@
   background: none;
   font: inherit;
   font-size: 0.85rem;
+  font-weight: 600;
   color: var(--cyan);
   cursor: pointer;
 }
@@ -828,11 +1108,12 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
+  width: 34px;
+  height: 34px;
   flex-shrink: 0;
   border-radius: 50%;
-  background: linear-gradient(135deg, #2563eb, #0ea5e9);
+  /* The homepage's navy-to-cyan, at badge size. */
+  background: linear-gradient(135deg, var(--navy) 0%, var(--cyan) 100%);
   color: #ffffff;
   font-size: 0.72rem;
   font-weight: 700;
@@ -842,7 +1123,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: 0.3rem;
-  margin-top: 0.25rem;
+  margin-top: 0.3rem;
 }
 
 /* The username is typed rather than read, so it is set in a typeface where
@@ -868,9 +1149,9 @@
 
 .addressLabel {
   display: inline-block;
-  margin-bottom: 0.1rem;
-  padding: 0.05rem 0.4rem;
-  border-radius: 4px;
+  margin-bottom: 0.15rem;
+  padding: 0.05rem 0.45rem;
+  border-radius: 5px;
   background: #f1f5f9;
   color: #475569;
   font-size: 0.72rem;
@@ -881,16 +1162,16 @@
 
 .badge {
   display: inline-block;
-  padding: 0.15rem 0.55rem;
+  padding: 0.2rem 0.6rem;
   border-radius: 999px;
-  font-size: 0.78rem;
-  font-weight: 600;
+  font-size: 0.76rem;
+  font-weight: 700;
   white-space: nowrap;
 }
 
 .neutral {
-  background: #f3f4f6;
-  color: #374151;
+  background: #f1f5f9;
+  color: #475569;
 }
 
 /* Amber: waiting on us. */
@@ -919,7 +1200,7 @@
 
 .countPill {
   min-width: 1.35rem;
-  padding: 0.05rem 0.4rem;
+  padding: 0.08rem 0.45rem;
   border-radius: 999px;
   background: #f59e0b;
   color: #ffffff;
@@ -934,16 +1215,16 @@
 
 .banner {
   margin: 0 0 1rem;
-  padding: 0.7rem 1rem;
+  padding: 0.8rem 1.1rem;
   border-left: 4px solid currentColor;
-  border-radius: 4px;
+  border-radius: 10px;
   font-size: 0.9rem;
 }
 
 .banner_info {
-  border-color: #2563eb;
-  background: #eff6ff;
-  color: #1e40af;
+  border-color: var(--cyan);
+  background: #f0f9ff;
+  color: #075985;
 }
 
 .banner_error {
@@ -954,12 +1235,12 @@
 
 .empty {
   margin: 0;
-  padding: 2.5rem 1rem;
+  padding: 3rem 1rem;
   border: 1px dashed #cbd5e1;
-  border-radius: 8px;
+  border-radius: 14px;
   background: #ffffff;
   text-align: center;
-  color: #6b7280;
+  color: var(--muted);
 }
 
 /* -------------------------------------------------------------- pagination */
@@ -969,22 +1250,26 @@
   align-items: center;
   justify-content: center;
   gap: 1rem;
-  margin-top: 1.25rem;
+  margin-top: 1.35rem;
 }
 
 .pageButton {
-  padding: 0.4rem 0.9rem;
+  padding: 0.5rem 1.1rem;
   border: 1px solid #cbd5e1;
-  border-radius: 6px;
+  border-radius: 10px;
   background: #ffffff;
   font: inherit;
   font-size: 0.88rem;
+  font-weight: 600;
   color: #374151;
   cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
 }
 
 .pageButton:hover:not(:disabled) {
-  border-color: #9ca3af;
+  border-color: var(--cyan);
+  background: #f0f9ff;
+  color: #075985;
 }
 
 .pageButton:disabled {
@@ -994,7 +1279,7 @@
 
 .pageStatus {
   font-size: 0.86rem;
-  color: #6b7280;
+  color: var(--muted);
   font-variant-numeric: tabular-nums;
 }
 
@@ -1022,8 +1307,8 @@
 
   .brand {
     width: auto;
-    background: none;
-    padding-right: 0.5rem;
+    padding-right: 0.6rem;
+    box-shadow: none;
   }
 
   .navToggle {
@@ -1034,13 +1319,23 @@
     display: none;
   }
 
+  .searchForm {
+    padding: 0 0.5rem;
+  }
+
+  /* Nothing to drag: the sidebar is an overlay at a fixed width here, and its
+     edge is not a boundary between two panes. */
+  .resizer {
+    display: none;
+  }
+
   /* The sidebar slides in over the content rather than pushing it, so the
      tables keep the whole width on a phone. */
   .sidebar {
     width: 240px;
     transform: translateX(-100%);
     transition: transform 0.18s ease;
-    box-shadow: 0 10px 30px rgba(5, 7, 10, 0.15);
+    box-shadow: 0 10px 30px rgba(11, 37, 69, 0.18);
   }
 
   .sidebarOpen {
@@ -1054,12 +1349,27 @@
     z-index: 15;
     border: 0;
     padding: 0;
-    background: rgba(5, 7, 10, 0.35);
+    background: rgba(7, 26, 48, 0.4);
   }
 
   .main {
     margin-left: 0;
     padding: 1.25rem 1rem 3rem;
+  }
+
+  .pageHead,
+  .head {
+    padding: 1.25rem 1.25rem;
+    border-radius: 14px;
+  }
+
+  .pageHead::before,
+  .head::before {
+    top: 1.35rem;
+  }
+
+  .toolbar {
+    padding: 0.9rem 1rem;
   }
 }
 
@@ -1069,16 +1379,18 @@
    unusable, and this one has a whole A4 sheet behind it. */
 .detail {
   margin-top: 1.25rem;
-  padding: 1.5rem;
+  padding: 1.6rem;
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: 14px;
   background: #ffffff;
+  box-shadow: var(--shadow);
 }
 
 .detailTitle {
   margin: 0 0 1.25rem;
   font-size: 1.15rem;
-  font-weight: 700;
+  font-weight: 800;
+  letter-spacing: -0.01em;
   color: var(--navy);
 }
 
@@ -1086,19 +1398,20 @@
    declared so nobody edits the wrong half. */
 .officeBox {
   margin-bottom: 1.5rem;
-  padding: 1.1rem 1.25rem;
+  padding: 1.2rem 1.35rem;
   border: 1px solid #bae6fd;
-  border-radius: 10px;
+  border-radius: 14px;
   background: #f0f9ff;
 }
 
+/* The homepage's eyebrow, exactly. */
 .officeHead {
-  margin: 0 0 0.9rem;
-  font-size: 0.72rem;
+  margin: 0 0 1rem;
+  font-size: 0.7rem;
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: #075985;
+  color: var(--cyan);
 }
 
 .officeGrid {
@@ -1111,7 +1424,7 @@
 .officeField {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: 0.3rem;
 }
 
 .officeLabel {
@@ -1122,26 +1435,20 @@
 
 .officeInput {
   width: 100%;
-  padding: 0.45rem 0.6rem;
+  padding: 0.5rem 0.65rem;
   box-sizing: border-box;
   border: 1px solid #bae6fd;
-  border-radius: 6px;
+  border-radius: 10px;
   background: #ffffff;
   font: inherit;
   font-size: 0.88rem;
   color: var(--navy);
 }
 
-.officeInput:focus {
-  outline: none;
-  border-color: var(--cyan);
-  box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.18);
-}
-
 .detailGrid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 1rem;
+  gap: 1.1rem;
   margin: 0;
 }
 
@@ -1150,10 +1457,10 @@
 }
 
 .detailGrid dt {
-  margin-bottom: 0.2rem;
-  font-size: 0.72rem;
+  margin-bottom: 0.25rem;
+  font-size: 0.7rem;
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.11em;
   text-transform: uppercase;
   color: var(--muted);
 }
@@ -1170,4 +1477,35 @@
   font-family: 'Segoe Script', 'Brush Script MT', cursive;
   font-size: 1.05rem;
   color: var(--navy);
+}
+
+/* Everything that moves, stops — the same courtesy the homepage extends. */
+@media (prefers-reduced-motion: reduce) {
+  .stat,
+  .stat::after,
+  .action,
+  .rangeSelect,
+  .sidebar,
+  .table tbody tr {
+    transition: none;
+  }
+
+  .stat:hover,
+  .action:hover,
+  .rangeSelect:hover {
+    transform: none;
+  }
+
+  .stat:hover::after {
+    transform: scaleX(1);
+  }
+}
+
+/* The line under a role that cannot be changed from here, saying why. Smaller
+   than .mutedCell around it, because it is a footnote to the role above and
+   not a second value. */
+.roleReason {
+  margin-top: 0.15rem;
+  font-size: 0.75rem;
+  color: var(--muted);
 }

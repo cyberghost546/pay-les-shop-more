@@ -577,6 +577,97 @@ export const translations = {
         products: 'Unieke producten',
         transport: 'Verzorgd transport',
       },
+      actions: {
+        book: 'Zending aanmelden',
+        destinations: 'Bekijk bestemmingen',
+        faq: 'Lees de veelgestelde vragen',
+        track: 'Volg uw zending',
+        contact: 'Neem contact op',
+      },
+      shopsFooter:
+        'Staat uw winkel er niet bij? Dat geeft niet — u kunt bij vrijwel elke Nederlandse webshop bestellen en uw pakket naar ons magazijn laten sturen.',
+      shops: {
+        general: {
+          title: 'Algemeen aanbod',
+          note: 'Grote warenhuizen waar u vrijwel alles in één bestelling kunt vinden.',
+        },
+        electronics: {
+          title: 'Elektronica',
+          note: 'Let op de spanning en de stekker: op de eilanden is dat niet altijd hetzelfde als in Nederland.',
+        },
+        fashion: {
+          title: 'Mode en wonen',
+          note: 'Kleding en meubels. Grote meubelstukken vallen onder volume — vraag vooraf een offerte aan.',
+        },
+        beauty: {
+          title: 'Beauty en drogisterij',
+          note: 'Vloeistoffen en spuitbussen kennen beperkingen bij luchtvracht; per zeevracht is er meer mogelijk.',
+        },
+        kids: {
+          title: 'Kind en speelgoed',
+          note: 'Speelgoed en babyartikelen. Speelgoed op batterijen melden wij apart aan.',
+        },
+        specialist: {
+          title: 'Specialistisch',
+          note: 'Auto-onderdelen, boeken en kantoorartikelen. Onderdelen met olie of accu vragen extra papieren.',
+        },
+      },
+      rates: {
+        title: 'Wat kost het?',
+        lead: 'Onze tarieven beginnen bij de bedragen hieronder. Wat u uiteindelijk betaalt hangt af van het volume, het gewicht en de bestemming van uw zending.',
+        from: 'vanaf',
+        popular: 'Meest gekozen',
+        factorsTitle: 'Wat bepaalt de prijs?',
+        note: 'Bovenstaande bedragen zijn indicatief en bedoeld als startpunt. Wij meten en wegen uw zending in het magazijn; de offerte die u daarna ontvangt is het bedrag dat geldt.',
+        cta: 'Vraag een offerte aan',
+        tiers: {
+          parcel: {
+            name: 'Pakket',
+            size: 'Tot ongeveer 30 × 30 × 30 cm',
+            body: 'Eén webshopbestelling: kleding, boeken, kleine elektronica of onderdelen.',
+          },
+          box: {
+            name: 'Doos',
+            size: 'Tot ongeveer 60 × 40 × 40 cm',
+            body: 'Meerdere bestellingen die wij voor u samenvoegen tot één zending.',
+          },
+          pallet: {
+            name: 'Pallet',
+            size: 'Vanaf ongeveer 120 × 80 cm',
+            body: 'Verhuisgoed, meubels of een zakelijke voorraad.',
+          },
+        },
+        factors: {
+          volume: 'Volume en gewicht — wij rekenen met het hoogste van de twee.',
+          destination: 'De bestemming en de vaartijd naar die haven.',
+          insurance: 'Of u de zending wilt verzekeren voor de waarde ervan.',
+        },
+      },
+      faq: {
+        title: 'Veelgestelde vragen',
+        more: 'Staat uw vraag er niet bij?',
+        contact: 'Neem contact met ons op',
+        transit: {
+          q: 'Hoe lang duurt een zending?',
+          a: 'Reken op 18 tot 28 dagen vanaf het moment dat uw pakket in ons magazijn aankomt. Sint Maarten duurt ongeveer 18 dagen, Aruba en Curaçao 21, Bonaire 24 en Suriname 28 dagen.',
+        },
+        customs: {
+          q: 'Moet ik zelf de douane regelen?',
+          a: 'Nee. Wij maken de douanepapieren voor u op en dienen ze in. Invoerrechten en lokale belastingen op de bestemming blijven voor uw rekening; wij laten u vooraf weten waar u rekening mee moet houden.',
+        },
+        vat: {
+          q: 'Krijg ik de btw terug?',
+          a: 'Omdat uw bestelling Nederland verlaat, kunt u in veel gevallen vrijstelling van btw krijgen. Dat scheelt tot 21% op de aankoopprijs. Wij vertellen u per webshop of dit mogelijk is en welke gegevens daarvoor nodig zijn.',
+        },
+        prohibited: {
+          q: 'Wat mag ik niet meesturen?',
+          a: 'Gevaarlijke stoffen, brandbare vloeistoffen, losse lithiumaccu’s, wapens, bederfelijke waren, geld en levende dieren kunnen wij niet vervoeren. Twijfelt u over een artikel, vraag het ons dan voordat u bestelt.',
+        },
+        insurance: {
+          q: 'Is mijn zending verzekerd?',
+          a: 'Standaard geldt de basisdekking van de vervoerder, die uitgaat van het gewicht en niet van de waarde. Bij het aanmelden kunt u de zending voor de aankoopwaarde verzekeren; dat raden wij aan bij elektronica en andere kostbare artikelen.',
+        },
+      },
     },
     contact: {
       eyebrow: 'NEEM',
@@ -1203,6 +1294,97 @@ export const translations = {
         products: 'Unique products',
         transport: 'Transport taken care of',
       },
+      actions: {
+        book: 'Register a shipment',
+        destinations: 'See destinations',
+        faq: 'Read the common questions',
+        track: 'Track your shipment',
+        contact: 'Get in touch',
+      },
+      shopsFooter:
+        'Do not see your shop? That is fine — you can order from almost any Dutch webshop and have the parcel sent to our warehouse.',
+      shops: {
+        general: {
+          title: 'General range',
+          note: 'Large department stores where you can find almost anything in a single order.',
+        },
+        electronics: {
+          title: 'Electronics',
+          note: 'Mind the voltage and the plug: the islands do not always match the Dutch standard.',
+        },
+        fashion: {
+          title: 'Fashion and home',
+          note: 'Clothing and furniture. Large furniture is priced on volume, so ask for a quote first.',
+        },
+        beauty: {
+          title: 'Beauty and drugstore',
+          note: 'Liquids and aerosols are restricted on air freight; sea freight allows a good deal more.',
+        },
+        kids: {
+          title: 'Kids and toys',
+          note: 'Toys and baby goods. Battery-powered toys are declared separately.',
+        },
+        specialist: {
+          title: 'Specialist',
+          note: 'Car parts, books and office supplies. Parts holding oil or a battery need extra paperwork.',
+        },
+      },
+      rates: {
+        title: 'What does it cost?',
+        lead: 'Our rates start at the amounts below. What you pay in the end depends on the volume, the weight and the destination of your shipment.',
+        from: 'from',
+        popular: 'Most chosen',
+        factorsTitle: 'What decides the price?',
+        note: 'The amounts above are indicative and meant as a starting point. We measure and weigh your shipment at the warehouse; the quote you receive afterwards is the figure that applies.',
+        cta: 'Request a quote',
+        tiers: {
+          parcel: {
+            name: 'Parcel',
+            size: 'Up to roughly 30 × 30 × 30 cm',
+            body: 'A single webshop order: clothing, books, small electronics or parts.',
+          },
+          box: {
+            name: 'Box',
+            size: 'Up to roughly 60 × 40 × 40 cm',
+            body: 'Several orders that we combine into one shipment for you.',
+          },
+          pallet: {
+            name: 'Pallet',
+            size: 'From roughly 120 × 80 cm',
+            body: 'Household removals, furniture or business stock.',
+          },
+        },
+        factors: {
+          volume: 'Volume and weight — we charge on whichever of the two is higher.',
+          destination: 'The destination and the sailing time to that port.',
+          insurance: 'Whether you want the shipment insured for its value.',
+        },
+      },
+      faq: {
+        title: 'Common questions',
+        more: 'Question not answered here?',
+        contact: 'Get in touch with us',
+        transit: {
+          q: 'How long does a shipment take?',
+          a: 'Allow 18 to 28 days from the moment your parcel reaches our warehouse. Sint Maarten takes about 18 days, Aruba and Curaçao 21, Bonaire 24 and Suriname 28 days.',
+        },
+        customs: {
+          q: 'Do I have to handle customs myself?',
+          a: 'No. We prepare and file the customs paperwork for you. Import duties and local taxes at the destination remain payable by you; we tell you in advance what to expect.',
+        },
+        vat: {
+          q: 'Do I get the VAT back?',
+          a: 'Because your order leaves the Netherlands, you can often claim a VAT exemption. That saves up to 21% on the purchase price. We tell you per webshop whether this is possible and what details are needed.',
+        },
+        prohibited: {
+          q: 'What can I not send?',
+          a: 'We cannot carry hazardous goods, flammable liquids, loose lithium batteries, weapons, perishables, cash or live animals. If you are unsure about an item, ask us before you order.',
+        },
+        insurance: {
+          q: 'Is my shipment insured?',
+          a: 'The carrier’s basic cover applies by default, and that is based on weight rather than value. When you register the shipment you can insure it for the purchase value, which we recommend for electronics and other valuable items.',
+        },
+      },
     },
     contact: {
       eyebrow: 'GET IN',
@@ -1828,6 +2010,97 @@ export const translations = {
         vat: 'Eksenshon di BTW',
         products: 'Produktonan úniko',
         transport: 'Transporte kompletu',
+      },
+      actions: {
+        book: 'Registrá un envío',
+        destinations: 'Mira destinashonnan',
+        faq: 'Lesa e preguntanan frekuente',
+        track: 'Sigui bo envío',
+        contact: 'Tuma kontakto',
+      },
+      shopsFooter:
+        'Bo tienda no ta den e lista? No ta problema — bo por bestel na kasi tur webshop hulandes i manda e pakete na nos depósito.',
+      shops: {
+        general: {
+          title: 'Oferta general',
+          note: 'Tiendanan grandi kaminda bo por haña kasi tur kos den un solo òrdu.',
+        },
+        electronics: {
+          title: 'Elektróniko',
+          note: 'Tene kuenta ku e voltahe i e steker: riba e islanan esaki no ta semper meskos ku na Hulanda.',
+        },
+        fashion: {
+          title: 'Moda i kas',
+          note: 'Paña i mueble. Mueble grandi ta konta pa volúmen — pidi un preis promé.',
+        },
+        beauty: {
+          title: 'Beauty i drogisterij',
+          note: 'Likido i spùit tin restrikshon den fleit di airu; pa laman tin mas posibilidat.',
+        },
+        kids: {
+          title: 'Mucha i huguete',
+          note: 'Hugete i artíkulo pa bebi. Hugete ku baterij nos ta deklará apart.',
+        },
+        specialist: {
+          title: 'Espesialisá',
+          note: 'Pieza di outo, buki i artíkulo di ofisina. Pieza ku zeta òf baterij mester di papel extra.',
+        },
+      },
+      rates: {
+        title: 'Kuantu e ta kosta?',
+        lead: 'Nos tarifanan ta kuminsá na e montantenan aki bou. Loke bo ta paga na final ta dependé di e volúmen, e peso i e destinashon di bo envío.',
+        from: 'for di',
+        popular: 'Mas skohé',
+        factorsTitle: 'Kiko ta determiná e preis?',
+        note: 'E montantenan aki riba ta indikativo i ta sirbi komo punto di salida. Nos ta midi i pisa bo envío den depósito; e preis ku bo ta risibí despues ta esun ku ta konta.',
+        cta: 'Pidi un preis',
+        tiers: {
+          parcel: {
+            name: 'Pakete',
+            size: 'Te mas o ménos 30 × 30 × 30 cm',
+            body: 'Un solo òrdu di webshop: paña, buki, elektróniko chikitu òf pieza.',
+          },
+          box: {
+            name: 'Doos',
+            size: 'Te mas o ménos 60 × 40 × 40 cm',
+            body: 'Vários òrdu ku nos ta uni pa bo den un solo envío.',
+          },
+          pallet: {
+            name: 'Pallet',
+            size: 'For di mas o ménos 120 × 80 cm',
+            body: 'Kos di mudansa, mueble òf stòk komersial.',
+          },
+        },
+        factors: {
+          volume: 'Volúmen i peso — nos ta kobra riba esun di dos ku ta mas haltu.',
+          destination: 'E destinashon i e tempu di biahe pa e haf ei.',
+          insurance: 'Si bo ke sigurá e envío pa su balor.',
+        },
+      },
+      faq: {
+        title: 'Preguntanan frekuente',
+        more: 'Bo pregunta no ta kontestá aki?',
+        contact: 'Tuma kontakto ku nos',
+        transit: {
+          q: 'Kuantu tempu un envío ta tuma?',
+          a: 'Konta ku 18 pa 28 dia for di ora bo pakete yega nos depósito. Sint Maarten ta tuma mas o ménos 18 dia, Aruba i Kòrsou 21, Boneiru 24 i Sürnam 28 dia.',
+        },
+        customs: {
+          q: 'Mi mester regla aduana mi mes?',
+          a: 'Nò. Nos ta prepará i entregá e papelnan di aduana pa bo. Derecho di importashon i belasting lokal na e destinashon ta keda pa bo kuenta; nos ta bisa bo di antemano kiko bo mester spera.',
+        },
+        vat: {
+          q: 'Mi ta haña e BTW bèk?',
+          a: 'Pasobra bo òrdu ta sali for di Hulanda, hopi biaha bo por haña eksenshon di BTW. Esei ta spar te 21% riba e preis di kumpra. Nos ta bisa bo pa kada webshop si esaki ta posibel i ki datos ta nesesario.',
+        },
+        prohibited: {
+          q: 'Kiko mi no por manda?',
+          a: 'Nos no por transportá material peligroso, likido inflamabel, baterij di litio lòs, arma, kuminda ku ta daña, plaka òf bestia bibu. Si bo tin duda tokante un artíkulo, puntra nos promé ku bo bestel.',
+        },
+        insurance: {
+          q: 'Mi envío ta sigurá?',
+          a: 'Pa defekto e kobertura básiko di e transportista ta konta, i esei ta basá riba peso i no riba balor. Ora bo registrá e envío bo por sigurá e pa e balor di kumpra; nos ta rekomendá esei pa elektróniko i otro artíkulo balioso.',
+        },
       },
     },
     contact: {

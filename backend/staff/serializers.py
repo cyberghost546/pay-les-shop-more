@@ -52,13 +52,48 @@ class StaffAddressSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
 
+class StaffAddressWriteSerializer(serializers.ModelSerializer):
+    """The half of an address the back office may fill in for a customer.
+
+    Separate from StaffAddressSerializer, which stays read-only because it is
+    nested inside the customer row: one serializer cannot be both the shape a
+    list renders and the shape a write accepts without the write silently
+    becoming possible everywhere the list appears.
+
+    The owner is never in the body -- it comes from the URL, so a staff member
+    cannot file an address under a different customer by editing the payload.
+    """
+
+    class Meta:
+        model = Address
+        fields = [
+            "id",
+            "label",
+            "street",
+            "house_number",
+            "postal_code",
+            "city",
+            "country",
+            "is_default",
+        ]
+        read_only_fields = ["id"]
+
+
 class StaffCustomerSerializer(serializers.ModelSerializer):
     """A customer with their addresses and a count of their shipments.
 
-    Read-only throughout. Staff look people up here — to check a spelling
-    before a delivery, or find whose package a tracking number belongs to —
-    but changing someone's personal data is a heavier action than this screen
-    should offer, and it already has a home in Django's admin.
+    The same User row the customer sees on their own profile page, which is
+    what makes this screen and that one two views of one record rather than
+    two copies: a correction made here is what the customer reads next time
+    they open their profile, and an edit they make there is what staff see on
+    the next load.
+
+    Name, e-mail and phone are therefore writable — a wrong digit in a phone
+    number is found by the agent trying to arrange a handover, not by the
+    customer, so the back office needs to be able to fix it. Everything else
+    stays read-only: the username is what someone types to sign in, the flags
+    are a record rather than a decision, and the role moves through its own
+    /role/ action where the refusals live.
     """
 
     name = serializers.SerializerMethodField()
@@ -67,6 +102,11 @@ class StaffCustomerSerializer(serializers.ModelSerializer):
     # Set when the account has been erased; the row survives only to keep the
     # shipment records intact.
     is_erased = serializers.SerializerMethodField()
+    # Whether the caller may switch this row between admin and customer. The
+    # server decides it -- see CustomerViewSet.role, which refuses the same
+    # cases again -- so the table can grey the control out without the React
+    # app having to know the rules.
+    can_change_role = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -81,11 +121,45 @@ class StaffCustomerSerializer(serializers.ModelSerializer):
             "addresses",
             "package_count",
             "is_staff",
+            # Shown so the table can say why a superuser's role is fixed here:
+            # that account is granted more than this screen manages.
+            "is_superuser",
             "is_active",
             "is_erased",
+            "can_change_role",
             "date_joined",
         ]
-        read_only_fields = fields
+        # Everything except the four contact fields below. The role moves
+        # through the dedicated /role/ action, which is the one place its
+        # refusals live, and the username is left alone because changing it
+        # changes what the customer types to sign in.
+        read_only_fields = [
+            "id",
+            "username",
+            "name",
+            "addresses",
+            "package_count",
+            "is_staff",
+            "is_superuser",
+            "is_active",
+            "is_erased",
+            "can_change_role",
+            "date_joined",
+        ]
+        extra_kwargs = {
+            # A customer is contacted about a shipment by one of these two, so
+            # neither may be cleared from here. AbstractUser leaves the name
+            # halves blank-able and the profile page allows the same, so this
+            # does not tighten them beyond what the customer can do themselves.
+            "email": {"required": True, "allow_blank": False},
+            "phone_number": {"required": True, "allow_blank": False},
+        }
+
+    def validate_email(self, value):
+        # Addresses differ only by case in practice, and the column is unique.
+        # Lowercasing here matches signup, so the uniqueness check compares
+        # like with like rather than letting Ana@x and ana@x both exist.
+        return value.lower()
 
     def get_name(self, obj):
         # str(User) already handles the erased case, where there is no name
@@ -94,6 +168,35 @@ class StaffCustomerSerializer(serializers.ModelSerializer):
 
     def get_is_erased(self, obj):
         return obj.anonymised_at is not None
+
+    def get_can_change_role(self, obj):
+        request = self.context.get("request")
+        if request is None:
+            return False
+
+        return not (
+            obj.pk == request.user.pk
+            or obj.is_superuser
+            or obj.anonymised_at is not None
+        )
+
+
+class StaffRoleSerializer(serializers.Serializer):
+    """The body of a role change: which of the two roles the account gets.
+
+    A named role rather than a raw `is_staff` boolean, because that is what
+    the screen offers and what the person pressing it means. The mapping onto
+    the flag lives here, in one place.
+    """
+
+    ADMIN = "admin"
+    CUSTOMER = "customer"
+
+    role = serializers.ChoiceField(choices=[ADMIN, CUSTOMER])
+
+    @property
+    def grants_staff(self):
+        return self.validated_data["role"] == self.ADMIN
 
 
 class StaffPackageSerializer(serializers.ModelSerializer):
