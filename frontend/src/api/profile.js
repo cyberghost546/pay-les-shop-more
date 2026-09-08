@@ -14,6 +14,11 @@ function toProfile(data) {
   const address = data.addresses?.find((item) => item.is_default) ?? {};
 
   return {
+    // Carried so the dashboard's customer table can tell which row is the
+    // account the staff member is signed in as. Comparing e-mail addresses
+    // almost worked, and stopped working the moment an e-mail was editable
+    // from that table.
+    id: data.id,
     name: [data.first_name, data.last_name].filter(Boolean).join(' '),
     firstName: data.first_name ?? '',
     lastName: data.last_name ?? '',

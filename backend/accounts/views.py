@@ -6,22 +6,27 @@ every write.
 """
 
 from django.contrib.auth import login, logout, update_session_auth_hash
+from django.db.models import Q
+from django.http import FileResponse, Http404
 from django.middleware.csrf import get_token
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.utils.decorators import method_decorator
 from rest_framework import generics, mixins, status, viewsets
-from rest_framework.exceptions import ValidationError
+from rest_framework.decorators import action
+from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 
 from .emails import send_password_reset
-from .models import Address, Package
+from .models import Address, Package, PackageDocument
 from .serializers import (
     AccountDeleteSerializer,
     AddressSerializer,
     LoginSerializer,
+    PackageDocumentSerializer,
+    PackageDocumentUploadSerializer,
     PackageSerializer,
     PasswordChangeSerializer,
     PasswordResetConfirmSerializer,
@@ -278,3 +283,227 @@ class PackageViewSet(
 
     def get_queryset(self):
         return Package.objects.filter(user=self.request.user)
+
+
+class PackageDocumentViewSet(
+    mixins.ListModelMixin,
+    mixins.CreateModelMixin,
+    mixins.RetrieveModelMixin,
+    mixins.DestroyModelMixin,
+    viewsets.GenericViewSet,
+):
+    """The paperwork a customer attaches to their own shipment.
+
+    The receipt for the television they bought, the shop's invoice, a customs
+    form. It goes the opposite way to an invoice: the business sends those out,
+    and these come in.
+
+    Staff read the same rows through the same view. The queryset below is what
+    decides who sees what, in one place rather than in each handler, so no id
+    arriving from a browser has escaped being narrowed to rows that caller may
+    see - somebody else's receipt is a 404 and not a decision made later.
+    """
+
+    serializer_class = PackageDocumentSerializer
+    permission_classes = [IsAuthenticated]
+    # DRF's defaults already accept JSON, form and multipart, which is what
+    # this viewset needs: uploads arrive as multipart and `attach` below is
+    # ordinary JSON. Pinning it to multipart, as this once did, answered 415
+    # to every JSON body — including that action's.
+
+    def get_queryset(self):
+        queryset = PackageDocument.objects.select_related(
+            "customer", "package", "uploaded_by"
+        )
+
+        # Staff are the audience for these: a receipt nobody in the office can
+        # open is a receipt that was not worth uploading.
+        #
+        # Scoped by `customer`, not by `package__user`: a document need not
+        # have a shipment, and scoping through one would make every unattached
+        # receipt invisible to the person who uploaded it.
+        if not self.request.user.is_staff:
+            queryset = queryset.filter(customer=self.request.user)
+
+        params = self.request.query_params
+
+        # ?package=<id> is how both the profile page and the dashboard ask for
+        # the files belonging to one shipment.
+        package = params.get("package")
+        if package:
+            queryset = queryset.filter(package_id=package)
+
+        # The dashboard's own three, none of which a customer has any use for
+        # but none of which leak anything either: the queryset above has
+        # already narrowed to rows the caller may see, so these only ever
+        # shrink that set further.
+        if params.get("unattached") == "true":
+            # The queue that matters: a document nobody has filed against a
+            # shipment yet.
+            queryset = queryset.filter(package__isnull=True)
+
+        kind = params.get("kind")
+        if kind in dict(PackageDocument.Kind.choices):
+            queryset = queryset.filter(kind=kind)
+
+        search = params.get("search", "").strip()
+        if search:
+            queryset = queryset.filter(
+                Q(note__icontains=search)
+                | Q(original_name__icontains=search)
+                | Q(customer__first_name__icontains=search)
+                | Q(customer__last_name__icontains=search)
+                | Q(customer__email__icontains=search)
+                | Q(package__tracking_number__icontains=search)
+            )
+
+        return queryset
+
+    def create(self, request, *args, **kwargs):
+        """Attach a file to one of the caller's own shipments.
+
+        The package comes from the body, so it is checked against the caller
+        rather than trusted: without that, any signed-in customer could file a
+        receipt under a stranger's parcel and have the office read it there.
+        """
+        body = PackageDocumentUploadSerializer(data=request.data)
+        body.is_valid(raise_exception=True)
+
+        package = self._package_for(request)
+        upload = body.validated_data["file"]
+
+        # Whose it is. The shipment's owner when there is a shipment — so a
+        # staff member attaching a receipt on a customer's behalf files it
+        # under that customer and not under themselves — and otherwise the
+        # person uploading.
+        customer = package.user if package else request.user
+
+        document = PackageDocument.objects.create(
+            customer=customer,
+            package=package,
+            uploaded_by=request.user,
+            kind=body.validated_data["kind"],
+            note=body.validated_data.get("note", ""),
+            file=upload,
+            # Kept so the customer's own list shows the name they recognise.
+            # Truncated rather than refused: a name too long for the column is
+            # not a reason to reject a valid receipt.
+            original_name=(upload.name or "")[:255],
+            content_type=(upload.content_type or "")[:100],
+            size_bytes=upload.size,
+        )
+
+        return Response(
+            self.get_serializer(document).data, status=status.HTTP_201_CREATED
+        )
+
+    def _package_for(self, request):
+        """The shipment this upload is for, if any, or a refusal.
+
+        None is a real answer. A receipt exists before the parcel does —
+        somebody buys a television and books the shipment days later — so a
+        document with no shipment is a normal document, not an incomplete one.
+
+        When a shipment *is* named it is checked against the caller rather
+        than trusted: without that, any signed-in customer could file a
+        receipt under a stranger's parcel and have the office read it there.
+        Staff may attach to any package, which is what they do for a customer
+        who has e-mailed one in.
+        """
+        package_id = request.data.get("package")
+        if not package_id:
+            return None
+
+        packages = Package.objects.all()
+        if not request.user.is_staff:
+            packages = packages.filter(user=request.user)
+
+        try:
+            return packages.get(pk=package_id)
+        except (Package.DoesNotExist, ValueError, TypeError):
+            # The same answer whether the parcel does not exist or belongs to
+            # somebody else. Telling those two apart would turn this into a
+            # way to discover which tracking numbers are real.
+            raise ValidationError({"package": "No such shipment."})
+
+    def perform_destroy(self, instance):
+        """Remove an upload, and the file with it.
+
+        Deleting the row alone would leave the bytes on disk for ever, which
+        for a document holding somebody's address and card digits is the one
+        outcome a delete button must not have.
+
+        A customer may withdraw what they sent in - the wrong photograph, the
+        wrong parcel. Staff may remove anything, because they are the ones who
+        have to clear up a receipt filed against the wrong shipment.
+        """
+        stored = instance.file.name
+        instance.delete()
+        if stored:
+            instance.file.storage.delete(stored)
+
+    @action(detail=True, methods=["post"])
+    def attach(self, request, pk=None):
+        """File a document against a shipment, or unfile it. Staff only.
+
+        The other half of letting a receipt arrive before the parcel does.
+        Somebody uploads the till receipt for a television on the day they buy
+        it; the shipment is booked later, and this is what joins the two so
+        the document turns up on the parcel where the office will look for it.
+
+        Customers are refused. They choose a shipment when they upload, from
+        a list that is already only their own — but a customer moving a
+        document afterwards is a customer moving evidence between shipments,
+        and the office is the party that has to be able to trust where a
+        receipt is filed.
+        """
+        if not request.user.is_staff:
+            raise PermissionDenied("Only staff can file a document.")
+
+        document = self.get_object()
+        package_id = request.data.get("package")
+
+        if package_id in (None, "", "null"):
+            # Unfiling is a real action: a receipt on the wrong parcel has to
+            # be able to come off it, and setting it to nothing is how.
+            document.package = None
+        else:
+            try:
+                # Any customer's, because staff see every document here. The
+                # owner does not change: whose paperwork this is was decided
+                # at upload, and moving it between parcels must not quietly
+                # reassign it to somebody else.
+                document.package = Package.objects.get(pk=package_id)
+            except (Package.DoesNotExist, ValueError, TypeError):
+                raise ValidationError({"package": "No such shipment."})
+
+        document.save(update_fields=["package"])
+
+        return Response(self.get_serializer(document).data)
+
+    @action(detail=True, methods=["get"])
+    def file(self, request, pk=None):
+        """Stream the document itself.
+
+        get_object() applies the queryset above, so this is already limited to
+        a file the caller may see. The remaining failure is a row pointing at
+        bytes that are not there - a media directory restored without its
+        contents - which is a 404 rather than the 500 that opening a missing
+        file would otherwise produce.
+        """
+        document = self.get_object()
+
+        try:
+            handle = document.file.open("rb")
+        except FileNotFoundError:
+            raise Http404("This document is missing.")
+
+        # as_attachment, so a browser saves it under a name that means
+        # something rather than rendering it in a tab named by its storage
+        # path. See PackageDocument.filename for why that name is scrubbed.
+        return FileResponse(
+            handle,
+            as_attachment=True,
+            filename=document.filename,
+            content_type=document.content_type or "application/octet-stream",
+        )

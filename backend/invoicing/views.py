@@ -19,6 +19,7 @@ from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 
 from .models import Invoice
+from .pdf import invoice_number
 from .serializers import CustomerInvoiceSerializer
 
 
@@ -70,6 +71,6 @@ class InvoiceViewSet(
         return FileResponse(
             handle,
             as_attachment=True,
-            filename=f"{invoice.number}.pdf",
+            filename=f"{invoice_number(invoice)}.pdf",
             content_type="application/pdf",
         )

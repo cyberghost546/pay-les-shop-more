@@ -5,10 +5,12 @@ AUTH_USER_MODEL cleanly before the first migration is applied; changing it
 later means dropping the database or a painful manual migration.
 """
 
+from django.conf import settings
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import RegexValidator
 from django.db import models
 from django.db.models import Q
+from django.utils import timezone
 
 
 # Numbers are written a dozen ways across the islands and the Netherlands
@@ -195,6 +197,27 @@ class Package(models.Model):
         DELIVERED = "delivered", "Delivered"
         CANCELLED = "cancelled", "Cancelled"
 
+    # Which statuses mean the money has come in, kept here with the data
+    # rather than in whichever view happens to be adding up totals.
+    #
+    # The flow is quoted -> paid -> purchased -> in transit -> arrived ->
+    # delivered, so everything from PAID onwards is a shipment that has been
+    # settled; a package cannot reach those states unpaid. QUOTED is the
+    # customer holding a quote they have not acted on yet, which is the only
+    # state that is money genuinely outstanding.
+    #
+    # CANCELLED is in neither list on purpose. It is not owed and it was not
+    # earned, so counting it either way would misstate the books - a cancelled
+    # shipment belongs in the count of shipments and in neither total.
+    PAID_STATUSES = (
+        Status.PAID,
+        Status.PURCHASED,
+        Status.IN_TRANSIT,
+        Status.ARRIVED,
+        Status.DELIVERED,
+    )
+    AWAITING_PAYMENT_STATUSES = (Status.QUOTED,)
+
     user = models.ForeignKey(
         "accounts.User",
         on_delete=models.CASCADE,
@@ -316,3 +339,175 @@ class Package(models.Model):
             ).strip()
 
         super().save(*args, **kwargs)
+
+
+def package_document_path(instance, filename):
+    """Where a customer's own upload is written, under MEDIA_ROOT.
+
+    Foldered by year and by shipment, so the files belonging to one parcel sit
+    together and the directory does not grow into one flat listing of every
+    receipt ever sent. Named by Django's own storage, which suffixes a name
+    that is already taken rather than overwriting - two customers who both
+    upload "receipt.pdf" must not end up sharing one file.
+
+    The customer's own filename never reaches this path. It is used for the
+    extension only, and only after being checked; see PackageDocument.EXTENSIONS.
+    """
+    # A document need not belong to a shipment — somebody can send in the
+    # receipt for a television before the parcel carrying it exists — so the
+    # folder falls back to the customer when there is no tracking number.
+    folder = (
+        instance.package.tracking_number
+        if instance.package_id
+        else f"customer-{instance.customer_id}"
+    )
+    return f"documents/{timezone.localtime():%Y}/{folder}/{filename}"
+
+
+class PackageDocument(models.Model):
+    """A file the customer attached to their own shipment.
+
+    The receipt for the television they bought, the invoice from the shop, the
+    customs form - the paperwork that belongs to a parcel and that the office
+    needs to see but has no way to produce itself. It goes the opposite way to
+    invoicing.Invoice, which is a document the business sends out; this is one
+    the customer sends in.
+
+    The file is never reachable through MEDIA_URL. A receipt carries a name, an
+    address, a card's last digits and what somebody bought, and a MEDIA_URL
+    link to one is a bearer token made of a guessable path. It is served by
+    accounts.views.PackageDocumentViewSet.file, which knows who is asking.
+    """
+
+    class Kind(models.TextChoices):
+        RECEIPT = "receipt", "Receipt"
+        INVOICE = "invoice", "Shop invoice"
+        CUSTOMS = "customs", "Customs form"
+        OTHER = "other", "Other"
+
+    # What may be uploaded, as extension -> the bytes a real one starts with.
+    #
+    # The extension and the browser's content type are both supplied by the
+    # caller and neither is evidence of anything. The signature is the check
+    # that actually holds: a .exe renamed .pdf fails it, and so does an HTML
+    # page saved as .jpg. JPEG's marker is two bytes because the third varies
+    # by encoder, which is as far as a signature check can honestly go.
+    SIGNATURES = {
+        ".pdf": (b"%PDF-",),
+        ".png": (b"\x89PNG\r\n\x1a\n",),
+        ".jpg": (b"\xff\xd8\xff",),
+        ".jpeg": (b"\xff\xd8\xff",),
+    }
+
+    # 10 MB. A phone photograph of a receipt is a megabyte or two; this leaves
+    # room for a scan without letting the media directory fill up with video
+    # somebody renamed.
+    MAX_BYTES = 10 * 1024 * 1024
+
+    # Whose paperwork this is. Required, and the column every read is scoped
+    # by: a document does not need a shipment, but it always has an owner, and
+    # without one there would be no way to answer "may this person see this".
+    #
+    # CASCADE, because erasing an account should take the receipts with it.
+    # They are the customer's own documents rather than a record of what the
+    # business did, which is what invoices are and why those are kept.
+    customer = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="documents",
+    )
+
+    # Which shipment it belongs to, when it belongs to one.
+    #
+    # Optional on purpose. The receipt exists before the parcel does: somebody
+    # buys a television, has the till receipt in their hand, and the shipment
+    # is booked days later. Requiring the link would mean the only people who
+    # could send a receipt in are the ones who no longer urgently need to.
+    # Staff can see an unattached document on the customer and attach it later.
+    package = models.ForeignKey(
+        "accounts.Package",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="documents",
+    )
+
+    # Who sent it in. SET_NULL rather than CASCADE: erasing an account must
+    # not delete the paperwork for a shipment that still exists, because the
+    # office may still need to prove what was declared. The row keeps the
+    # file and loses the person, which is what User.anonymise() does
+    # everywhere else.
+    uploaded_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="uploaded_documents",
+    )
+
+    kind = models.CharField(
+        max_length=20,
+        choices=Kind.choices,
+        default=Kind.RECEIPT,
+    )
+
+    file = models.FileField(upload_to=package_document_path)
+
+    # What the customer called it, kept so their own list shows the name they
+    # recognise rather than the storage path. Never used to build that path.
+    original_name = models.CharField(max_length=255, blank=True)
+
+    # Recorded at upload rather than sniffed on the way out, so serving a file
+    # is a read and not an inspection.
+    content_type = models.CharField(max_length=100, blank=True)
+    size_bytes = models.PositiveIntegerField(default=0)
+
+    # The customer's own words about what this is: "receipt from MediaMarkt".
+    note = models.CharField(max_length=255, blank=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [
+            # Everything attached to a parcel, and everything belonging to a
+            # customer — the two queries the profile page and the dashboard
+            # make between them.
+            models.Index(fields=["package", "-created_at"]),
+            models.Index(fields=["customer", "-created_at"]),
+        ]
+
+    def __str__(self):
+        where = (
+            self.package.tracking_number
+            if self.package_id
+            else f"{self.customer} (no shipment)"
+        )
+        return f"{self.get_kind_display()} for {where}"
+
+    @property
+    def filename(self):
+        """The name to hand back on download.
+
+        The customer's own name when there is one, because that is what they
+        will recognise in their downloads folder - but only its basename, and
+        only its own extension, so a name that arrived carrying a path cannot
+        put one in a Content-Disposition header.
+        """
+        import os
+        import re
+
+        name = os.path.basename(self.original_name or "")
+        # Anything a filesystem or a header would read as structure comes out.
+        name = re.sub(r'[^A-Za-z0-9 ._-]', "", name).strip()
+
+        if name and os.path.splitext(name)[1].lower() in self.SIGNATURES:
+            return name
+
+        extension = os.path.splitext(self.file.name)[1].lower() or ".bin"
+        stem = (
+            self.package.tracking_number
+            if self.package_id
+            else f"document-{self.pk}"
+        )
+        return f"{stem}-{self.kind}{extension}"

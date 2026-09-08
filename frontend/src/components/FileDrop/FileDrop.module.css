@@ -1,0 +1,118 @@
+/* src/components/FileDrop/FileDrop.module.css
+ *
+ * The upload box. A dashed outline rather than a solid card: it reads as a
+ * place to put something rather than as something already there.
+ */
+
+.field {
+  --navy: #0b2545;
+  --blue: #2563eb;
+  --ink: #0f172a;
+  --muted: #64748b;
+  --line: #e2e8f0;
+}
+
+.label {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  margin: 0 0 0.5rem;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--navy);
+}
+
+.optional {
+  font-weight: 500;
+  color: var(--muted);
+}
+
+.zone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1.75rem 1.25rem;
+  border: 1.5px dashed #cbd5e1;
+  border-radius: 12px;
+  background: #f8fafc;
+  text-align: center;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.zone:hover {
+  border-color: #94a3b8;
+}
+
+/* While a file is over the box. The whole area changes, not just the border,
+   so the target is unmistakable at the moment of letting go. */
+.zoneDragging {
+  border-color: var(--blue);
+  border-style: solid;
+  background: #eff6ff;
+}
+
+.zoneInert {
+  opacity: 0.65;
+}
+
+.zoneInert:hover {
+  border-color: #cbd5e1;
+}
+
+.icon {
+  width: 22px;
+  height: 22px;
+  color: var(--muted);
+}
+
+.prompt {
+  margin: 0;
+  font-size: 0.92rem;
+  color: var(--ink);
+}
+
+/* The label is the control, so it carries the affordance: it looks and
+   behaves like the link it reads as. */
+.choose {
+  color: var(--blue);
+  font-weight: 700;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.choose:hover {
+  color: #1d4ed8;
+}
+
+.hint {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+/* Clipped to nothing rather than display:none, which would take the input out
+   of the tab order and with it the only keyboard route to the file picker.
+   :focus-visible draws the ring on the box, since that is what is on screen. */
+.input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  border: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.zone:focus-within {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .zone {
+    transition: none;
+  }
+}

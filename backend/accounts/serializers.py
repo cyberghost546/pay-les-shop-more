@@ -4,14 +4,17 @@ Every field the API accepts is listed explicitly. A serializer built from
 `__all__` will happily accept `is_superuser` the day someone adds it.
 """
 
+import os
+
 from django.contrib.auth import authenticate, get_user_model
 from django.contrib.auth.password_validation import validate_password
 from django.contrib.auth.tokens import default_token_generator
 from django.core.exceptions import ValidationError as DjangoValidationError
+from django.urls import reverse
 from django.utils.http import urlsafe_base64_decode
 from rest_framework import serializers
 
-from .models import Address, Package
+from .models import Address, Package, PackageDocument
 
 User = get_user_model()
 
@@ -266,3 +269,119 @@ class PackageSerializer(serializers.ModelSerializer):
         ]
         # Customers read their shipments; only staff change them.
         read_only_fields = fields
+
+
+class PackageDocumentSerializer(serializers.ModelSerializer):
+    """A customer's own upload, as both they and the office read it.
+
+    There is no `file` here on purpose. The stored path must not reach any
+    browser: it would be a MEDIA_URL link to somebody's receipt, guarded by
+    nothing but the filename. `download_url` points at the view that checks
+    who is asking instead.
+    """
+
+    kind_display = serializers.CharField(source="get_kind_display", read_only=True)
+    # None when the document is not tied to a shipment, which is allowed —
+    # see PackageDocument.package. The pages read it to decide between naming
+    # the parcel and saying there is not one yet.
+    tracking_number = serializers.CharField(
+        source="package.tracking_number", read_only=True, default=None
+    )
+    # The id as well as the name: the dashboard's filing picker offers a
+    # customer their own shipments, and matching on a displayed name would
+    # break on two customers who share one.
+    customer_name = serializers.SerializerMethodField()
+    filename = serializers.CharField(read_only=True)
+    uploaded_by_name = serializers.SerializerMethodField()
+    download_url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = PackageDocument
+        fields = [
+            "id",
+            "package",
+            "tracking_number",
+            "customer",
+            "customer_name",
+            "kind",
+            "kind_display",
+            "note",
+            "filename",
+            "content_type",
+            "size_bytes",
+            "uploaded_by_name",
+            "download_url",
+            "created_at",
+        ]
+        read_only_fields = fields
+
+    def get_customer_name(self, obj):
+        # str(User) already handles the erased case, where there is no name
+        # left to show.
+        return str(obj.customer) if obj.customer_id else None
+
+    def get_uploaded_by_name(self, obj):
+        # str(User) already handles the erased case, where there is no name
+        # left to show.
+        return str(obj.uploaded_by) if obj.uploaded_by_id else None
+
+    def get_download_url(self, obj):
+        path = reverse("package-document-file", kwargs={"pk": obj.pk})
+        request = self.context.get("request")
+        return request.build_absolute_uri(path) if request else path
+
+
+class PackageDocumentUploadSerializer(serializers.Serializer):
+    """The body of a customer upload: one file, checked before it is stored.
+
+    An uploaded file is the one thing on this API a browser hands over
+    verbatim, so nothing about it is taken on trust. The name is decoration —
+    storage picks the stored name — and the content type is whatever the
+    browser felt like claiming. What actually decides is the extension being
+    one we accept *and* the first bytes being what that kind really starts
+    with, so a .exe renamed .pdf and an HTML page saved as .jpg both fail.
+    """
+
+    file = serializers.FileField()
+    kind = serializers.ChoiceField(
+        choices=PackageDocument.Kind.choices,
+        default=PackageDocument.Kind.RECEIPT,
+    )
+    note = serializers.CharField(
+        max_length=255,
+        required=False,
+        allow_blank=True,
+        trim_whitespace=True,
+    )
+
+    def validate_file(self, uploaded):
+        if uploaded.size == 0:
+            raise serializers.ValidationError("That file is empty.")
+
+        if uploaded.size > PackageDocument.MAX_BYTES:
+            megabytes = PackageDocument.MAX_BYTES // (1024 * 1024)
+            raise serializers.ValidationError(
+                f"That file is larger than {megabytes} MB."
+            )
+
+        extension = os.path.splitext(uploaded.name or "")[1].lower()
+        signatures = PackageDocument.SIGNATURES.get(extension)
+
+        if signatures is None:
+            raise serializers.ValidationError(
+                "Only a PDF, JPG or PNG can be uploaded."
+            )
+
+        # Long enough for the longest signature we check for.
+        head = uploaded.read(8)
+        # Rewound, or whatever stores this afterwards starts part-way in and
+        # writes a file no reader will open.
+        uploaded.seek(0)
+
+        if not any(head.startswith(signature) for signature in signatures):
+            raise serializers.ValidationError(
+                f"That file is named {extension} but is not one. Upload the "
+                "original PDF, JPG or PNG."
+            )
+
+        return uploaded

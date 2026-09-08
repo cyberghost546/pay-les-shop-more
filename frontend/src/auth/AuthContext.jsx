@@ -58,6 +58,23 @@ export function AuthProvider({ children }) {
     return profile;
   }, []);
 
+  /**
+   * Re-reads the profile from the server and republishes it to everything
+   * holding `user`.
+   *
+   * The profile page and the dashboard's customer list write to the same row,
+   * so either can leave this copy stale — a staff member correcting their own
+   * name in the customer table is editing the account they are signed in as,
+   * and the header would go on showing the old one until a reload. Whoever
+   * made the write calls this; re-reading rather than merging the response
+   * keeps one mapper responsible for the shape.
+   */
+  const refreshUser = useCallback(async () => {
+    const profile = await getProfile();
+    setUser(profile);
+    return profile;
+  }, []);
+
   const signOut = useCallback(async () => {
     try {
       await apiSignOut();
@@ -78,8 +95,9 @@ export function AuthProvider({ children }) {
       signOut,
       // Lets the profile page push its saved changes back into the header.
       setUser,
+      refreshUser,
     }),
-    [user, state, signIn, signUp, signOut],
+    [user, state, signIn, signUp, signOut, refreshUser],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -8,6 +8,12 @@ from . import public, views
 router = DefaultRouter()
 router.register("addresses", views.AddressViewSet, basename="address")
 router.register("packages", views.PackageViewSet, basename="package")
+# The paperwork customers send in — receipts, shop invoices, customs
+# forms. Read by staff through the same routes; the queryset is what
+# decides who sees which rows.
+router.register(
+    "documents", views.PackageDocumentViewSet, basename="package-document"
+)
 
 urlpatterns = [
     # Open to anyone: the homepage's tracking box and statistics band.

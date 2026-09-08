@@ -89,21 +89,25 @@ export default function ActivityChart({ daily }) {
 
   return (
     <figure className={styles.chartFigure}>
-      <figcaption className={styles.legend}>
-        {SERIES.map(({ key, label, colour }) => (
-          <span key={key} className={styles.legendItem}>
-            <span
-              className={styles.legendSwatch}
-              style={{ background: colour }}
-              aria-hidden="true"
-            />
-            {label}
-            <b className={styles.legendTotal}>{total(key)}</b>
-          </span>
-        ))}
-      </figcaption>
-
+      {/* Inside the card rather than floating above it on the page ground.
+          The overview puts this chart in a row beside the summary column, and
+          a caption outside the card started that column a legend's height
+          lower than this one — two cards side by side with different tops. */}
       <div className={styles.chartBox}>
+        <figcaption className={styles.legend}>
+          {SERIES.map(({ key, label, colour }) => (
+            <span key={key} className={styles.legendItem}>
+              <span
+                className={styles.legendSwatch}
+                style={{ background: colour }}
+                aria-hidden="true"
+              />
+              {label}
+              <b className={styles.legendTotal}>{total(key)}</b>
+            </span>
+          ))}
+        </figcaption>
+
         <svg
           className={styles.chart}
           viewBox={`0 0 ${WIDTH} ${HEIGHT}`}

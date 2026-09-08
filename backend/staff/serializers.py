@@ -11,6 +11,7 @@ from django.contrib.auth import get_user_model
 from rest_framework import serializers
 
 from accounts.models import Address, Package
+from accounts.serializers import PackageDocumentSerializer
 from enquiries.models import ContactMessage, QuoteRequest
 
 User = get_user_model()
@@ -79,6 +80,23 @@ class StaffAddressWriteSerializer(serializers.ModelSerializer):
         read_only_fields = ["id"]
 
 
+class _StaffPackageInvoiceMixin:
+    """Kept out of the class body above only to keep its field list readable."""
+
+    def get_invoice(self, obj):
+        # hasattr on a reverse one-to-one is how Django answers "is there
+        # one" without a second query, given the select_related in the view.
+        invoice = getattr(obj, "invoice", None)
+        if invoice is None:
+            return None
+
+        return {
+            "id": invoice.pk,
+            "status": invoice.status,
+            "status_display": invoice.get_status_display(),
+        }
+
+
 class StaffCustomerSerializer(serializers.ModelSerializer):
     """A customer with their addresses and a count of their shipments.
 
@@ -99,6 +117,16 @@ class StaffCustomerSerializer(serializers.ModelSerializer):
     name = serializers.SerializerMethodField()
     addresses = StaffAddressSerializer(many=True, read_only=True)
     package_count = serializers.IntegerField(read_only=True)
+    # What this customer has settled and what they are still holding a quote
+    # for, both annotated by CustomerViewSet.get_queryset. Decimals rather
+    # than floats all the way to the browser, which is why they arrive as
+    # strings: "1120.00" survives the trip exactly, 1120.0000000001 does not.
+    paid_eur = serializers.DecimalField(
+        max_digits=12, decimal_places=2, read_only=True
+    )
+    outstanding_eur = serializers.DecimalField(
+        max_digits=12, decimal_places=2, read_only=True
+    )
     # Set when the account has been erased; the row survives only to keep the
     # shipment records intact.
     is_erased = serializers.SerializerMethodField()
@@ -120,6 +148,8 @@ class StaffCustomerSerializer(serializers.ModelSerializer):
             "phone_number",
             "addresses",
             "package_count",
+            "paid_eur",
+            "outstanding_eur",
             "is_staff",
             # Shown so the table can say why a superuser's role is fixed here:
             # that account is granted more than this screen manages.
@@ -139,6 +169,8 @@ class StaffCustomerSerializer(serializers.ModelSerializer):
             "name",
             "addresses",
             "package_count",
+            "paid_eur",
+            "outstanding_eur",
             "is_staff",
             "is_superuser",
             "is_active",
@@ -155,11 +187,20 @@ class StaffCustomerSerializer(serializers.ModelSerializer):
             "phone_number": {"required": True, "allow_blank": False},
         }
 
-    def validate_email(self, value):
-        # Addresses differ only by case in practice, and the column is unique.
-        # Lowercasing here matches signup, so the uniqueness check compares
-        # like with like rather than letting Ana@x and ana@x both exist.
-        return value.lower()
+    def to_internal_value(self, data):
+        """Lowercase the e-mail before anything else looks at it.
+
+        Addresses differ only by case in practice and the column is unique, so
+        they are stored lowercased. Doing it here rather than in a
+        `validate_email` is what makes the uniqueness check compare like with
+        like: field validators run first, so "Agent@example.com" would clear a
+        check against the stored "agent@example.com" and then collide on save.
+        """
+        if isinstance(data, dict) and isinstance(data.get("email"), str):
+            data = data.copy()
+            data["email"] = data["email"].lower()
+
+        return super().to_internal_value(data)
 
     def get_name(self, obj):
         # str(User) already handles the erased case, where there is no name
@@ -199,11 +240,22 @@ class StaffRoleSerializer(serializers.Serializer):
         return self.validated_data["role"] == self.ADMIN
 
 
-class StaffPackageSerializer(serializers.ModelSerializer):
+class StaffPackageSerializer(_StaffPackageInvoiceMixin, serializers.ModelSerializer):
     """A shipment as the back office sees it: with its customer attached."""
 
     customer = CustomerBriefSerializer(source="user", read_only=True)
     status_display = serializers.CharField(source="get_status_display", read_only=True)
+    # What the customer has sent in about this shipment: the receipt for what
+    # they bought, the shop's invoice, a customs form. Nested rather than
+    # fetched per row, or opening the packages page would cost one request per
+    # shipment to find out whether there is anything to look at.
+    documents = PackageDocumentSerializer(many=True, read_only=True)
+    # Whether this shipment has an invoice yet, and where it stands. The
+    # Packages page needs it to decide between offering to raise one and
+    # pointing at the one that exists — without it the button would be a
+    # guess, and pressing it on a shipment that already has an invoice would
+    # look like it had done nothing.
+    invoice = serializers.SerializerMethodField()
 
     class Meta:
         model = Package
@@ -217,6 +269,8 @@ class StaffPackageSerializer(serializers.ModelSerializer):
             "weight_kg",
             "value_eur",
             "delivery_address_text",
+            "documents",
+            "invoice",
             "shipped_at",
             "delivered_at",
             # Editable here: it is a decision staff make, and the public
@@ -234,6 +288,8 @@ class StaffPackageSerializer(serializers.ModelSerializer):
             "delivery_address_text",
             "created_at",
             "updated_at",
+            "documents",
+            "invoice",
             "shipped_at",
             "delivered_at",
         ]

@@ -371,19 +371,411 @@ class CustomerTests(StaffApiTestCase):
         results = self.rows(staff="true")
         self.assertEqual([row["username"] for row in results], ["agent@example.com"])
 
-    def test_customers_are_read_only(self):
-        url = reverse("staff-customer-detail", args=[self.customer.pk])
+    def test_customers_cannot_be_deleted(self):
+        """Erasure is the customer's own action, on their profile page.
 
-        for method in [self.client.patch, self.client.put]:
-            with self.subTest(method=method.__name__):
-                response = method(url, {"first_name": "Changed"}, format="json")
-                self.assertEqual(
-                    response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED
-                )
+        It anonymises rather than deletes, because the shipment records have
+        to survive it. A DELETE here would take those with it.
+        """
+        url = reverse("staff-customer-detail", args=[self.customer.pk])
 
         self.assertEqual(
             self.client.delete(url).status_code, status.HTTP_405_METHOD_NOT_ALLOWED
         )
+        self.assertTrue(User.objects.filter(pk=self.customer.pk).exists())
+
+
+class RaiseInvoiceTests(StaffApiTestCase):
+    """Getting an invoice for a shipment that never passed through the
+    dashboard's own paid transition.
+
+    A row seeded straight into `paid`, imported, or set in the Django admin
+    has no invoice and — before this action — no way to get one, because every
+    other invoice control lives on the queue and the queue was empty.
+    """
+
+    def setUp(self):
+        super().setUp()
+        self.client.force_authenticate(self.staff)
+        # Straight into paid, the way seeded and imported rows arrive: no
+        # transition, so nothing raised an invoice for it.
+        self.paid = Package.objects.create(
+            user=self.customer,
+            tracking_number="PLSM-SEEDED-1",
+            status=Package.Status.PAID,
+            value_eur="250.00",
+        )
+
+    def url(self, package):
+        return reverse("staff-package-invoice", args=[package.pk])
+
+    def test_staff_can_raise_an_invoice_for_a_paid_shipment(self):
+        response = self.client.post(self.url(self.paid))
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.json()["status"], "pending_review")
+        self.assertEqual(response.json()["tracking_number"], "PLSM-SEEDED-1")
+
+    def test_it_lands_in_the_review_queue(self):
+        """Which is the whole point: somewhere to upload the document."""
+        self.client.post(self.url(self.paid))
+
+        queue = self.client.get(reverse("staff-invoice-list")).json()["results"]
+
+        self.assertIn("PLSM-SEEDED-1", [row["tracking_number"] for row in queue])
+
+    def test_pressing_it_twice_does_not_raise_a_second_invoice(self):
+        first = self.client.post(self.url(self.paid))
+        second = self.client.post(self.url(self.paid))
+
+        self.assertEqual(first.json()["id"], second.json()["id"])
+
+    def test_a_shipment_still_only_quoted_is_refused(self):
+        """A customer holding a quote they have not acted on owes nothing.
+        Billing for it would be inventing a debt."""
+        quoted = Package.objects.create(
+            user=self.customer,
+            tracking_number="PLSM-SEEDED-2",
+            status=Package.Status.QUOTED,
+            value_eur="99.00",
+        )
+
+        response = self.client.post(self.url(quoted))
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_a_cancelled_shipment_is_refused(self):
+        cancelled = Package.objects.create(
+            user=self.customer,
+            tracking_number="PLSM-SEEDED-3",
+            status=Package.Status.CANCELLED,
+            value_eur="99.00",
+        )
+
+        response = self.client.post(self.url(cancelled))
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_a_customer_cannot_raise_an_invoice(self):
+        self.client.force_authenticate(self.customer)
+
+        response = self.client.post(self.url(self.paid))
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_the_package_row_says_whether_there_is_an_invoice(self):
+        """What the Packages page reads to choose between offering to raise
+        one and pointing at the one that exists."""
+        before = self.client.get(reverse("staff-package-list")).json()["results"]
+        row = next(r for r in before if r["tracking_number"] == "PLSM-SEEDED-1")
+        self.assertIsNone(row["invoice"])
+
+        self.client.post(self.url(self.paid))
+
+        after = self.client.get(reverse("staff-package-list")).json()["results"]
+        row = next(r for r in after if r["tracking_number"] == "PLSM-SEEDED-1")
+        self.assertEqual(row["invoice"]["status"], "pending_review")
+
+
+class CustomerMoneyTests(StaffApiTestCase):
+    """What a customer has paid and what they still owe, on their row.
+
+    The figures are what the search is for: a name goes in, and the answer is
+    this person and where they stand.
+    """
+
+    def setUp(self):
+        super().setUp()
+        self.client.force_authenticate(self.staff)
+
+        # StaffApiTestCase already gives this customer PLSM-0001: quoted,
+        # with no value_eur set. It is deliberately left in — a priced total
+        # has to survive an unpriced row sitting beside it — so their shipment
+        # count is one higher than the four raised here.
+        self.INHERITED_PACKAGES = 1
+
+        # Two settled shipments, one quote they have not acted on, and one
+        # cancelled — which belongs in neither total.
+        Package.objects.create(
+            user=self.customer,
+            tracking_number="PLSM-PAID-1",
+            status=Package.Status.DELIVERED,
+            value_eur="100.00",
+        )
+        Package.objects.create(
+            user=self.customer,
+            tracking_number="PLSM-PAID-2",
+            status=Package.Status.IN_TRANSIT,
+            value_eur="50.50",
+        )
+        Package.objects.create(
+            user=self.customer,
+            tracking_number="PLSM-OWED-1",
+            status=Package.Status.QUOTED,
+            value_eur="25.25",
+        )
+        Package.objects.create(
+            user=self.customer,
+            tracking_number="PLSM-CANC-1",
+            status=Package.Status.CANCELLED,
+            value_eur="999.00",
+        )
+
+    def rows(self, **params):
+        return self.client.get(reverse("staff-customer-list"), params).json()["results"]
+
+    def find(self, username, **params):
+        return next(r for r in self.rows(**params) if r["username"] == username)
+
+    def test_the_row_adds_up_what_is_paid_and_what_is_not(self):
+        row = self.find("klant@example.com")
+
+        self.assertEqual(row["paid_eur"], "150.50")
+        # 25.25, not 25.25 plus something for the inherited quote that has no
+        # price on it: an unpriced shipment adds nothing rather than breaking
+        # the sum.
+        self.assertEqual(row["outstanding_eur"], "25.25")
+
+    def test_a_cancelled_shipment_counts_in_neither_total(self):
+        """It is not owed and it was not earned. Counting it either way would
+        misstate the books by 999 euro."""
+        row = self.find("klant@example.com")
+
+        self.assertNotIn("999", row["paid_eur"])
+        self.assertNotIn("999", row["outstanding_eur"])
+        # It is still one of their shipments.
+        self.assertEqual(row["package_count"], 4 + self.INHERITED_PACKAGES)
+
+    def test_a_customer_with_no_shipments_reads_zero_not_null(self):
+        """The browser formats these as money. A null would render as an empty
+        cell, which reads as "unknown" rather than as "nothing"."""
+        alone = User.objects.create_user(
+            username="niks@example.com",
+            email="niks@example.com",
+            password="a-long-enough-password",
+            first_name="Geen",
+            last_name="Zending",
+            phone_number="+599 9 000 0000",
+        )
+
+        row = self.find(alone.username)
+
+        self.assertEqual(row["paid_eur"], "0.00")
+        self.assertEqual(row["outstanding_eur"], "0.00")
+
+    def test_searching_by_name_finds_them_with_the_totals_intact(self):
+        """The regression this is really here for.
+
+        Searching joins the address table, so a customer with more than one
+        address comes back as more than one row. A Sum annotated over the
+        packages join would be multiplied by that, and this customer would
+        appear to have paid 301 euro instead of 150.50. The totals are
+        subqueries precisely so the join cannot reach them.
+        """
+        for label in ("Thuis", "Werk"):
+            Address.objects.create(
+                user=self.customer,
+                label=label,
+                street="Kaya Grandi",
+                house_number="24",
+                postal_code="0000",
+                city="Willemstad",
+                country=Address.Country.CURACAO,
+            )
+
+        found = self.rows(search="Klant")
+
+        self.assertEqual(len(found), 1)
+        self.assertEqual(found[0]["paid_eur"], "150.50")
+        self.assertEqual(found[0]["outstanding_eur"], "25.25")
+        self.assertEqual(found[0]["package_count"], 4 + self.INHERITED_PACKAGES)
+
+    def test_the_totals_cannot_be_written_from_the_browser(self):
+        """They are a reading of the shipment rows, not a field staff set."""
+        response = self.client.patch(
+            reverse("staff-customer-detail", args=[self.customer.pk]),
+            {"paid_eur": "999999.00", "outstanding_eur": "0.00"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.json()["paid_eur"], "150.50")
+
+
+class CustomerEditTests(StaffApiTestCase):
+    """Editing a customer from the dashboard.
+
+    The point of these is that the dashboard and the customer's own profile
+    page are two views of one row. So each write is checked twice: once in the
+    response the table swaps in, and once from the other side - either the
+    database, or the profile endpoint the customer themselves reads.
+    """
+
+    def setUp(self):
+        super().setUp()
+        self.address = Address.objects.create(
+            user=self.customer,
+            label="Thuis",
+            street="Kaya Grandi",
+            house_number="24",
+            postal_code="0000",
+            city="Willemstad",
+            country=Address.Country.CURACAO,
+            is_default=True,
+        )
+        self.url = reverse("staff-customer-detail", args=[self.customer.pk])
+        self.address_url = reverse("staff-customer-address", args=[self.customer.pk])
+        self.client.force_authenticate(self.staff)
+
+    def rows(self, **params):
+        return self.client.get(reverse("staff-customer-list"), params).json()["results"]
+
+    def customer_profile(self):
+        """What the customer sees on their own profile page."""
+        # force_authenticate holds this instance by reference and the profile
+        # endpoint serializes request.user, so a stale copy here would read
+        # back the values the test just changed.
+        self.customer.refresh_from_db()
+        self.client.force_authenticate(self.customer)
+        data = self.client.get(reverse("profile")).json()
+        self.client.force_authenticate(self.staff)
+        return data
+
+    def test_a_correction_here_is_what_the_customer_reads_on_their_profile(self):
+        response = self.client.patch(
+            self.url,
+            {"first_name": "Voorbeeldje", "phone_number": "+599 9 000 1111"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        # The whole row comes back, so the table can swap it in without a
+        # refetch - including the parts only the list queryset knows.
+        self.assertEqual(response.json()["name"], "Voorbeeldje Klant")
+        self.assertEqual(response.json()["package_count"], 1)
+
+        profile = self.customer_profile()
+        self.assertEqual(profile["first_name"], "Voorbeeldje")
+        self.assertEqual(profile["phone_number"], "+599 9 000 1111")
+
+    def test_a_customers_own_edit_is_what_the_dashboard_then_shows(self):
+        """The same link, read the other way round."""
+        self.client.force_authenticate(self.customer)
+        self.client.patch(reverse("profile"), {"last_name": "Klantje"}, format="json")
+
+        self.client.force_authenticate(self.staff)
+        row = next(r for r in self.rows() if r["username"] == "klant@example.com")
+        self.assertEqual(row["name"], "Voorbeeld Klantje")
+
+    def test_an_e_mail_is_lowercased_and_has_to_stay_unique(self):
+        self.client.patch(self.url, {"email": "Klant@Example.COM"}, format="json")
+        self.customer.refresh_from_db()
+        self.assertEqual(self.customer.email, "klant@example.com")
+
+        # The column is unique, and the lowercasing above is what makes the
+        # check compare like with like.
+        response = self.client.patch(
+            self.url, {"email": "Agent@example.com"}, format="json"
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.customer.refresh_from_db()
+        self.assertEqual(self.customer.email, "klant@example.com")
+
+    def test_contact_details_cannot_be_cleared(self):
+        """A customer with no e-mail and no phone cannot be told their package
+        arrived, which is the one thing the record exists for."""
+        for field in ["email", "phone_number"]:
+            with self.subTest(field=field):
+                response = self.client.patch(self.url, {field: ""}, format="json")
+                self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_the_username_and_the_role_are_not_writable_here(self):
+        self.client.patch(
+            self.url,
+            {"username": "someone-else", "is_staff": True, "is_superuser": True},
+            format="json",
+        )
+
+        self.customer.refresh_from_db()
+        self.assertEqual(self.customer.username, "klant@example.com")
+        # The role has its own action, which is where its refusals live.
+        self.assertFalse(self.customer.is_staff)
+        self.assertFalse(self.customer.is_superuser)
+
+    def test_an_erased_account_is_refused(self):
+        self.customer.anonymise()
+
+        response = self.client.patch(self.url, {"first_name": "Terug"}, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.customer.refresh_from_db()
+        self.assertEqual(self.customer.first_name, "")
+
+    def test_an_address_can_be_corrected(self):
+        response = self.client.post(
+            self.address_url,
+            {"id": self.address.pk, "house_number": "26"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.address.refresh_from_db()
+        self.assertEqual(self.address.house_number, "26")
+        # Corrected in place rather than added alongside.
+        self.assertEqual(self.customer.addresses.count(), 1)
+        self.assertEqual(self.customer_profile()["addresses"][0]["house_number"], "26")
+
+    def test_an_address_can_be_added_when_there_is_none(self):
+        self.address.delete()
+
+        response = self.client.post(
+            self.address_url,
+            {
+                "street": "Kaya Grandi",
+                "house_number": "24",
+                "postal_code": "0000",
+                "city": "Kralendijk",
+                "country": Address.Country.BONAIRE,
+                "is_default": True,
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.json()["addresses"][0]["city"], "Kralendijk")
+        self.assertEqual(self.customer.addresses.count(), 1)
+
+    def test_an_address_belonging_to_someone_else_is_out_of_reach(self):
+        """The id is looked up within this customer's own rows.
+
+        Otherwise the URL would name one customer and the body could name
+        another customer's address, and the body would win.
+        """
+        theirs = Address.objects.create(
+            user=self.staff,
+            street="Schottegatweg",
+            house_number="1",
+            city="Willemstad",
+        )
+
+        response = self.client.post(
+            self.address_url, {"id": theirs.pk, "city": "Oranjestad"}, format="json"
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        theirs.refresh_from_db()
+        self.assertEqual(theirs.city, "Willemstad")
+
+    def test_a_customer_cannot_edit_another_customer(self):
+        """The whole viewset is behind IsStaff; this is the write half of it."""
+        self.client.force_authenticate(self.customer)
+
+        for response in [
+            self.client.patch(self.url, {"first_name": "Changed"}, format="json"),
+            self.client.post(self.address_url, {"city": "Changed"}, format="json"),
+        ]:
+            self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
         self.customer.refresh_from_db()
         self.assertEqual(self.customer.first_name, "Voorbeeld")
 

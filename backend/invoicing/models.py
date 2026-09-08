@@ -303,6 +303,37 @@ class Invoice(models.Model):
             rejection_reason=reason,
         )
 
+    def replace_document(self, pdf_name):
+        """Swap the document on an invoice the customer already has.
+
+        Only from SENT, and the status does not move: this is a correction to
+        a document that has already gone out, not a second sending. The
+        customer is deliberately not notified again — "your invoice has been
+        sent" is not true a second time, and telling them a document changed
+        without being able to say how is worse than the office telephoning
+        them, which is what actually happens.
+
+        Written as the same conditional UPDATE as every transition, so two
+        people replacing at once cannot interleave, and so an invoice that has
+        been moved out of SENT in the meantime is refused rather than quietly
+        given a document it should not have.
+        """
+        if not pdf_name:
+            raise InvalidInvoiceTransition("There is no document to attach.")
+
+        updated = self.__class__.objects.filter(
+            pk=self.pk, status=self.Status.SENT
+        ).update(pdf=pdf_name, updated_at=timezone.now())
+
+        if not updated:
+            raise InvalidInvoiceTransition(
+                "Only an invoice that has already been sent can have its "
+                "document replaced. Reload and try again."
+            )
+
+        self.refresh_from_db()
+        return self
+
     def mark_sent(self, pdf_name):
         """APPROVED -> SENT, recording the document that was sent.
 

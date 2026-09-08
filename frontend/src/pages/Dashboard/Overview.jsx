@@ -1,8 +1,10 @@
 // src/pages/Dashboard/Overview.jsx
 import { Link, useOutletContext } from 'react-router-dom';
+import { useAuth } from '../../auth/useAuth';
 import Loading from '../../components/Loading/Loading';
 import ConnectionError from '../../components/ConnectionError/ConnectionError';
 import ActivityChart from './ActivityChart';
+import { Donut, Sparkline } from './gauges';
 import { StatusBadge } from './ui';
 import { PACKAGE_TONES, QUOTE_TONES } from './statuses';
 import { PACKAGE_STATUSES, QUOTE_STATUSES } from '../../api/staff';
@@ -24,22 +26,67 @@ function breakdown(options, counts) {
     .join(' · ');
 }
 
+/** "Good morning" / "Good afternoon" / "Good evening", by the clock. */
+function greeting(hour) {
+  if (hour < 12) return 'Good morning';
+  if (hour < 18) return 'Good afternoon';
+  return 'Good evening';
+}
+
 /**
- * One number and the link to the list behind it.
+ * The change from the period before, as a word and a direction.
  *
- * `urgent` is for counts that mean somebody has to act — those get the amber
- * treatment, so a glance at the row shows what is waiting rather than just
- * how big the business is.
+ * Returns null when there is nothing honest to say. A rise from nothing has no
+ * percentage — dividing by a previous zero is infinity, which no dashboard
+ * should print — so that case is worded rather than calculated, and a metric
+ * with no `trend` from the API gets no arrow at all instead of a made-up one.
  */
-function Stat({ label, value, note, to, urgent = false }) {
+function change(trend) {
+  if (!trend) return null;
+
+  const { current, previous } = trend;
+  if (current === previous) return { direction: 'flat', text: 'No change' };
+
+  if (previous === 0) {
+    return {
+      direction: 'up',
+      text: `${current} where there were none`,
+    };
+  }
+
+  const percent = Math.round(((current - previous) / previous) * 100);
+
+  return {
+    direction: current > previous ? 'up' : 'down',
+    text: `${percent > 0 ? '+' : ''}${percent}% vs previous`,
+  };
+}
+
+const ARROWS = { up: '▲', down: '▼', flat: '–' };
+
+/**
+ * One tile in the strip across the top: a label, the number, and how it has
+ * moved. Borderless and side by side rather than four separate cards — the
+ * strip is one sentence about the state of the business, and boxing each
+ * number makes them read as four unrelated facts.
+ *
+ * `urgent` is for counts that mean somebody has to act, which is a different
+ * thing from a count being large.
+ */
+function Kpi({ label, value, note, to, trend, urgent = false }) {
+  const moved = change(trend);
+
   return (
-    <Link
-      to={to}
-      className={urgent ? `${styles.stat} ${styles.statUrgent}` : styles.stat}
-    >
-      <p className={styles.statLabel}>{label}</p>
-      <p className={styles.statValue}>{value}</p>
-      {note && <p className={styles.statNote}>{note}</p>}
+    <Link to={to} className={urgent ? `${styles.kpi} ${styles.kpiUrgent}` : styles.kpi}>
+      <p className={styles.kpiLabel}>{label}</p>
+      <p className={styles.kpiValue}>{value}</p>
+
+      {moved && (
+        <p className={`${styles.kpiDelta} ${styles[`kpiDelta_${moved.direction}`]}`}>
+          <span aria-hidden="true">{ARROWS[moved.direction]}</span> {moved.text}
+        </p>
+      )}
+      {!moved && note && <p className={styles.kpiNote}>{note}</p>}
     </Link>
   );
 }
@@ -69,6 +116,9 @@ export default function Overview() {
   // Fetched by the layout, which needs the same numbers for its badges and
   // owns the range so that one request serves both.
   const { overview, state, reload, days, setDays } = useOutletContext();
+  // Only for the greeting. Everything the page counts comes from the
+  // overview request; this is whose screen it is.
+  const { user } = useAuth();
 
   if (state === 'loading') return <Loading />;
   if (state === 'error' || !overview) return <ConnectionError onRetry={reload} />;
@@ -76,10 +126,36 @@ export default function Overview() {
   const { quotes, messages, packages, customers, daily, ranges } = overview;
   const window = RANGE_LABELS[days]?.toLowerCase() ?? `last ${days} days`;
 
+  // Falls back through the full name to the e-mail address, and then to a
+  // plain hello — the greeting must not read "Good morning, undefined".
+  const firstName =
+    user?.name?.trim().split(/\s+/)[0] || user?.email?.split('@')[0] || 'there';
+
+  // Older sessions and older deploys may not carry the invoice block yet, so
+  // the page reads it defensively rather than crashing on a missing key.
+  const invoices = overview.invoices ?? {};
+
+  // Everything that is a person's turn to act, in one figure. The three
+  // queues are the same ones the sidebar pills count.
+  const waiting =
+    (quotes.new ?? 0) + (messages.unhandled ?? 0) + (invoices.pending_review ?? 0);
+
+  // One number per day for the sparkline: how much arrived that day, whatever
+  // kind of thing it was.
+  const arrivals = daily.map((row) => row.quotes + row.packages + row.messages);
+
   return (
     <>
       <div className={styles.pageHead}>
-        <h1 className={styles.pageTitle}>Dashboard</h1>
+        <div>
+          <h1 className={styles.pageTitle}>
+            {greeting(new Date().getHours())},{' '}
+            <strong className={styles.pageTitleName}>{firstName}</strong>
+          </h1>
+          <p className={styles.pageSubtitle}>
+            What the {window} looks like, and what is waiting for you.
+          </p>
+        </div>
 
         <div className={styles.pageActions}>
           <button
@@ -107,35 +183,81 @@ export default function Overview() {
         </div>
       </div>
 
-      <ActivityChart daily={daily} />
-
-      <div className={styles.statGrid}>
-        <Stat
+      {/* The strip: five numbers and which way each is moving, read left to
+          right before anything else on the page. */}
+      <div className={styles.kpiStrip}>
+        <Kpi
           label="New quote requests"
           value={quotes.new}
-          note={`${quotes.recent} in the ${window}`}
           to="/dashboard/quotes?status=new"
+          trend={quotes.trend}
           urgent={quotes.new > 0}
         />
-        <Stat
+        <Kpi
           label="Unread messages"
           value={messages.unhandled}
-          note={`${messages.recent} in the ${window}`}
           to="/dashboard/messages?handled=false"
+          trend={messages.trend}
           urgent={messages.unhandled > 0}
         />
-        <Stat
+        <Kpi
           label="Packages in transit"
           value={packages.in_transit}
           note={`${packages.awaiting_action} not yet shipped`}
           to="/dashboard/packages?status=in_transit"
+          trend={packages.trend}
         />
-        <Stat
+        <Kpi
+          label="Invoices to review"
+          value={invoices.pending_review ?? 0}
+          to="/dashboard/invoices"
+          trend={invoices.trend}
+          urgent={(invoices.pending_review ?? 0) > 0}
+        />
+        <Kpi
           label="Customers"
           value={customers.total}
-          note={`${customers.recent} joined in the ${window}`}
           to="/dashboard/customers"
+          trend={customers.trend}
         />
+      </div>
+
+      {/* Chart on the left, the summary column on the right — the chart is
+          the shape of the period, the column is where it stands now. */}
+      <div className={styles.overviewRow}>
+        <ActivityChart daily={daily} />
+
+        <div className={styles.summaryColumn}>
+          <Link to="/dashboard/invoices" className={styles.summaryCard}>
+            <p className={styles.summaryLabel}>Waiting on you</p>
+            <p className={styles.summaryValue}>{waiting}</p>
+            <p className={styles.summaryNote}>
+              {quotes.new} quotes · {messages.unhandled} messages ·{' '}
+              {invoices.pending_review ?? 0} invoices
+            </p>
+
+            <div className={styles.summarySpark}>
+              <Sparkline
+                values={arrivals}
+                label={`Everything that arrived each day over the ${window}`}
+              />
+            </div>
+          </Link>
+
+          <div className={styles.gaugeCard}>
+            <Donut
+              label="Delivered"
+              value={packages.delivered ?? 0}
+              total={packages.total ?? 0}
+            />
+            <Donut
+              label="Invoiced"
+              value={invoices.sent ?? 0}
+              total={invoices.total ?? 0}
+              colour="#0ea5e9"
+            />
+          </div>
+        </div>
       </div>
 
       <section className={styles.section}>

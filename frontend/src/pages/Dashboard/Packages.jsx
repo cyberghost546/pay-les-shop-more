@@ -1,9 +1,14 @@
 // src/pages/Dashboard/Packages.jsx
 import { useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import Loading from '../../components/Loading/Loading';
 import ConnectionError from '../../components/ConnectionError/ConnectionError';
-import { PACKAGE_STATUSES, listPackages, updatePackage } from '../../api/staff';
+import {
+  PACKAGE_STATUSES,
+  listPackages,
+  raiseInvoice,
+  updatePackage,
+} from '../../api/staff';
 import { useCollection } from './useCollection';
 import { PACKAGE_TONES } from './statuses';
 import { formatDate, formatDateTime, formatMoney, formatWeight } from './format';
@@ -23,6 +28,18 @@ import styles from './Dashboard.module.css';
 // waiting on us. Matches the `awaiting_action` count on the overview.
 const AWAITING = new Set(['quoted', 'paid']);
 
+// Statuses from which an invoice can be raised — everything from paid
+// onwards. A customer still holding a quote owes nothing, and a cancelled
+// shipment is owed by nobody. The server refuses the rest; this only decides
+// whether to draw the button.
+const BILLABLE = new Set([
+  'paid',
+  'purchased',
+  'in_transit',
+  'arrived',
+  'delivered',
+]);
+
 export default function Packages() {
   const [params] = useSearchParams();
   const list = useCollection(
@@ -33,6 +50,44 @@ export default function Packages() {
 
   const [savingId, setSavingId] = useState(null);
   const [error, setError] = useState('');
+  const [done, setDone] = useState('');
+
+  /**
+   * Raise the invoice for a shipment that has none.
+   *
+   * Marking a package paid here raises one by itself, so this button only
+   * appears on the rows that never went through that transition: seeded rows,
+   * imports, anything set in the Django admin.
+   */
+  async function bill(pkg) {
+    setSavingId(pkg.id);
+    setError('');
+    setDone('');
+
+    try {
+      const invoice = await raiseInvoice(pkg.id);
+      // Patch the row in place rather than refetching the page, so the button
+      // is replaced by the invoice's status without the table jumping.
+      list.replaceRow({
+        ...pkg,
+        invoice: {
+          id: invoice.id,
+          status: invoice.status,
+          status_display: invoice.status_display,
+        },
+      });
+      setDone(
+        `Invoice raised for ${pkg.tracking_number}. It is in the review queue — open Invoices to upload the document.`,
+      );
+    } catch (failure) {
+      setError(
+        failure.fields?.detail ??
+          'That invoice could not be raised. Check the connection and try again.',
+      );
+    } finally {
+      setSavingId(null);
+    }
+  }
 
   async function changeStatus(pkg, status) {
     setSavingId(pkg.id);
@@ -78,6 +133,7 @@ export default function Packages() {
       </Toolbar>
 
       <Banner tone="error">{error}</Banner>
+      <Banner tone="success">{done}</Banner>
 
       {list.state === 'loading' && <Loading inline />}
       {list.state === 'error' && <ConnectionError inline onRetry={list.reload} />}
@@ -110,6 +166,38 @@ export default function Packages() {
                         <div className={`${styles.mutedCell} ${styles.excerpt}`}>
                           {pkg.description}
                         </div>
+                      )}
+
+                      {/* What the customer has sent in about this shipment —
+                          the receipt for what they bought, the shop's
+                          invoice, a customs form. Nested on the row by the
+                          API, so this costs no extra request.
+
+                          Each link goes through the API view that checks the
+                          session, never through /media: a receipt carries
+                          somebody's name, address and what they paid. */}
+                      {pkg.documents?.length > 0 && (
+                        <ul className={styles.attachments}>
+                          {pkg.documents.map((document) => (
+                            <li key={document.id}>
+                              <a
+                                className={styles.link}
+                                href={document.download_url}
+                                target="_blank"
+                                rel="noreferrer"
+                                title={document.note || document.filename}
+                              >
+                                {document.kind_display}
+                              </a>
+                              {document.note && (
+                                <span className={styles.mutedCell}>
+                                  {' '}
+                                  · {document.note}
+                                </span>
+                              )}
+                            </li>
+                          ))}
+                        </ul>
                       )}
                     </td>
 
@@ -169,6 +257,33 @@ export default function Packages() {
                           {pkg.status_display}
                         </StatusBadge>
                       </div>
+
+                      {/* Where the invoice for this shipment stands, and the
+                          way to start one when there is none. Without this a
+                          package that arrived already paid — seeded, imported,
+                          set in the admin — has no invoice and nowhere to
+                          make one, because every other invoice control lives
+                          on a queue that would be empty. */}
+                      {pkg.invoice ? (
+                        <div className={styles.mutedCell}>
+                          Invoice{' '}
+                          <Link className={styles.link} to="/dashboard/invoices?status=all">
+                            {pkg.invoice.status_display.toLowerCase()}
+                          </Link>
+                        </div>
+                      ) : (
+                        BILLABLE.has(pkg.status) && (
+                          <button
+                            type="button"
+                            className={styles.rowButton}
+                            style={{ marginTop: '0.35rem' }}
+                            disabled={savingId === pkg.id}
+                            onClick={() => bill(pkg)}
+                          >
+                            {savingId === pkg.id ? 'Working…' : 'Raise invoice'}
+                          </button>
+                        )
+                      )}
                     </td>
                   </tr>
                 ))}

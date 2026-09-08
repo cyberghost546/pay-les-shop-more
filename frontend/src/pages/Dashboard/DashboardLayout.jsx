@@ -17,47 +17,99 @@ import {
   FileIcon,
   HouseIcon,
   MailIcon,
+  ReceiptIcon,
   SearchIcon,
   UsersIcon,
 } from './icons';
 import styles from './Dashboard.module.css';
 
+// The navigation, in labelled groups. One flat list of seven links reads as
+// seven equally important things; grouped, it reads as "the work", "the
+// money", "the people", which is how somebody actually decides where to go.
+//
+// Dashboard sits above the groups with no heading of its own — it is the way
+// back, not a category.
 const SECTIONS = [
   { to: '/dashboard', label: 'Dashboard', icon: HouseIcon, end: true },
+];
+
+const GROUPS = [
   {
-    to: '/dashboard/quotes',
-    label: 'Quote requests',
-    icon: FileIcon,
-    pill: (o) => o?.quotes.new,
+    heading: 'Operations',
+    links: [
+      {
+        to: '/dashboard/quotes',
+        label: 'Quote requests',
+        icon: FileIcon,
+        pill: (o) => o?.quotes.new,
+      },
+      {
+        to: '/dashboard/messages',
+        label: 'Messages',
+        icon: MailIcon,
+        pill: (o) => o?.messages.unhandled,
+      },
+      {
+        to: '/dashboard/bookings',
+        label: 'Bookings',
+        icon: FileIcon,
+        pill: (o) => o?.bookings?.new,
+      },
+    ],
   },
   {
-    to: '/dashboard/messages',
-    label: 'Messages',
-    icon: MailIcon,
-    pill: (o) => o?.messages.unhandled,
+    heading: 'Shipments',
+    links: [
+      {
+        to: '/dashboard/packages',
+        label: 'Packages',
+        icon: BoxIcon,
+        pill: (o) => o?.packages.awaiting_action,
+      },
+    ],
   },
   {
-    to: '/dashboard/packages',
-    label: 'Packages',
-    icon: BoxIcon,
-    pill: (o) => o?.packages.awaiting_action,
+    heading: 'Billing',
+    links: [
+      {
+        to: '/dashboard/invoices',
+        label: 'Invoices',
+        icon: ReceiptIcon,
+        // What is waiting for a person. An invoice sits here unseen by the
+        // customer until somebody approves it, so an unattended queue is a
+        // customer with no invoice.
+        pill: (o) => o?.invoices?.pending_review,
+      },
+    ],
   },
   {
-    to: '/dashboard/bookings',
-    label: 'Bookings',
-    icon: FileIcon,
-    pill: (o) => o?.bookings?.new,
+    heading: 'Paperwork',
+    links: [
+      {
+        to: '/dashboard/documents',
+        label: 'Documents',
+        icon: ReceiptIcon,
+        // What customers have sent in that nobody has filed against a
+        // shipment yet. The only number here that is work.
+        pill: (o) => o?.documents?.unattached,
+      },
+    ],
   },
-  { to: '/dashboard/customers', label: 'Customers', icon: UsersIcon },
+  {
+    heading: 'People',
+    links: [{ to: '/dashboard/customers', label: 'Customers', icon: UsersIcon }],
+  },
 ];
 
 // The standing questions someone opens this dashboard to answer. Each is just
-// a section with a filter already applied — the work is in choosing which four
+// a section with a filter already applied — the work is in choosing which few
 // are worth a permanent place, not in the mechanism.
 const QUICK_VIEWS = [
   { to: '/dashboard/quotes?status=new', label: 'New quote requests' },
   { to: '/dashboard/messages?handled=false', label: 'Unhandled messages' },
   { to: '/dashboard/packages?status=in_transit', label: 'In transit' },
+  { to: '/dashboard/invoices', label: 'Invoices to review' },
+  { to: '/dashboard/documents?unattached=true', label: 'Unfiled documents' },
   { to: '/dashboard/packages?status=quoted', label: 'Awaiting payment' },
 ];
 
@@ -72,6 +124,28 @@ const SEARCHABLE = [
   '/dashboard/bookings',
 ];
 const DEFAULT_SEARCH_TARGET = '/dashboard/packages';
+
+/** One sidebar link: icon, label, and the count pill when it has one. */
+function NavItem({ link, overview, onNavigate }) {
+  const { to, label, icon: Icon, end, pill } = link;
+
+  return (
+    <NavLink
+      to={to}
+      // Without `end`, /dashboard would stay highlighted on every child
+      // route, since they all start with it.
+      end={end}
+      onClick={onNavigate}
+      className={({ isActive }) =>
+        isActive ? `${styles.navLink} ${styles.navLinkActive}` : styles.navLink
+      }
+    >
+      <Icon />
+      <span className={styles.navLabel}>{label}</span>
+      <CountPill value={pill?.(overview)} />
+    </NavLink>
+  );
+}
 
 /**
  * The frame every dashboard page sits in: a dark bar across the top, a
@@ -205,27 +279,25 @@ export default function DashboardLayout() {
           aria-label="Dashboard sections"
         >
           <ul className={styles.navList}>
-            {SECTIONS.map(({ to, label, icon: Icon, end, pill }) => (
-              <li key={to}>
-                <NavLink
-                  to={to}
-                  // Without `end`, /dashboard would stay highlighted on every
-                  // child route, since they all start with it.
-                  end={end}
-                  onClick={closeNav}
-                  className={({ isActive }) =>
-                    isActive
-                      ? `${styles.navLink} ${styles.navLinkActive}`
-                      : styles.navLink
-                  }
-                >
-                  <Icon />
-                  <span className={styles.navLabel}>{label}</span>
-                  <CountPill value={pill?.(overview)} />
-                </NavLink>
+            {SECTIONS.map((link) => (
+              <li key={link.to}>
+                <NavItem link={link} overview={overview} onNavigate={closeNav} />
               </li>
             ))}
           </ul>
+
+          {GROUPS.map((group) => (
+            <div key={group.heading}>
+              <p className={styles.navHeading}>{group.heading}</p>
+              <ul className={styles.navList}>
+                {group.links.map((link) => (
+                  <li key={link.to}>
+                    <NavItem link={link} overview={overview} onNavigate={closeNav} />
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
 
           <p className={styles.navHeading}>Quick views</p>
           <ul className={styles.navList}>

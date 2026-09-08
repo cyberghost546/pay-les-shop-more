@@ -11,11 +11,14 @@ with no React app in the way.
 import os
 import shutil
 import tempfile
+from datetime import timedelta
 from unittest import mock
 
 from django.contrib.auth import get_user_model
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db import IntegrityError, transaction
 from django.test import override_settings
+from django.utils import timezone
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
@@ -289,6 +292,160 @@ class InvoiceQueueTests(InvoiceTestCase):
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
         invoice.refresh_from_db()
         self.assertEqual(invoice.status, Invoice.Status.PENDING_REVIEW)
+
+
+    def test_the_status_filter_widens_the_list(self):
+        """?status=all is how the dashboard's "Any status" option works, and
+        an unknown value falls back to the queue rather than erroring."""
+        pending = self.make_invoice()
+
+        other_package = Package.objects.create(
+            user=self.customer, tracking_number="PLSM-0004"
+        )
+        approved = ensure_invoice_for_package(other_package)
+        approved.approve(self.staff)
+
+        self.client.force_authenticate(user=self.staff)
+        url = reverse("staff-invoice-list")
+
+        everything = self.client.get(url, {"status": "all"})
+        just_approved = self.client.get(url, {"status": Invoice.Status.APPROVED})
+        nonsense = self.client.get(url, {"status": "not-a-status"})
+
+        self.assertEqual(everything.data["count"], 2)
+        self.assertEqual(just_approved.data["count"], 1)
+        self.assertEqual(just_approved.data["results"][0]["id"], approved.pk)
+        # Falls back to the queue.
+        self.assertEqual(nonsense.data["count"], 1)
+        self.assertEqual(nonsense.data["results"][0]["id"], pending.pk)
+
+    def test_the_search_finds_an_invoice_by_tracking_number(self):
+        self.make_invoice()
+
+        other_package = Package.objects.create(
+            user=self.customer, tracking_number="PLSM-9999"
+        )
+        wanted = ensure_invoice_for_package(other_package)
+
+        self.client.force_authenticate(user=self.staff)
+        response = self.client.get(reverse("staff-invoice-list"), {"search": "9999"})
+
+        self.assertEqual(response.data["count"], 1)
+        self.assertEqual(response.data["results"][0]["id"], wanted.pk)
+
+    def test_the_search_finds_an_invoice_by_customer(self):
+        """Whose it is, not only what it is for — the office is as likely to
+        be asked about an invoice by name as by tracking number."""
+        mine = self.make_invoice()
+
+        someone_else = User.objects.create_user(
+            username="ander@example.com",
+            email="ander@example.com",
+            password="a-long-enough-password",
+            first_name="Andere",
+            last_name="Klant",
+            phone_number="+599 9 111 2222",
+        )
+        their_package = Package.objects.create(
+            user=someone_else, tracking_number="PLSM-0005"
+        )
+        theirs = ensure_invoice_for_package(their_package)
+
+        self.client.force_authenticate(user=self.staff)
+        url = reverse("staff-invoice-list")
+
+        by_surname = self.client.get(url, {"search": "Klant"})
+        by_email = self.client.get(url, {"search": "ander@example.com"})
+
+        self.assertEqual(
+            {row["id"] for row in by_surname.data["results"]}, {mine.pk, theirs.pk}
+        )
+        self.assertEqual(by_email.data["count"], 1)
+        self.assertEqual(by_email.data["results"][0]["id"], theirs.pk)
+
+    def test_the_search_and_the_status_filter_apply_together(self):
+        """A search must not quietly widen the status the page is showing."""
+        self.make_invoice()
+
+        other_package = Package.objects.create(
+            user=self.customer, tracking_number="PLSM-0006"
+        )
+        approved = ensure_invoice_for_package(other_package)
+        approved.approve(self.staff)
+
+        self.client.force_authenticate(user=self.staff)
+        response = self.client.get(
+            reverse("staff-invoice-list"), {"search": "PLSM-0006"}
+        )
+
+        # Matches the search, but is not in the queue, so it is not listed.
+        self.assertEqual(response.data["count"], 0)
+
+
+class InvoiceOverviewTests(InvoiceTestCase):
+    """The counts behind the sidebar's pill."""
+
+    def test_the_overview_counts_the_review_queue(self):
+        self.make_invoice()
+
+        other_package = Package.objects.create(
+            user=self.customer, tracking_number="PLSM-0007"
+        )
+        rejected = ensure_invoice_for_package(other_package)
+        rejected.reject(self.staff, "Value is wrong.")
+
+        self.client.force_authenticate(user=self.staff)
+        response = self.client.get(reverse("staff-overview"))
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        invoices = response.data["invoices"]
+        self.assertEqual(invoices["total"], 2)
+        self.assertEqual(invoices["pending_review"], 1)
+        self.assertEqual(invoices["rejected"], 1)
+        # Nothing has been approved, so nothing is waiting on a render.
+        self.assertEqual(invoices["awaiting_document"], 0)
+
+    def test_the_overview_compares_this_period_with_the_one_before(self):
+        """The arrows on the dashboard are measured, not guessed. Two invoices
+        raised inside the window and one well outside it must read as a rise
+        from one to two, not as a bare count with a decoration on it."""
+        self.make_invoice()
+
+        older_package = Package.objects.create(
+            user=self.customer, tracking_number="PLSM-0008"
+        )
+        older = ensure_invoice_for_package(older_package)
+        # auto_now_add cannot be passed in, so the row is moved afterwards.
+        # 40 days back puts it inside the 30 before the last 30, and outside
+        # the last 30 itself.
+        Invoice.objects.filter(pk=older.pk).update(
+            created_at=timezone.now() - timedelta(days=40)
+        )
+
+        self.client.force_authenticate(self.staff)
+        response = self.client.get(reverse("staff-overview"), {"days": 30})
+
+        self.assertEqual(
+            response.data["invoices"]["trend"], {"current": 1, "previous": 1}
+        )
+        # Every metric on the dashboard carries one, or the strip would have
+        # arrows above some numbers and nothing above others.
+        for metric in ("quotes", "messages", "packages", "customers"):
+            self.assertIn("trend", response.data[metric], metric)
+
+    def test_an_approved_invoice_with_no_document_is_counted_as_stuck(self):
+        """A render that never ran leaves an invoice nobody is waiting on and
+        no customer can see. The overview names it rather than hiding it in
+        the approved total."""
+        invoice = self.make_invoice()
+        # Approve without letting the on_commit hook fire, which is what a
+        # broker that is down looks like from here.
+        invoice.approve(self.staff)
+
+        self.client.force_authenticate(user=self.staff)
+        response = self.client.get(reverse("staff-overview"))
+
+        self.assertEqual(response.data["invoices"]["awaiting_document"], 1)
 
 
 class InvoiceApproveEndpointTests(InvoiceTestCase):
@@ -700,6 +857,253 @@ class InvoiceRenderTests(InvoiceTestCase):
         self.assertTrue(response.data["pdf_url"].endswith(".pdf"))
 
 
+class InvoiceUploadTests(InvoiceRenderTests):
+    """Staff attaching a document by hand, instead of a worker drawing one.
+
+    Inherits InvoiceRenderTests for its MEDIA_ROOT redirect: these write real
+    files through real storage, because what is being tested is largely what
+    happens to those files.
+    """
+
+    def url(self, invoice):
+        return reverse("staff-invoice-document", args=[invoice.pk])
+
+    def a_pdf(self, name="invoice.pdf", body=b"%PDF-1.4 a real enough document"):
+        return SimpleUploadedFile(name, body, content_type="application/pdf")
+
+    def approved_invoice(self):
+        """Approved, with no document - a render that never ran."""
+        invoice = self.make_invoice()
+        invoice.approve(self.staff)
+        invoice.refresh_from_db()
+        self.assertEqual(invoice.pdf, "")
+        return invoice
+
+    def test_uploading_to_an_approved_invoice_sends_it(self):
+        """The whole point: the document arrives, and with it the invoice."""
+        invoice = self.approved_invoice()
+        self.client.force_authenticate(self.staff)
+
+        response = self.client.post(
+            self.url(invoice), {"pdf": self.a_pdf()}, format="multipart"
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        invoice.refresh_from_db()
+        self.assertEqual(invoice.status, Invoice.Status.SENT)
+        self.assertTrue(invoice.pdf)
+        self.assertIsNotNone(invoice.sent_at)
+
+    def test_the_customer_sees_it_on_their_own_page(self):
+        """What was actually asked for, end to end: staff upload, customer
+        opens their profile, the invoice is there and downloads."""
+        invoice = self.approved_invoice()
+
+        self.client.force_authenticate(self.staff)
+        self.client.post(self.url(invoice), {"pdf": self.a_pdf()}, format="multipart")
+
+        self.client.force_authenticate(self.customer)
+        listing = self.client.get(reverse("invoice-list"))
+        document = self.client.get(reverse("invoice-pdf", args=[invoice.pk]))
+
+        self.assertEqual(listing.data["count"], 1)
+        self.assertEqual(listing.data["results"][0]["id"], invoice.pk)
+        self.assertEqual(document.status_code, status.HTTP_200_OK)
+        self.assertTrue(b"".join(document.streaming_content).startswith(b"%PDF"))
+
+    def test_the_stored_name_is_ours_not_the_browsers(self):
+        """The uploaded name is decoration. What the browser calls the file
+        must not decide what it is called on our disk."""
+        invoice = self.approved_invoice()
+        self.client.force_authenticate(self.staff)
+
+        self.client.post(
+            self.url(invoice),
+            {"pdf": self.a_pdf(name="totally-not-our-name.pdf")},
+            format="multipart",
+        )
+
+        invoice.refresh_from_db()
+        self.assertIn(invoice_number(invoice), invoice.pdf.name)
+        self.assertIn(self.package.tracking_number, invoice.pdf.name)
+        self.assertNotIn("totally-not-our-name", invoice.pdf.name)
+
+    def test_a_file_that_is_not_a_pdf_is_refused(self):
+        """Named .pdf, announced as a PDF, and not one. The first five bytes
+        are what actually decides."""
+        invoice = self.approved_invoice()
+        self.client.force_authenticate(self.staff)
+
+        response = self.client.post(
+            self.url(invoice),
+            {"pdf": self.a_pdf(body=b"GIF89a not a pdf at all")},
+            format="multipart",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("pdf", response.data)
+        invoice.refresh_from_db()
+        # Nothing was stored and nothing moved.
+        self.assertEqual(invoice.pdf, "")
+        self.assertEqual(invoice.status, Invoice.Status.APPROVED)
+
+    def test_an_empty_file_is_refused(self):
+        invoice = self.approved_invoice()
+        self.client.force_authenticate(self.staff)
+
+        response = self.client.post(
+            self.url(invoice), {"pdf": self.a_pdf(body=b"")}, format="multipart"
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_uploading_to_an_invoice_in_the_queue_approves_and_sends_it(self):
+        """One step: attach the document and the customer has it.
+
+        The approval is not skipped, it is attributed — whoever uploads is
+        saying the invoice is right, and the row records them as the reviewer
+        like any other approval.
+        """
+        invoice = self.make_invoice()
+        self.assertEqual(invoice.status, Invoice.Status.PENDING_REVIEW)
+        self.client.force_authenticate(self.staff)
+
+        response = self.client.post(
+            self.url(invoice), {"pdf": self.a_pdf()}, format="multipart"
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        invoice.refresh_from_db()
+        self.assertEqual(invoice.status, Invoice.Status.SENT)
+        self.assertEqual(invoice.reviewed_by, self.staff)
+        self.assertIsNotNone(invoice.reviewed_at)
+        self.assertIsNotNone(invoice.sent_at)
+
+    def test_the_uploaded_document_is_the_one_the_customer_gets(self):
+        """Approving queues a render, so for a moment two documents are in
+        play. The uploaded one has to win — otherwise the office attaches a
+        corrected invoice and the customer receives the drawn one anyway.
+        """
+        invoice = self.make_invoice()
+        self.client.force_authenticate(self.staff)
+
+        body = b"%PDF-1.4 the one the office attached"
+        self.client.post(
+            self.url(invoice), {"pdf": self.a_pdf(body=body)}, format="multipart"
+        )
+
+        invoice.refresh_from_db()
+        with invoice.pdf.open("rb") as handle:
+            self.assertEqual(handle.read(), body)
+
+        # And the customer downloads that same file, not another one.
+        self.client.force_authenticate(self.customer)
+        document = self.client.get(reverse("invoice-pdf", args=[invoice.pk]))
+        self.assertEqual(b"".join(document.streaming_content), body)
+
+    def test_the_render_leaves_no_second_file_behind(self):
+        """The task the approval queues must not also write a document that
+        nothing points at."""
+        invoice = self.make_invoice()
+        self.client.force_authenticate(self.staff)
+
+        self.client.post(self.url(invoice), {"pdf": self.a_pdf()}, format="multipart")
+
+        invoice.refresh_from_db()
+        written = [
+            os.path.join(root, name)
+            for root, _, names in os.walk(self.media_root)
+            for name in names
+        ]
+        self.assertEqual(written, [invoice.pdf.path])
+
+    def test_a_draft_invoice_refuses_a_document(self):
+        invoice = ensure_invoice_for_package(self.package)
+        Invoice.objects.filter(pk=invoice.pk).update(status=Invoice.Status.DRAFT)
+        invoice.refresh_from_db()
+        self.client.force_authenticate(self.staff)
+
+        response = self.client.post(
+            self.url(invoice), {"pdf": self.a_pdf()}, format="multipart"
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
+        invoice.refresh_from_db()
+        self.assertEqual(invoice.pdf, "")
+
+    def test_a_rejected_invoice_refuses_a_document(self):
+        invoice = self.make_invoice()
+        invoice.reject(self.staff, "The value is wrong.")
+        self.client.force_authenticate(self.staff)
+
+        response = self.client.post(
+            self.url(invoice), {"pdf": self.a_pdf()}, format="multipart"
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
+
+    def test_replacing_a_sent_document_keeps_the_status_and_drops_the_old_file(self):
+        """A wrong document that has already gone out. The invoice stays sent,
+        and the superseded file does not linger on disk."""
+        invoice = self.approve_and_run_tasks(self.make_invoice())
+        self.assertEqual(invoice.status, Invoice.Status.SENT)
+        first_path = invoice.pdf.path
+        self.assertTrue(os.path.exists(first_path))
+
+        self.client.force_authenticate(self.staff)
+        response = self.client.post(
+            self.url(invoice),
+            {"pdf": self.a_pdf(body=b"%PDF-1.4 the corrected one")},
+            format="multipart",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        invoice.refresh_from_db()
+        self.assertEqual(invoice.status, Invoice.Status.SENT)
+        self.assertNotEqual(invoice.pdf.path, first_path)
+        self.assertFalse(os.path.exists(first_path))
+        with invoice.pdf.open("rb") as handle:
+            self.assertIn(b"the corrected one", handle.read())
+
+    def test_replacing_does_not_notify_the_customer_again(self):
+        """'Your invoice has been sent' is not true a second time."""
+        invoice = self.approve_and_run_tasks(self.make_invoice())
+        self.client.force_authenticate(self.staff)
+
+        with mock.patch("notifications.services.notify_invoice_sent") as notify:
+            self.client.post(
+                self.url(invoice), {"pdf": self.a_pdf()}, format="multipart"
+            )
+
+        notify.assert_not_called()
+
+    def test_a_customer_cannot_upload_a_document(self):
+        """Including the customer the invoice belongs to. This route decides
+        what somebody is shown as their own bill."""
+        invoice = self.approved_invoice()
+        self.client.force_authenticate(self.customer)
+
+        response = self.client.post(
+            self.url(invoice), {"pdf": self.a_pdf()}, format="multipart"
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        invoice.refresh_from_db()
+        self.assertEqual(invoice.pdf, "")
+
+    def test_an_anonymous_caller_cannot_upload_a_document(self):
+        invoice = self.approved_invoice()
+
+        response = self.client.post(
+            self.url(invoice), {"pdf": self.a_pdf()}, format="multipart"
+        )
+
+        self.assertIn(
+            response.status_code,
+            (status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN),
+        )
+
+
 class InvoicePdfTests(InvoiceTestCase):
     """The drawing itself, with no storage and no task in the way."""
 
@@ -732,3 +1136,136 @@ class InvoicePdfTests(InvoiceTestCase):
         invoice.approve(self.staff)
 
         self.assertTrue(render_invoice_pdf(invoice).startswith(b"%PDF-"))
+
+
+class CustomerInvoiceEndpointTests(InvoiceRenderTests):
+    """What the profile page reads: the customer's own sent invoices.
+
+    Inherits InvoiceRenderTests for its MEDIA_ROOT redirect and its
+    approve_and_run_tasks helper — a customer-visible invoice is by definition
+    one that has been through the render, so these tests need real files in a
+    temporary directory the same way that class does.
+    """
+
+    def setUp(self):
+        super().setUp()
+
+        self.other_customer = User.objects.create_user(
+            username="ander@example.com",
+            email="ander@example.com",
+            password="a-long-enough-password",
+            first_name="Andere",
+            last_name="Klant",
+            phone_number="+599 9 111 2222",
+        )
+
+    def sent_invoice(self, package=None):
+        """An invoice all the way through to SENT, with a document behind it."""
+        invoice = ensure_invoice_for_package(package or self.package)
+        return self.approve_and_run_tasks(invoice)
+
+    def test_a_customer_sees_their_own_sent_invoice(self):
+        invoice = self.sent_invoice()
+
+        self.client.force_authenticate(self.customer)
+        response = self.client.get(reverse("invoice-list"))
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        results = response.data["results"]
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0]["id"], invoice.pk)
+        self.assertEqual(results[0]["number"], invoice_number(invoice))
+        self.assertEqual(results[0]["tracking_number"], "PLSM-0001")
+
+    def test_the_list_never_leaks_the_storage_path(self):
+        """The whole reason the document is served by a view: a MEDIA_URL link
+        would be readable by anyone who guessed the filename."""
+        invoice = self.sent_invoice()
+
+        self.client.force_authenticate(self.customer)
+        response = self.client.get(reverse("invoice-list"))
+
+        body = str(response.data)
+        self.assertNotIn(invoice.pdf.name, body)
+        self.assertNotIn("/media/", body)
+
+    def test_an_invoice_still_in_review_is_not_shown(self):
+        """PENDING_REVIEW is an internal state. There is no document yet, and
+        no verdict the customer is owed a look at."""
+        invoice = ensure_invoice_for_package(self.package)
+        self.assertEqual(invoice.status, Invoice.Status.PENDING_REVIEW)
+
+        self.client.force_authenticate(self.customer)
+        response = self.client.get(reverse("invoice-list"))
+
+        self.assertEqual(response.data["results"], [])
+
+    def test_a_customer_does_not_see_someone_elses_invoice(self):
+        invoice = self.sent_invoice()
+
+        self.client.force_authenticate(self.other_customer)
+        list_response = self.client.get(reverse("invoice-list"))
+        detail_response = self.client.get(
+            reverse("invoice-detail", args=[invoice.pk])
+        )
+
+        self.assertEqual(list_response.data["results"], [])
+        # 404, not 403: the queryset narrows first, so an id that is not the
+        # caller's simply does not exist as far as this view is concerned.
+        self.assertEqual(detail_response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_an_anonymous_caller_gets_nothing(self):
+        self.sent_invoice()
+
+        response = self.client.get(reverse("invoice-list"))
+
+        self.assertIn(
+            response.status_code,
+            (status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN),
+        )
+
+    def test_the_owner_can_download_the_pdf(self):
+        invoice = self.sent_invoice()
+
+        self.client.force_authenticate(self.customer)
+        response = self.client.get(reverse("invoice-pdf", args=[invoice.pk]))
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response["Content-Type"], "application/pdf")
+        self.assertIn(invoice_number(invoice), response["Content-Disposition"])
+        self.assertTrue(b"".join(response.streaming_content).startswith(b"%PDF"))
+
+    def test_another_customer_cannot_download_the_pdf(self):
+        invoice = self.sent_invoice()
+
+        self.client.force_authenticate(self.other_customer)
+        response = self.client.get(reverse("invoice-pdf", args=[invoice.pk]))
+
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_a_row_whose_file_is_missing_is_a_404_not_a_500(self):
+        """A media directory restored without its contents. The row is still
+        there; opening it must not take the page down."""
+        invoice = self.sent_invoice()
+        os.remove(invoice.pdf.path)
+
+        self.client.force_authenticate(self.customer)
+        response = self.client.get(reverse("invoice-pdf", args=[invoice.pk]))
+
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_the_list_is_read_only(self):
+        invoice = self.sent_invoice()
+
+        self.client.force_authenticate(self.customer)
+        patch = self.client.patch(
+            reverse("invoice-detail", args=[invoice.pk]),
+            {"status": Invoice.Status.DRAFT},
+            format="json",
+        )
+        delete = self.client.delete(reverse("invoice-detail", args=[invoice.pk]))
+
+        self.assertEqual(patch.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+        self.assertEqual(delete.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+        invoice.refresh_from_db()
+        self.assertEqual(invoice.status, Invoice.Status.SENT)

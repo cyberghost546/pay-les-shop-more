@@ -260,6 +260,153 @@
   color: var(--cyan);
 }
 
+/* ------------------------------------------------------------- invoices */
+
+.cardIntro {
+  margin: -0.6rem 0 1.25rem;
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.invoiceMessage {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+.invoiceList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.invoice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.95rem 0;
+}
+
+.invoice + .invoice {
+  border-top: 1px solid var(--line);
+}
+
+.invoiceText {
+  min-width: 0;
+}
+
+.invoiceNumber {
+  margin: 0;
+  font-weight: 700;
+  color: var(--navy);
+  /* The reference is a code, so it reads better with the digits aligned. */
+  font-variant-numeric: tabular-nums;
+}
+
+.invoiceMeta {
+  margin: 0.2rem 0 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.invoiceRight {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-shrink: 0;
+}
+
+.invoiceAmount {
+  font-weight: 700;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.invoiceDownload {
+  padding: 0.5rem 0.95rem;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: #ffffff;
+  color: var(--blue);
+  font-size: 0.88rem;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.invoiceDownload:hover {
+  border-color: var(--blue);
+  background: #f5f8ff;
+}
+
+.invoiceDownload:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+}
+
+/* The retry inside the failure message. A button, because it does something
+   rather than going somewhere, dressed as the link it reads as. */
+.linkButton {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* The file that has been chosen and not yet sent.
+ *
+ * A tinted panel rather than another list row: it is not one of the documents
+ * below, it is a thing still in the visitor's hands, and it stops looking
+ * like one the moment it has gone. */
+.staged {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.9rem;
+  margin-top: 0.9rem;
+  padding: 0.9rem 1.1rem;
+  border: 1px solid #bae6fd;
+  border-radius: 12px;
+  background: #f0f9ff;
+}
+
+.stagedText {
+  min-width: 0;
+}
+
+.stagedName {
+  margin: 0;
+  font-weight: 700;
+  color: var(--navy);
+  /* A long filename must wrap rather than push the send button off the
+     panel — the button is the point of the panel. */
+  overflow-wrap: anywhere;
+}
+
+/* Under each document in the list: it has gone, and the office can read it.
+   Said out loud because the send button above raises the question. */
+.sentNote {
+  margin: 0.2rem 0 0;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #15803d;
+}
+
+@media (max-width: 560px) {
+  .staged {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
 /* --------------------------------------------------------------- fields */
 
 .form {
@@ -574,6 +721,16 @@
 @media (max-width: 560px) {
   .row {
     grid-template-columns: 1fr;
+  }
+
+  .invoice {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .invoiceRight {
+    width: 100%;
+    justify-content: space-between;
   }
 
   .card {

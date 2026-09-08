@@ -79,10 +79,14 @@
   display: flex;
   align-items: center;
   height: var(--topbar-height);
-  /* The homepage hero's own gradient, cropped to a bar. */
-  background: var(--band);
-  background-color: var(--navy-deep);
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.08), 0 6px 20px rgba(7, 26, 48, 0.28);
+  /* White rather than the homepage's navy band. The dashboard's chrome sits
+     around dense white cards all day; a dark bar above them reads as a lid,
+     and the eye keeps returning to it instead of to the work. The sidebar
+     below is already white, so this also makes the two read as one surface
+     with the content floating on it. */
+  background: #ffffff;
+  border-bottom: 1px solid var(--line);
+  box-shadow: 0 1px 2px rgba(11, 37, 69, 0.04);
 }
 
 .brand {
@@ -93,7 +97,7 @@
   height: 100%;
   padding: 0 1.15rem;
   box-sizing: border-box;
-  color: #ffffff;
+  color: var(--navy);
   font-size: 1rem;
   font-weight: 800;
   letter-spacing: -0.01em;
@@ -111,7 +115,7 @@
 /* The .com is part of the name, dimmed rather than dropped — the same
    treatment the site footer gives it. */
 .brandDot {
-  color: var(--cyan-bright);
+  color: var(--cyan);
   font-weight: 500;
 }
 
@@ -128,7 +132,7 @@
   position: absolute;
   left: 1.75rem;
   display: flex;
-  color: #7f9bb8;
+  color: #94a3b8;
   pointer-events: none;
 }
 
@@ -137,29 +141,29 @@
   max-width: 460px;
   padding: 0.45rem 1rem 0.45rem 2.4rem;
   /* Rounded and inset rather than a full-bleed slot, which is what makes it
-     read as a control on the band instead of a hole cut through it. */
-  border: 1px solid rgba(255, 255, 255, 0.14);
+     read as a control on the bar instead of a hole cut through it. */
+  border: 1px solid var(--line);
   border-radius: 10px;
-  background: rgba(255, 255, 255, 0.08);
-  color: #ffffff;
+  background: var(--ground);
+  color: var(--ink);
   font: inherit;
   font-size: 0.9rem;
   transition: background 0.15s ease, border-color 0.15s ease;
 }
 
 .topSearch::placeholder {
-  color: #7f9bb8;
+  color: #94a3b8;
 }
 
 .topSearch:hover {
-  background: rgba(255, 255, 255, 0.12);
+  background: #eef4fb;
 }
 
 .topSearch:focus {
   outline: none;
-  border-color: var(--cyan-bright);
-  background: rgba(255, 255, 255, 0.14);
-  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.25);
+  border-color: var(--cyan);
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.2);
 }
 
 .topRight {
@@ -171,19 +175,20 @@
 }
 
 .who {
-  color: #9fb4c9;
+  color: var(--ink);
+  font-weight: 600;
   font-size: 0.85rem;
   white-space: nowrap;
   /* Hidden on narrow screens, where the bar has no room to spare. */
 }
 
-/* The homepage's ghost button, at control size. */
+/* A quiet outline button now that the bar is white. */
 .signOut {
   padding: 0.35rem 0.9rem;
-  border: 1px solid rgba(255, 255, 255, 0.28);
+  border: 1px solid var(--line);
   border-radius: 8px;
   background: none;
-  color: #ffffff;
+  color: #475569;
   font: inherit;
   font-size: 0.86rem;
   font-weight: 600;
@@ -341,7 +346,7 @@
  * the same colour falls to about 2.9:1, under the 4.5:1 small text needs. This
  * shade is the same hue at about 5.9:1. */
 .navHeading {
-  margin: 0 0 0.5rem;
+  margin: 1.35rem 0 0.5rem;
   padding: 0 0.8rem;
   font-size: 0.7rem;
   font-weight: 700;
@@ -450,9 +455,12 @@
   position: relative;
   margin-bottom: 1.75rem;
   padding: 1.5rem 1.65rem;
+  border: 1px solid var(--line);
   border-radius: 16px;
-  background: var(--band);
-  background-color: var(--navy-deep);
+  /* A white card like everything below it. The navy band it replaces was the
+     homepage's hero brought inland, which made every page open on a block of
+     colour carrying two words. */
+  background: #ffffff;
   box-shadow: var(--shadow);
   overflow: hidden;
 }
@@ -469,7 +477,7 @@
   width: 4px;
   height: 1.6rem;
   border-radius: 0 4px 4px 0;
-  background: var(--cyan-bright);
+  background: var(--cyan);
 }
 
 .pageHead {
@@ -489,21 +497,36 @@
   font-weight: 800;
   letter-spacing: -0.02em;
   line-height: 1.15;
-  color: #ffffff;
+  color: var(--ink);
 }
 
 .title {
   margin-bottom: 0.4rem;
 }
 
-/* The homepage's hero lead colour, which is what keeps this legible on navy
-   without going to full white and competing with the title. */
-.subtitle {
+.subtitle,
+.pageSubtitle {
   margin: 0;
   max-width: 70ch;
   font-size: 0.94rem;
   line-height: 1.65;
-  color: #b9cbe0;
+  color: var(--muted);
+}
+
+.pageSubtitle {
+  margin-top: 0.35rem;
+}
+
+/* "Good morning, **Chris**" — the greeting is the quiet half and the name is
+   the loud one, which is the whole reason the title is split in two. */
+.pageTitle {
+  font-weight: 400;
+  color: var(--muted);
+}
+
+.pageTitleName {
+  font-weight: 800;
+  color: var(--ink);
 }
 
 .pageActions {
@@ -512,32 +535,33 @@
   gap: 0.6rem;
 }
 
-/* The homepage's ghost button. On the banner these sit on navy, so they take
-   the hero's translucent-white treatment rather than the grey admin one. */
+/* Outline controls on a white head, matching the row buttons in the tables
+   below rather than the homepage's ghost buttons on navy. */
 .action,
 .rangeSelect {
   padding: 0.5rem 1rem;
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  border: 1px solid var(--line);
   border-radius: 10px;
-  background: rgba(255, 255, 255, 0.08);
+  background: #ffffff;
   font: inherit;
   font-size: 0.88rem;
   font-weight: 600;
-  color: #ffffff;
+  color: #374151;
   cursor: pointer;
   transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
 }
 
 .action:hover,
 .rangeSelect:hover {
-  border-color: #ffffff;
-  background: rgba(255, 255, 255, 0.16);
+  border-color: var(--cyan);
+  background: #f0f9ff;
+  color: #075985;
   transform: translateY(-1px);
 }
 
 .action:focus-visible,
 .rangeSelect:focus-visible {
-  outline: 2px solid var(--cyan-bright);
+  outline: 2px solid var(--cyan);
   outline-offset: 2px;
 }
 
@@ -556,14 +580,28 @@
 /* ------------------------------------------------------------------- chart */
 
 .chartFigure {
-  margin: 0 0 2rem;
+  /* No bottom margin: the chart is a cell of .overviewRow, and the grid's
+     own gap is what separates it from what follows. It also has to stretch,
+     or a short legend leaves the card shorter than the column beside it. */
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  min-width: 0;
+}
+
+.chartFigure .chartBox {
+  flex: 1 1 auto;
 }
 
 .legend {
   display: flex;
   flex-wrap: wrap;
   gap: 1.25rem;
-  margin-bottom: 0.75rem;
+  /* Sits inside the chart card now, so it needs the separation from the plot
+     that the page ground used to provide. */
+  margin: 0 0 0.9rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--line);
   font-size: 0.85rem;
   color: #4b5563;
 }
@@ -657,95 +695,251 @@
 
 /* auto-fit rather than a fixed count: the row reflows on a laptop screen
    without a media query per breakpoint. */
-.statGrid {
+/* ------------------------------------------------------------- kpi strip */
+
+/* Five numbers in a row, on one white card with hairlines between them rather
+   than five separate cards. The strip is a single sentence about where the
+   business stands; boxing each figure makes them read as five unrelated
+   facts, and the gaps between the boxes carry no meaning. */
+.kpiStrip {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
-  gap: 1.15rem;
-  margin-bottom: 2rem;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  /* The dividers are the grid's own gaps showing the card's ground through
+     opaque tiles, rather than a border on each tile. A border — or an
+     ::before on `.kpi + .kpi` — hangs a stray edge off the first tile of
+     every wrapped row, because "second in the DOM" and "second in the row"
+     stop being the same thing the moment the strip wraps. Gaps cannot get
+     that wrong: they only exist between things that are actually adjacent. */
+  gap: 1px;
+  margin-bottom: 1.5rem;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--line);
+  box-shadow: var(--shadow);
+  overflow: hidden;
 }
 
-/* The homepage's service card, carrying a number instead of a paragraph: the
-   same white ground, 14px corners, cyan hover edge and lift. */
-.stat {
-  position: relative;
+.kpi {
   display: block;
-  padding: 1.3rem 1.4rem;
-  border: 1px solid var(--line);
-  border-radius: 14px;
+  padding: 1.2rem 1.35rem;
+  /* Opaque, or the ground showing through the gaps shows through the tile. */
   background: #ffffff;
-  box-shadow: var(--shadow);
   color: inherit;
   text-decoration: none;
-  overflow: hidden;
-  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+  transition: background 0.15s ease;
 }
 
-/* A cyan hairline along the top edge, drawn in on hover from the left. The
-   homepage's service icons take on cyan the same way. */
-.stat::after {
-  content: '';
-  position: absolute;
-  inset: 0 auto auto 0;
-  width: 100%;
-  height: 3px;
-  background: linear-gradient(90deg, var(--cyan), var(--cyan-bright));
-  transform: scaleX(0);
-  transform-origin: left;
-  transition: transform 0.25s ease;
+.kpi:hover {
+  background: #f8fbff;
 }
 
-/* The stats are links to the list they summarise, so they lift on hover the
-   way the rest of the site's cards do. */
-.stat:hover {
-  transform: translateY(-4px);
-  border-color: #bae6fd;
-  box-shadow: var(--shadow-lift);
+.kpi:focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: -2px;
 }
 
-.stat:hover::after {
-  transform: scaleX(1);
-}
-
-/* The homepage's eyebrow again, at label size. */
-.statLabel {
-  margin: 0 0 0.5rem;
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.11em;
-  text-transform: uppercase;
+.kpiLabel {
+  margin: 0 0 0.4rem;
+  font-size: 0.8rem;
+  font-weight: 600;
   color: var(--muted);
 }
 
-.statValue {
+.kpiValue {
   margin: 0;
-  font-size: 2.15rem;
+  font-size: 1.9rem;
   font-weight: 800;
-  line-height: 1.05;
   letter-spacing: -0.02em;
-  color: var(--navy);
-  /* Keeps 9 and 108 on the same baseline as the row reflows. */
+  line-height: 1.1;
+  color: var(--ink);
+  /* Digits of equal width, so a strip of numbers lines up and a count
+     ticking over does not shuffle the label under it. */
   font-variant-numeric: tabular-nums;
 }
 
-.statNote {
-  margin: 0.4rem 0 0;
-  font-size: 0.85rem;
+.kpiDelta,
+.kpiNote {
+  margin: 0.35rem 0 0;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.kpiNote {
+  color: var(--muted);
+  font-weight: 500;
+}
+
+/* Up is not automatically good — more unread messages is a worse morning, not
+   a better one — so the arrows are coloured by direction and left to mean
+   "more" and "fewer". The urgent tiles below are what carry judgement. */
+.kpiDelta_up {
+  color: #15803d;
+}
+
+.kpiDelta_down {
+  color: #b91c1c;
+}
+
+.kpiDelta_flat {
   color: var(--muted);
 }
 
-/* The number that means "someone has to do something about this". Amber is
-   the homepage's third colour — the far end of its route map, the parcel tape
-   on the hero illustration — so it is already part of the vocabulary. */
-.statUrgent .statValue {
-  color: #b45309;
+/* Something is waiting for a person. An amber edge along the top, which is
+   the same signal the tables use down the left of an unhandled row. */
+.kpiUrgent {
+  background: #fffbeb;
 }
 
-.statUrgent::after {
-  background: linear-gradient(90deg, #d97706, #f59e0b);
+.kpiUrgent:hover {
+  background: #fef3c7;
 }
 
-.statUrgent:hover {
-  border-color: #fcd34d;
+.kpiUrgent .kpiValue {
+  color: #92400e;
+}
+
+/* --------------------------------------------------- overview two-column */
+
+/* The chart, and beside it the column that says where things stand right
+   now. Collapses to one column below the width where the chart stops being
+   readable at two-thirds. */
+.overviewRow {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(240px, 1fr);
+  gap: 1.25rem;
+  margin-bottom: 2rem;
+}
+
+.summaryColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+/* The one block of colour on the page. It is the queue — the answer to "is
+   there anything for me" — and being the only saturated thing on screen is
+   what makes it findable without reading. */
+.summaryCard {
+  position: relative;
+  display: block;
+  padding: 1.35rem 1.4rem 0;
+  border-radius: 16px;
+  background: linear-gradient(150deg, #2563eb 0%, #1d4ed8 55%, #1e40af 100%);
+  box-shadow: var(--shadow);
+  color: #ffffff;
+  text-decoration: none;
+  overflow: hidden;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.summaryCard:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lift);
+}
+
+.summaryCard:focus-visible {
+  outline: 2px solid var(--cyan-bright);
+  outline-offset: 2px;
+}
+
+.summaryLabel {
+  margin: 0;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.summaryValue {
+  margin: 0.3rem 0 0;
+  font-size: 2.4rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.summaryNote {
+  margin: 0.5rem 0 0;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.78);
+}
+
+/* The sparkline runs to the card's edges, so it reads as the floor of the
+   card rather than as a small picture sitting on it. */
+.summarySpark {
+  margin: 0.75rem -1.4rem 0;
+}
+
+.sparkline {
+  display: block;
+  width: 100%;
+  height: 56px;
+}
+
+/* ---------------------------------------------------------------- donuts */
+
+.gaugeCard {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  padding: 1.25rem 1.2rem;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: #ffffff;
+  box-shadow: var(--shadow);
+}
+
+.donut {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  min-width: 0;
+}
+
+.donutRing {
+  flex-shrink: 0;
+  width: 52px;
+  height: 52px;
+}
+
+.donutText {
+  min-width: 0;
+}
+
+.donutValue {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.donutLabel {
+  margin: 0.1rem 0 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.donutNote {
+  margin: 0.1rem 0 0;
+  font-size: 0.72rem;
+  color: #94a3b8;
+}
+
+/* One column each below the width where a ring and its figure stop fitting
+   side by side twice over. */
+@media (max-width: 1080px) {
+  .overviewRow {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 420px) {
+  .gaugeCard {
+    grid-template-columns: 1fr;
+  }
 }
 
 .section {
@@ -1050,6 +1244,67 @@
   cursor: default;
 }
 
+/* Two or three controls in one cell — approve, reject, the PDF link. They
+   wrap rather than widening the column, which on a table is what a long cell
+   costs every other column. */
+.rowActions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+/* A file input dressed as a row button. The input itself is hidden rather
+   than removed: it is still the thing that opens the picker and still the
+   thing the keyboard reaches through the label, so display:none on it would
+   take the control away from anyone not using a mouse. */
+.uploadButton {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.35rem 0.8rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: #ffffff;
+  font-size: 0.83rem;
+  font-weight: 600;
+  color: #374151;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+
+.uploadButton:hover {
+  border-color: var(--cyan);
+  background: #f0f9ff;
+  color: #075985;
+}
+
+/* The focus ring belongs on the label, because that is what is visible; the
+   input inside it is what actually takes focus. */
+.uploadButton:focus-within {
+  outline: 2px solid var(--cyan);
+  outline-offset: 2px;
+}
+
+.uploadButton:has(.uploadInput:disabled) {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.uploadInput {
+  /* Clipped to nothing rather than display:none, which would drop it out of
+     the tab order along with the picker it opens. */
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  border: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
 .rowButtonDone {
   border-color: #bbf7d0;
   background: #f0fdf4;
@@ -1078,6 +1333,24 @@
 
 .linkButton:hover {
   text-decoration: underline;
+}
+
+/* The files a customer has attached to a shipment, listed under its tracking
+   number. Small and unbulleted: on a row that already carries a description
+   these are a footnote, not a second column. */
+.attachments {
+  margin: 0.35rem 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.8rem;
+  line-height: 1.6;
+}
+
+/* Money a customer still owes. The same amber the unhandled rows and the
+   urgent KPI tiles use, so "needs attention" reads the same everywhere. */
+.owed {
+  font-weight: 700;
+  color: #b45309;
 }
 
 /* Rows nobody has dealt with yet, marked down the left edge so an unhandled
@@ -1231,6 +1504,15 @@
   border-color: #dc2626;
   background: #fef2f2;
   color: #991b1b;
+}
+
+/* Something went through — an invoice approved, an invoice sent back. Green
+   rather than the info blue, because it reports a change that has happened
+   rather than a fact about the page. */
+.banner_success {
+  border-color: #16a34a;
+  background: #f0fdf4;
+  color: #15803d;
 }
 
 .empty {
@@ -1433,6 +1715,22 @@
   color: #075985;
 }
 
+/* The reject box asks a question rather than labelling a field, so its label
+   is a sentence: normal weight, and room to sit on two lines. */
+.officeBox textarea.officeInput {
+  resize: vertical;
+  min-height: 4.5rem;
+  font: inherit;
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+.officeBox .officeLabel {
+  margin-bottom: 0.15rem;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
 .officeInput {
   width: 100%;
   padding: 0.5rem 0.65rem;
@@ -1443,6 +1741,15 @@
   font: inherit;
   font-size: 0.88rem;
   color: var(--navy);
+}
+
+/* The server's reason for refusing one field, under the field it is about. */
+.officeError {
+  font-size: 0.75rem;
+  font-weight: 600;
+  /* Same red the error banner uses, so a refusal reads the same wherever it
+     appears on the page. */
+  color: #991b1b;
 }
 
 .detailGrid {
@@ -1481,8 +1788,8 @@
 
 /* Everything that moves, stops — the same courtesy the homepage extends. */
 @media (prefers-reduced-motion: reduce) {
-  .stat,
-  .stat::after,
+  .kpi,
+  .summaryCard,
   .action,
   .rangeSelect,
   .sidebar,
@@ -1490,14 +1797,10 @@
     transition: none;
   }
 
-  .stat:hover,
+  .summaryCard:hover,
   .action:hover,
   .rangeSelect:hover {
     transform: none;
-  }
-
-  .stat:hover::after {
-    transform: scaleX(1);
   }
 }
 

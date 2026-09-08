@@ -11,6 +11,7 @@ urlpatterns = [
     path('api/', include('enquiries.urls')),
     path('api/', include('bookings.urls')),
     path('api/', include('notifications.urls')),
+    path('api/', include('invoicing.urls')),
     # The back-office API. Behind IsStaff, so a non-staff account gets 403
     # from every route under it.
     path('api/staff/', include('staff.urls')),

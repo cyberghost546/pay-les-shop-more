@@ -37,6 +37,8 @@ const Messages = lazy(() => import('./pages/Dashboard/Messages'));
 const Packages = lazy(() => import('./pages/Dashboard/Packages'));
 const Customers = lazy(() => import('./pages/Dashboard/Customers'));
 const Bookings = lazy(() => import('./pages/Dashboard/Bookings'));
+const Invoices = lazy(() => import('./pages/Dashboard/Invoices'));
+const Documents = lazy(() => import('./pages/Dashboard/Documents'));
 
 export default function App() {
   const { pathname } = useLocation();
@@ -96,6 +98,8 @@ export default function App() {
               <Route path="messages" element={<Messages />} />
               <Route path="packages" element={<Packages />} />
               <Route path="bookings" element={<Bookings />} />
+              <Route path="invoices" element={<Invoices />} />
+              <Route path="documents" element={<Documents />} />
               <Route path="customers" element={<Customers />} />
             </Route>
 

@@ -252,7 +252,12 @@ REST_FRAMEWORK = {
         # poor spam target.
         'forms': '20/hour',
     },
-    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    # A page size the caller may raise, within a ceiling. 25 is right for a
+    # table somebody reads; a control that has to offer every shipment a
+    # customer owns needs more, and without ?page_size= it would have to make
+    # one request per page to find them. The ceiling is what stops
+    # ?page_size=100000 becoming a single query that reads the whole table.
+    'DEFAULT_PAGINATION_CLASS': 'config.pagination.AdjustablePagination',
     'PAGE_SIZE': 25,
 }
 

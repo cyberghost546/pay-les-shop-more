@@ -3,10 +3,17 @@ import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import Loading from '../../components/Loading/Loading';
 import ConnectionError from '../../components/ConnectionError/ConnectionError';
-import { CUSTOMER_ROLES, listCustomers, setCustomerRole } from '../../api/staff';
+import {
+  ADDRESS_COUNTRIES,
+  CUSTOMER_ROLES,
+  listCustomers,
+  saveCustomerAddress,
+  setCustomerRole,
+  updateCustomer,
+} from '../../api/staff';
 import { useAuth } from '../../auth/useAuth';
 import { useCollection } from './useCollection';
-import { formatDate } from './format';
+import { formatDate, formatMoney } from './format';
 import {
   Banner,
   Empty,
@@ -61,12 +68,243 @@ function AddressLines({ address }) {
   );
 }
 
+/**
+ * The server's complaint about one field, if it made one.
+ *
+ * DRF answers a 400 with `{field: ["message", ...]}`, which the API client
+ * hands over as `error.fields`. Showing it beside the input it belongs to is
+ * the difference between "that change could not be saved" and "that e-mail
+ * address is already in use".
+ */
+function FieldError({ errors, name }) {
+  const message = errors?.[name];
+  if (!message) return null;
+
+  return (
+    <span className={styles.officeError}>
+      {Array.isArray(message) ? message.join(' ') : String(message)}
+    </span>
+  );
+}
+
+/**
+ * One labelled input inside an office box.
+ *
+ * @param {{ label: string, name: string, value: string,
+ *           onChange: (value: string) => void, errors?: object,
+ *           type?: string, options?: {value: string, label: string}[] }} props
+ */
+function Field({ label, name, value, onChange, errors, type = 'text', options }) {
+  return (
+    <label className={styles.officeField}>
+      <span className={styles.officeLabel}>{label}</span>
+      {options ? (
+        <select
+          className={styles.officeInput}
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+        >
+          {options.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+      ) : (
+        <input
+          className={styles.officeInput}
+          type={type}
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+        />
+      )}
+      <FieldError errors={errors} name={name} />
+    </label>
+  );
+}
+
+/**
+ * The customer's contact details, as the office may correct them.
+ *
+ * These write to the same User row the customer sees on their own profile
+ * page, so a fixed phone number is the one they read next time they open it.
+ * The username is not here: it is what they type to sign in.
+ */
+function ContactFields({ customer, onSave, busy, errors }) {
+  const [draft, setDraft] = useState({
+    first_name: customer.first_name ?? '',
+    last_name: customer.last_name ?? '',
+    email: customer.email ?? '',
+    phone_number: customer.phone_number ?? '',
+  });
+
+  const dirty = Object.entries(draft).some(
+    ([field, value]) => String(customer[field] ?? '') !== String(value),
+  );
+
+  const set = (field) => (value) =>
+    setDraft((current) => ({ ...current, [field]: value }));
+
+  return (
+    <div className={styles.officeBox}>
+      <p className={styles.officeHead}>Contact details</p>
+
+      <div className={styles.officeGrid}>
+        <Field
+          label="First name"
+          name="first_name"
+          value={draft.first_name}
+          onChange={set('first_name')}
+          errors={errors}
+        />
+        <Field
+          label="Surname"
+          name="last_name"
+          value={draft.last_name}
+          onChange={set('last_name')}
+          errors={errors}
+        />
+        <Field
+          label="E-mail"
+          name="email"
+          type="email"
+          value={draft.email}
+          onChange={set('email')}
+          errors={errors}
+        />
+        <Field
+          label="Phone"
+          name="phone_number"
+          type="tel"
+          value={draft.phone_number}
+          onChange={set('phone_number')}
+          errors={errors}
+        />
+      </div>
+
+      <button
+        type="button"
+        className={styles.rowButton}
+        disabled={!dirty || busy}
+        onClick={() => onSave(draft)}
+      >
+        {busy ? 'Saving…' : 'Save details'}
+      </button>
+    </div>
+  );
+}
+
+/**
+ * The customer's default delivery address — the one their next order is
+ * pre-filled from, and the one their profile page edits.
+ *
+ * Only the default: a customer may keep several addresses, and choosing
+ * between them is theirs to do. What the office needs is to fix the one an
+ * agent is delivering against. If they have none, this adds it.
+ */
+function AddressFields({ customer, onSave, busy, errors }) {
+  const existing =
+    customer.addresses.find((address) => address.is_default) ??
+    customer.addresses[0] ??
+    null;
+
+  const [draft, setDraft] = useState({
+    label: existing?.label ?? '',
+    street: existing?.street ?? '',
+    house_number: existing?.house_number ?? '',
+    postal_code: existing?.postal_code ?? '',
+    city: existing?.city ?? '',
+    country: existing?.country ?? ADDRESS_COUNTRIES[0].value,
+  });
+
+  const dirty = Object.entries(draft).some(
+    ([field, value]) => String(existing?.[field] ?? '') !== String(value),
+  );
+  // A new address has to arrive complete; the server would refuse a blank
+  // street or city anyway, this just says so before the round trip.
+  const complete = draft.street.trim() && draft.city.trim();
+
+  const set = (field) => (value) =>
+    setDraft((current) => ({ ...current, [field]: value }));
+
+  return (
+    <div className={styles.officeBox}>
+      <p className={styles.officeHead}>
+        {existing ? 'Default delivery address' : 'Delivery address — none yet'}
+      </p>
+
+      <div className={styles.officeGrid}>
+        <Field
+          label="Label"
+          name="label"
+          value={draft.label}
+          onChange={set('label')}
+          errors={errors}
+        />
+        <Field
+          label="Street"
+          name="street"
+          value={draft.street}
+          onChange={set('street')}
+          errors={errors}
+        />
+        <Field
+          label="No."
+          name="house_number"
+          value={draft.house_number}
+          onChange={set('house_number')}
+          errors={errors}
+        />
+        <Field
+          label="Postal code"
+          name="postal_code"
+          value={draft.postal_code}
+          onChange={set('postal_code')}
+          errors={errors}
+        />
+        <Field
+          label="City"
+          name="city"
+          value={draft.city}
+          onChange={set('city')}
+          errors={errors}
+        />
+        <Field
+          label="Country"
+          name="country"
+          value={draft.country}
+          onChange={set('country')}
+          options={ADDRESS_COUNTRIES}
+          errors={errors}
+        />
+      </div>
+
+      <button
+        type="button"
+        className={styles.rowButton}
+        disabled={!dirty || !complete || busy}
+        onClick={() =>
+          onSave({
+            // The id is what tells the server to correct this address rather
+            // than add another one beside it.
+            id: existing?.id ?? null,
+            ...draft,
+            is_default: true,
+          })
+        }
+      >
+        {busy ? 'Saving…' : existing ? 'Save address' : 'Add address'}
+      </button>
+    </div>
+  );
+}
+
 export default function Customers() {
   const [params] = useSearchParams();
-  // Only to word the greyed-out row: e-mail is unique, so it identifies the
-  // signed-in account well enough for a label. Which rows are actually locked
-  // is the server's `can_change_role`, not this.
-  const { user } = useAuth();
+  // `user` for two things: wording the greyed-out role, and noticing when the
+  // row being edited is the account this staff member is signed in as — the
+  // header renders from the same copy and would otherwise go stale.
+  const { user, refreshUser } = useAuth();
 
   const list = useCollection(
     listCustomers,
@@ -76,6 +314,10 @@ export default function Customers() {
 
   const [savingId, setSavingId] = useState(null);
   const [error, setError] = useState('');
+  // Which customer's edit panel is open, and the server's last per-field
+  // complaints about it.
+  const [openId, setOpenId] = useState(null);
+  const [fieldErrors, setFieldErrors] = useState({});
 
   async function changeRole(customer, role) {
     setSavingId(customer.id);
@@ -96,15 +338,58 @@ export default function Customers() {
     }
   }
 
+  /**
+   * Runs one of the two saves in the edit panel.
+   *
+   * Both answer with the whole customer row, so the table swaps it in rather
+   * than refetching the page and losing the scroll position.
+   */
+  async function save(customer, write) {
+    setSavingId(customer.id);
+    setError('');
+    setFieldErrors({});
+
+    try {
+      list.replaceRow(await write());
+
+      // Editing your own row means editing the account you are signed in as.
+      // The header, and this page's own idea of who you are, come from the
+      // copy <AuthProvider> holds, so it has to be re-read.
+      if (user?.id === customer.id) await refreshUser();
+    } catch (caught) {
+      // A 400 carries the server's reasons per field; anything else has no
+      // more to say than that it did not happen.
+      if (caught?.fields) setFieldErrors(caught.fields);
+
+      setError(
+        caught?.fields
+          ? 'That change was refused — see the fields below.'
+          : 'That change could not be saved. Check the connection and try again.',
+      );
+    } finally {
+      setSavingId(null);
+    }
+  }
+
+  function toggle(customer) {
+    setFieldErrors({});
+    setError('');
+    setOpenId((current) => (current === customer.id ? null : customer.id));
+  }
+
+  const open = list.rows.find((customer) => customer.id === openId) ?? null;
+
   return (
     <>
       <header className={styles.head}>
         <h1 className={styles.title}>Customers</h1>
         <p className={styles.subtitle}>
           Everyone with an account, with their addresses and how many shipments
-          they have. The role is the only thing editable here — an admin can
-          reach this dashboard and everything in it. Personal data is changed
-          in the Django admin, or by the customer on their own profile.
+          they have. These are the same records customers edit on their own
+          profile page, so a correction made here is what they read next time
+          they open it — and a change they make there shows up on the next
+          load. The role is separate: an admin can reach this dashboard and
+          everything in it.
         </p>
       </header>
 
@@ -150,6 +435,8 @@ export default function Customers() {
                   <th scope="col">Phone</th>
                   <th scope="col">Addresses</th>
                   <th scope="col">Shipments</th>
+                  <th scope="col">Paid</th>
+                  <th scope="col">Outstanding</th>
                   <th scope="col">Joined</th>
                   <th scope="col">Role</th>
                 </tr>
@@ -178,6 +465,18 @@ export default function Customers() {
                               <StatusBadge tone="neutral">Inactive</StatusBadge>
                             )}
                           </div>
+                          {/* Nothing to correct on an erased row: it holds no
+                              personal data, and putting a name back on one
+                              would undo the erasure it was asked for. */}
+                          {!customer.is_erased && (
+                            <button
+                              type="button"
+                              className={styles.linkButton}
+                              onClick={() => toggle(customer)}
+                            >
+                              {openId === customer.id ? 'Close' : 'Edit details'}
+                            </button>
+                          )}
                         </div>
                       </div>
                     </td>
@@ -224,6 +523,25 @@ export default function Customers() {
 
                     <td className={styles.numberCell}>{customer.package_count}</td>
 
+                    <td className={styles.numberCell}>
+                      {formatMoney(customer.paid_eur)}
+                    </td>
+
+                    {/* Amber when there is something outstanding, plain when
+                        there is not. A column of zeros in warning colour
+                        would make every settled customer look like a debt. */}
+                    <td className={styles.numberCell}>
+                      {Number(customer.outstanding_eur) > 0 ? (
+                        <span className={styles.owed}>
+                          {formatMoney(customer.outstanding_eur)}
+                        </span>
+                      ) : (
+                        <span className={styles.mutedCell}>
+                          {formatMoney(customer.outstanding_eur)}
+                        </span>
+                      )}
+                    </td>
+
                     <td className={styles.dateCell}>
                       {formatDate(customer.date_joined)}
                     </td>
@@ -246,10 +564,7 @@ export default function Customers() {
                         <div className={styles.mutedCell}>
                           <div>{customer.is_staff ? 'Admin' : 'Customer'}</div>
                           <div className={styles.roleReason}>
-                            {whyRoleIsFixed(
-                              customer,
-                              Boolean(user?.email) && user.email === customer.email,
-                            )}
+                            {whyRoleIsFixed(customer, user?.id === customer.id)}
                           </div>
                         </div>
                       )}
@@ -260,6 +575,46 @@ export default function Customers() {
             </table>
           </div>
         ))}
+
+      {/* The edit forms below the table rather than inside it: a form crammed
+          into a table cell is unusable, and the same panel is what Bookings
+          opens under its own table. Keyed by the customer, so switching rows
+          rebuilds the drafts instead of carrying one person's half-typed
+          e-mail onto another's row. */}
+      {open && (
+        <section key={open.id} className={styles.detail}>
+          <h2 className={styles.detailTitle}>
+            {open.name}
+            {user?.id === open.id && (
+              <span className={styles.roleReason}> — your own account</span>
+            )}
+          </h2>
+
+          {/* Keyed on the stored values, so a save the server tidied — a
+              lowercased e-mail — leaves the form showing what was actually
+              stored rather than what was typed. Typing does not change these,
+              so a draft survives editing; only a save resets it. */}
+          <ContactFields
+            key={`${open.first_name}|${open.last_name}|${open.email}|${open.phone_number}`}
+            customer={open}
+            busy={savingId === open.id}
+            errors={fieldErrors}
+            onSave={(changes) =>
+              save(open, () => updateCustomer(open.id, changes))
+            }
+          />
+
+          <AddressFields
+            key={JSON.stringify(open.addresses)}
+            customer={open}
+            busy={savingId === open.id}
+            errors={fieldErrors}
+            onSave={(address) =>
+              save(open, () => saveCustomerAddress(open.id, address))
+            }
+          />
+        </section>
+      )}
 
       <Pagination
         page={list.page}

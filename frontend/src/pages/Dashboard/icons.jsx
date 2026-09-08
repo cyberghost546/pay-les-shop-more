@@ -76,6 +76,17 @@ export function UsersIcon() {
   );
 }
 
+export function ReceiptIcon() {
+  return (
+    <Icon>
+      {/* A torn-off slip: the zigzag foot is what tells it apart from the
+          plain document FileIcon two rows above it in the nav. */}
+      <path d="M6 3h12v18l-2-1.4-2 1.4-2-1.4-2 1.4-2-1.4L6 21Z" />
+      <path d="M9.5 8h5M9.5 12h5" />
+    </Icon>
+  );
+}
+
 export function SearchIcon() {
   return (
     <Icon>

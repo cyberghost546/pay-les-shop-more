@@ -10,6 +10,8 @@ import {
   updateNotifications,
   updateProfile,
 } from '../../api/profile';
+import { listInvoices } from '../../api/invoices';
+import Receipts from './Receipts';
 import { AUTH_ERRORS } from '../../api/auth';
 import { useAuth } from '../../auth/useAuth';
 import Loading from '../../components/Loading/Loading';
@@ -19,13 +21,7 @@ import styles from './Profile.module.css';
 
 // Destinations we ship to. Values are ISO codes so the server never has to
 // parse a display name.
-const COUNTRIES = [
-  { code: 'CW', label: 'Curaçao' },
-  { code: 'BQ', label: 'Bonaire' },
-  { code: 'AW', label: 'Aruba' },
-  { code: 'SX', label: 'Sint Maarten' },
-  { code: 'NL', label: 'Nederland' },
-];
+
 
 const NOTIFICATION_KEYS = ['shipping', 'offers', 'newsletter'];
 
@@ -100,6 +96,20 @@ function SectionIcon({ name }) {
         <circle cx="12" cy="9.5" r="2.6" />
       </>
     ),
+    invoices: (
+      <>
+        <path d="M6 3h9l3.5 3.5V21H6Z" />
+        <path d="M14.6 3v3.9h3.9" />
+        <path d="M9 12h6" />
+        <path d="M9 16h4" />
+      </>
+    ),
+    receipts: (
+      <>
+        <path d="M7 3.5h10v17l-2.5-1.6-2.5 1.6-2.5-1.6L7 20.5Z" />
+        <path d="M10 8h4M10 12h4" />
+      </>
+    ),
     password: (
       <>
         <rect x="4.5" y="10.5" width="15" height="10" rx="2" />
@@ -142,6 +152,8 @@ function SectionIcon({ name }) {
 const SECTIONS = [
   { id: 'details', labelKey: 'profile.sections.details' },
   { id: 'address', labelKey: 'profile.sections.address' },
+  { id: 'invoices', labelKey: 'profile.sections.invoices' },
+  { id: 'receipts', labelKey: 'profile.sections.receipts' },
   { id: 'password', labelKey: 'profile.sections.password' },
   { id: 'notifications', labelKey: 'profile.sections.notifications' },
   { id: 'danger', labelKey: 'profile.sections.danger' },
@@ -149,13 +161,23 @@ const SECTIONS = [
 
 export default function Profile() {
   const { t, language } = useLanguage();
-  const { signOut } = useAuth();
+  // setUser, because the header, the booking form and the dashboard's
+  // customer table all render from the copy <AuthProvider> holds. Saving here
+  // has to republish it, or the header goes on greeting the old name.
+  const { signOut, setUser } = useAuth();
   const navigate = useNavigate();
 
   const [profile, setProfile] = useState(null);
   const [details, setDetails] = useState(null);
   const [passwords, setPasswords] = useState(EMPTY_PASSWORDS);
   const [notifications, setNotifications] = useState(null);
+
+  // The invoices load on their own, separately from the profile above.
+  // They are one card on a page of six, so a slow or failing invoice list
+  // must not keep the visitor from changing their password.
+  const [invoices, setInvoices] = useState([]);
+  // 'loading' | 'ready' | 'error'
+  const [invoiceState, setInvoiceState] = useState('loading');
 
   const [detailErrors, setDetailErrors] = useState({});
   const [passwordErrors, setPasswordErrors] = useState({});
@@ -193,6 +215,30 @@ export default function Profile() {
     return () => {
       // Stops a slow response from overwriting state after the visitor has
       // navigated away, or after a retry has already superseded it.
+      cancelled = true;
+    };
+  }, [attempt]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    // No setInvoiceState('loading') here: 'loading' is the initial value, and
+    // a retry re-runs this effect from behind the page-level spinner, so the
+    // card is not on screen to show a stale message in the meantime.
+    listInvoices()
+      .then((loaded) => {
+        if (cancelled) return;
+        setInvoices(loaded);
+        setInvoiceState('ready');
+      })
+      .catch(() => {
+        if (cancelled) return;
+        // Reported inside the card rather than thrown at the page, for the
+        // same reason it is fetched separately.
+        setInvoiceState('error');
+      });
+
+    return () => {
       cancelled = true;
     };
   }, [attempt]);
@@ -270,31 +316,30 @@ export default function Profile() {
     setDetailErrors(found);
     if (Object.keys(found).length > 0) return;
 
-    runSave('details', () =>
-      updateProfile({
+    runSave('details', async () => {
+      const saved = await updateProfile({
         name: details.name.trim(),
         email: details.email.trim(),
         phone: details.phone.trim(),
-      }),
-    );
-  }
-
-  function handleAddressSubmit(event) {
-    event.preventDefault();
-    // Addresses live in their own table, so this does not go through the
-    // profile endpoint. Remember the new id, so a second save patches rather
-    // than creating a duplicate.
-    runSave('address', async () => {
-      const saved = await saveDefaultAddress({
-        addressId: details.addressId,
-        street: details.street.trim(),
-        postalCode: details.postalCode.trim(),
-        city: details.city.trim(),
-        country: details.country,
       });
-      setDetails((current) => ({ ...current, addressId: saved.id }));
+
+      setProfile(saved);
+      // Only the identity fields: the address form below shares this state,
+      // and an unsaved edit sitting in it should not be thrown away by a save
+      // that was never about the address.
+      setDetails((current) => ({
+        ...current,
+        name: saved.name,
+        firstName: saved.firstName,
+        lastName: saved.lastName,
+        email: saved.email,
+        phone: saved.phone,
+      }));
+      setUser(saved);
     });
   }
+
+ 
 
   function handlePasswordSubmit(event) {
     event.preventDefault();
@@ -351,6 +396,18 @@ export default function Profile() {
     year: 'numeric',
     month: 'long',
   }).format(new Date(profile.memberSince));
+
+  const invoiceDate = new Intl.DateTimeFormat(language, {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  });
+
+  // Euros, because that is what the API sends and what the document says.
+  const money = new Intl.NumberFormat(language, {
+    style: 'currency',
+    currency: 'EUR',
+  });
 
   async function handleSignOut() {
     setBusy((current) => ({ ...current, logout: true }));
@@ -517,81 +574,89 @@ export default function Profile() {
             </form>
           </section>
 
-          {/* Delivery address */}
-          <section className={styles.card} id="address">
+          
+
+          {/* Invoices. Read-only: an invoice is a record of what was
+              charged, so there is nothing here to edit. */}
+          <section className={styles.card} id="invoices">
             <h2 className={styles.cardTitle}>
-              <SectionIcon name="address" />
-              {t('profile.sections.address')}
+              <SectionIcon name="invoices" />
+              {t('profile.sections.invoices')}
             </h2>
 
-            <form className={styles.form} onSubmit={handleAddressSubmit} noValidate>
-              <label className={styles.field}>
-                <span className={styles.label}>{t('profile.fields.street')}</span>
-                <input
-                  className={styles.input}
-                  type="text"
-                  name="street"
-                  value={details.street}
-                  onChange={handleDetailChange}
-                  autoComplete="street-address"
-                />
-              </label>
+            <p className={styles.cardIntro}>{t('profile.invoices.intro')}</p>
 
-              <div className={styles.row}>
-                <label className={styles.field}>
-                  <span className={styles.label}>
-                    {t('profile.fields.postalCode')}
-                  </span>
-                  <input
-                    className={styles.input}
-                    type="text"
-                    name="postalCode"
-                    value={details.postalCode}
-                    onChange={handleDetailChange}
-                    autoComplete="postal-code"
-                  />
-                </label>
+            {invoiceState === 'loading' && (
+              <p className={styles.invoiceMessage} role="status">
+                {t('profile.invoices.loading')}
+              </p>
+            )}
 
-                <label className={styles.field}>
-                  <span className={styles.label}>{t('profile.fields.city')}</span>
-                  <input
-                    className={styles.input}
-                    type="text"
-                    name="city"
-                    value={details.city}
-                    onChange={handleDetailChange}
-                    autoComplete="address-level2"
-                  />
-                </label>
-              </div>
+            {invoiceState === 'error' && (
+              <p className={styles.failure} role="alert">
+                {t('profile.invoices.failed')}{' '}
+                <button type="button" className={styles.linkButton} onClick={retry}>
+                  {t('profile.invoices.retry')}
+                </button>
+              </p>
+            )}
 
-              <label className={styles.field}>
-                <span className={styles.label}>{t('profile.fields.country')}</span>
-                <select
-                  className={styles.input}
-                  name="country"
-                  value={details.country}
-                  onChange={handleDetailChange}
-                  autoComplete="country"
-                >
-                  {COUNTRIES.map((country) => (
-                    <option key={country.code} value={country.code}>
-                      {country.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
+            {invoiceState === 'ready' && invoices.length === 0 && (
+              <p className={styles.invoiceMessage}>{t('profile.invoices.empty')}</p>
+            )}
 
-              <button
-                type="submit"
-                className={styles.submit}
-                disabled={busy.address}
-              >
-                {busy.address ? t('profile.saving') : t('profile.save')}
-              </button>
+            {invoiceState === 'ready' && invoices.length > 0 && (
+              <ul className={styles.invoiceList}>
+                {invoices.map((invoice) => (
+                  <li key={invoice.id} className={styles.invoice}>
+                    <div className={styles.invoiceText}>
+                      <p className={styles.invoiceNumber}>{invoice.number}</p>
+                      <p className={styles.invoiceMeta}>
+                        {invoice.sentAt
+                          ? invoiceDate.format(new Date(invoice.sentAt))
+                          : ''}
+                        {invoice.sentAt && ' · '}
+                        {t('profile.invoices.tracking')} {invoice.trackingNumber}
+                      </p>
+                      {invoice.description && (
+                        <p className={styles.invoiceMeta}>{invoice.description}</p>
+                      )}
+                    </div>
 
-              {statusFor('address')}
-            </form>
+                    <div className={styles.invoiceRight}>
+                      {invoice.valueEur != null && (
+                        <span className={styles.invoiceAmount}>
+                          {money.format(Number(invoice.valueEur))}
+                        </span>
+                      )}
+                      {/* A plain link, not a fetch: the session cookie rides
+                          along on a normal navigation, and the browser's own
+                          download handling beats rebuilding it with a blob.
+                          The server sends Content-Disposition: attachment. */}
+                      <a
+                        className={styles.invoiceDownload}
+                        href={invoice.downloadUrl}
+                        download
+                      >
+                        {t('profile.invoices.download')}
+                      </a>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+
+          {/* What the customer sends in: the receipt for what they bought,
+              the shop's invoice, a customs form. The opposite direction to
+              the invoices above. */}
+          <section className={styles.card} id="receipts">
+            <h2 className={styles.cardTitle}>
+              <SectionIcon name="receipts" />
+              {t('profile.sections.receipts')}
+            </h2>
+
+            <Receipts />
           </section>
 
           {/* Change password */}
