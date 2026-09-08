@@ -857,7 +857,18 @@ class InvoiceRenderTests(InvoiceTestCase):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["status"], Invoice.Status.SENT)
-        self.assertTrue(response.data["pdf_url"].endswith(".pdf"))
+
+        # A link to the route that streams the document, not to the file's own
+        # storage path. This used to assert the value ended in ".pdf", which it
+        # did because it was the media URL — and a media URL is a working link
+        # only where MEDIA_ROOT is published by the web server, which is also
+        # what would let anyone able to guess a tracking number read invoices
+        # straight out of it.
+        self.assertIn(
+            reverse("staff-invoice-pdf", args=[invoice.pk]),
+            response.data["pdf_url"],
+        )
+        self.assertNotIn("/media/", response.data["pdf_url"])
 
 
 class InvoiceUploadTests(InvoiceRenderTests):
