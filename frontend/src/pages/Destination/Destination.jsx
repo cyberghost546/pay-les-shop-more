@@ -4,6 +4,7 @@ import { findDestination } from '../../data/destinations';
 import DestinationHero from '../../components/DestinationHero/DestinationHero';
 import QuoteForm from '../../components/QuoteForm/QuoteForm';
 import { useLanguage } from '../../i18n/useLanguage';
+import { usePageMeta } from '../../hooks/usePageMeta';
 import styles from './Destination.module.css';
 
 // The four stages of an order, laid out as a timeline rather than a row of
@@ -66,11 +67,19 @@ export default function Destination() {
   const { t } = useLanguage();
 
   const destination = findDestination(slug);
+  const name = destination ? t(destination.nameKey) : '';
+
+  // Above the early return, because a hook cannot sit behind a condition. An
+  // unknown slug leaves these empty and usePageMeta falls back to the site
+  // defaults, which is the right thing for a page that only redirects.
+  usePageMeta(
+    name && t('destination.howTitle').replace('{island}', name),
+    name && t('destination.howSubtitle'),
+    name && `/destinations/${slug}`,
+  );
 
   // An unknown island in the URL goes to the index rather than a blank page.
   if (!destination) return <Navigate to="/destinations" replace />;
-
-  const name = t(destination.nameKey);
 
   /** Fills {island}, {port} and {days} in a translated string. */
   const fill = (key) =>

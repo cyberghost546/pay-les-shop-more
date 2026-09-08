@@ -1,6 +1,7 @@
 // src/pages/Tracking/Tracking.jsx
 import TrackingPanel from '../../components/TrackingPanel/TrackingPanel';
 import { useLanguage } from '../../i18n/useLanguage';
+import { usePageMeta } from '../../hooks/usePageMeta';
 import styles from './Tracking.module.css';
 
 /**
@@ -9,6 +10,7 @@ import styles from './Tracking.module.css';
  */
 export default function Tracking() {
   const { t } = useLanguage();
+  usePageMeta(t('tracking.pageTitle'), t('tracking.pageLead'), '/tracking');
 
   return (
     <main className={styles.page}>

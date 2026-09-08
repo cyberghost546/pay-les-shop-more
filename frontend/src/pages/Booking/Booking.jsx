@@ -19,6 +19,7 @@ import {
 import { API_ERRORS } from '../../api/client';
 import { useAuth } from '../../auth/useAuth';
 import { useLanguage } from '../../i18n/useLanguage';
+import { usePageMeta } from '../../hooks/usePageMeta';
 import styles from './Booking.module.css';
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
@@ -196,6 +197,7 @@ function ChoiceRow({ name, options, form, onChange, t }) {
 
 export default function Booking() {
   const { t, language } = useLanguage();
+  usePageMeta(t('booking.title'), t('booking.lead'), '/booking');
   const { user } = useAuth();
 
   // A signed-in customer already told us who they are; the sender block starts

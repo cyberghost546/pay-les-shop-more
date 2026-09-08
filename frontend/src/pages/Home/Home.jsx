@@ -15,6 +15,7 @@ import ShippingVisual from './ShippingVisual';
 import RouteMap from './RouteMap';
 import { useInViewport } from '../../hooks/useInViewport';
 import { useLanguage } from '../../i18n/useLanguage';
+import { usePageMeta } from '../../hooks/usePageMeta';
 import styles from './Home.module.css';
 
 // The services this company actually sells, not the freight-forwarder menu.
@@ -98,6 +99,7 @@ function Section({ children, className = '' }) {
 
 export default function Home() {
   const { t } = useLanguage();
+  usePageMeta(t('home.hero.title'), t('home.hero.lead'), '/');
 
   return (
     <main className={styles.page}>

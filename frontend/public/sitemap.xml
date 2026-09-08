@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  The public pages, for search engines.
+
+  Maintained by hand, and so worth keeping short: every entry here is a page a
+  customer could land on cold and understand. Anything behind a login is left
+  out, matching robots.txt.
+
+  No <lastmod>, <changefreq> or <priority>. Google ignores the last two
+  outright, and a <lastmod> that is not genuinely maintained is worse than
+  none — a date that never changes teaches a crawler to stop trusting the
+  field. If this list starts drifting from App.jsx, generate it at build time
+  from the route table instead of adding dates to it.
+-->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://paylesshopmore.com/</loc></url>
+  <url><loc>https://paylesshopmore.com/services</loc></url>
+  <url><loc>https://paylesshopmore.com/tracking</loc></url>
+  <url><loc>https://paylesshopmore.com/booking</loc></url>
+  <url><loc>https://paylesshopmore.com/contact</loc></url>
+  <url><loc>https://paylesshopmore.com/destinations</loc></url>
+  <url><loc>https://paylesshopmore.com/destinations/aruba</loc></url>
+  <url><loc>https://paylesshopmore.com/destinations/bonaire</loc></url>
+  <url><loc>https://paylesshopmore.com/destinations/curacao</loc></url>
+  <url><loc>https://paylesshopmore.com/destinations/sint-maarten</loc></url>
+  <url><loc>https://paylesshopmore.com/destinations/suriname</loc></url>
+</urlset>

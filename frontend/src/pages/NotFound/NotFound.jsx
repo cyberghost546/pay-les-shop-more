@@ -1,10 +1,12 @@
 // src/pages/NotFound/NotFound.jsx
 import { Link } from 'react-router-dom';
 import { useLanguage } from '../../i18n/useLanguage';
+import { usePageMeta } from '../../hooks/usePageMeta';
 import styles from './NotFound.module.css';
 
 export default function NotFound() {
   const { t } = useLanguage();
+  usePageMeta(t('notFound.title'), t('notFound.body'));
 
   return (
     <main className={styles.page}>

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import containerShip from '../../images/container-ship.webp';
 import { DESTINATIONS } from '../../data/destinations';
 import { useLanguage } from '../../i18n/useLanguage';
+import { usePageMeta } from '../../hooks/usePageMeta';
 import styles from './Services.module.css';
 
 // Inline SVGs: public/icons.svg only holds the footer's social logos.
@@ -153,6 +154,7 @@ const FAQ_IDS = ['transit', 'customs', 'vat', 'prohibited', 'insurance'];
 
 export default function Services() {
   const { t } = useLanguage();
+  usePageMeta(t('services.title'), t('services.lead'), '/services');
 
   return (
     <>

@@ -1,0 +1,17 @@
+# PayLesShopMore
+
+# The marketing site is meant to be found. The application behind it is not:
+# these paths either need a login or are meaningless without one, and a search
+# result pointing at the staff dashboard is noise at best. They are client-side
+# routes, so the server hands back index.html for all of them — without this a
+# crawler would happily index a dozen URLs that all render the same shell.
+User-agent: *
+Allow: /
+Disallow: /dashboard
+Disallow: /profile
+Disallow: /login
+Disallow: /signup
+Disallow: /forgot-password
+Disallow: /reset-password
+
+Sitemap: https://paylesshopmore.com/sitemap.xml

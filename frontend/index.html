@@ -16,7 +16,81 @@
       rel="stylesheet"
     />
 
-    <title>PayLesShopMore.com</title>
+    <!-- ================================================================
+         Search and social metadata.
+
+         These are the site-wide defaults, and they live in static HTML on
+         purpose. React 19 hoists <title> and <meta> rendered inside a
+         component into <head>, and the pages use that for their own titles —
+         but that happens in JavaScript, and the crawlers that build a link
+         preview (WhatsApp, Facebook, LinkedIn, iMessage) do not run any. They
+         read the HTML as served and stop. So whatever must survive being
+         pasted into a chat has to be here, in the file, before React starts.
+
+         Google does execute JavaScript, so per-route titles reach search. A
+         link preview is the thing that only this block can fix.
+         ================================================================ -->
+
+    <title>PayLesShopMore — Shop and ship to the Caribbean</title>
+    <meta
+      name="description"
+      content="Order from Dutch webshops and ship to the Caribbean. We gather your parcels in one place and you follow every shipment to your door — Aruba, Bonaire, Curaçao, Sint Maarten and Suriname."
+    />
+
+    <!-- No <link rel="canonical"> here on purpose. This file is served for
+         every route, so a canonical baked into it would tell a crawler that
+         /destinations/aruba *is* the homepage — which is how you get pages
+         dropped from the index rather than ranked. usePageMeta sets it per
+         route instead, where the URL is actually known. -->
+
+    <!-- The colour a mobile browser paints its chrome with. The brand navy,
+         so the address bar continues the header rather than cutting it off. -->
+    <meta name="theme-color" content="#0b2545" />
+
+    <!-- Open Graph: WhatsApp, Facebook, LinkedIn, Slack, iMessage. WhatsApp is
+         the one that matters most here — it is how a shipping business gets
+         passed between people in the Antilles, and until now a shared link
+         arrived as a bare URL with no title, no image and nothing to click. -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="PayLesShopMore" />
+    <meta property="og:url" content="https://paylesshopmore.com/" />
+    <meta
+      property="og:title"
+      content="PayLesShopMore — Shop and ship to the Caribbean"
+    />
+    <meta
+      property="og:description"
+      content="Order from Dutch webshops and ship to the Caribbean. We gather your parcels in one place and you follow every shipment to your door."
+    />
+    <!-- Absolute URL, not a path: a crawler resolving this is not on our
+         origin. 1200x630 is what every one of them renders at, and declaring
+         the dimensions lets the preview reserve the space before the image
+         arrives instead of reflowing when it does. -->
+    <meta property="og:image" content="https://paylesshopmore.com/og-image.jpg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta
+      property="og:image:alt"
+      content="A container ship loaded with freight in port"
+    />
+    <meta property="og:locale" content="en_US" />
+    <!-- The site is fully translated into all three; this tells a crawler the
+         other two exist rather than leaving that work invisible. -->
+    <meta property="og:locale:alternate" content="nl_NL" />
+    <meta property="og:locale:alternate" content="pap_CW" />
+
+    <!-- Twitter/X reads og:* for most fields but needs its own card type to
+         show the large image rather than a thumbnail. -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta
+      name="twitter:title"
+      content="PayLesShopMore — Shop and ship to the Caribbean"
+    />
+    <meta
+      name="twitter:description"
+      content="Order from Dutch webshops and ship to the Caribbean. We gather your parcels in one place and you follow every shipment to your door."
+    />
+    <meta name="twitter:image" content="https://paylesshopmore.com/og-image.jpg" />
   </head>
   <body>
     <div id="root"></div>

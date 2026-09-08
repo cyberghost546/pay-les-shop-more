@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { sendContactMessage } from '../../api/contact';
 import { API_ERRORS } from '../../api/client';
 import { useLanguage } from '../../i18n/useLanguage';
+import { usePageMeta } from '../../hooks/usePageMeta';
 import styles from './Contact.module.css';
 
 const OFFICE = {
@@ -108,6 +109,7 @@ export default function Contact() {
   const [failureKey, setFailureKey] = useState(null);
   const [busy, setBusy] = useState(false);
   const { t, language } = useLanguage();
+  usePageMeta(t('contact.title'), t('contact.lead'), '/contact');
 
   const subjects = t('contact.subjects');
 

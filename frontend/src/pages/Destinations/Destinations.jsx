@@ -4,10 +4,16 @@ import { DESTINATIONS } from '../../data/destinations';
 import DestinationHero from '../../components/DestinationHero/DestinationHero';
 import portHaven from '../../images/port-haven-ship.jpeg';
 import { useLanguage } from '../../i18n/useLanguage';
+import { usePageMeta } from '../../hooks/usePageMeta';
 import styles from './Destinations.module.css';
 
 export default function Destinations() {
   const { t } = useLanguage();
+  usePageMeta(
+    t('destination.indexTitle'),
+    t('destination.indexSubtitle'),
+    '/destinations',
+  );
 
   return (
     <main>
