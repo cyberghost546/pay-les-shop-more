@@ -12,10 +12,13 @@ import os
 import shutil
 import tempfile
 from datetime import timedelta
+from io import StringIO
 from unittest import mock
 
 from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.core.management import call_command
+from django.core.management.base import CommandError
 from django.db import IntegrityError, transaction
 from django.test import override_settings
 from django.utils import timezone
@@ -1269,3 +1272,171 @@ class CustomerInvoiceEndpointTests(InvoiceRenderTests):
         self.assertEqual(delete.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
         invoice.refresh_from_db()
         self.assertEqual(invoice.status, Invoice.Status.SENT)
+
+
+class RerenderCommandTests(InvoiceTestCase):
+    """`manage.py rerender_invoices`, the way back from a failed render.
+
+    Not a subclass of InvoiceRenderTests: subclassing a TestCase inherits its
+    test methods too, and these tests need that class's temporary MEDIA_ROOT,
+    not another thirteen runs of its assertions.
+    """
+
+    def setUp(self):
+        super().setUp()
+
+        self.media_root = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, self.media_root, ignore_errors=True)
+
+        override = override_settings(MEDIA_ROOT=self.media_root)
+        override.enable()
+        self.addCleanup(override.disable)
+
+    def make_stuck_invoice(self, package=None, approved_minutes_ago=60):
+        """An invoice approved while the broker was down.
+
+        This is the state the command exists for: APPROVED, no document, and no
+        job coming. _queue_render swallows the broker failure, which is what
+        lets the approval itself succeed.
+        """
+        invoice = self.make_invoice(package=package or self.package)
+
+        with mock.patch(
+            "invoicing.tasks.render_approved_invoice.delay",
+            side_effect=OSError("no broker"),
+        ):
+            with self.captureOnCommitCallbacks(execute=True):
+                invoice.approve(self.staff)
+
+        # Backdated with an UPDATE rather than a save, so it goes around
+        # auto_now on updated_at and lands only on the column being aged.
+        Invoice.objects.filter(pk=invoice.pk).update(
+            reviewed_at=timezone.now() - timedelta(minutes=approved_minutes_ago)
+        )
+
+        invoice.refresh_from_db()
+        self.assertEqual(invoice.status, Invoice.Status.APPROVED)
+        self.assertEqual(invoice.pdf.name, "")
+        return invoice
+
+    def second_package(self):
+        return Package.objects.create(
+            user=self.customer,
+            tracking_number="PLSM-0002",
+            description="Een doos",
+            status=Package.Status.PAID,
+            value_eur="49.95",
+        )
+
+    def run_command(self, *args):
+        out = StringIO()
+        call_command("rerender_invoices", *args, stdout=out, stderr=StringIO())
+        return out.getvalue()
+
+    def test_a_stuck_invoice_is_rendered_and_sent(self):
+        """The whole point: the invoice the broker outage stranded is finished,
+        with no second approval and the original reviewer intact."""
+        invoice = self.make_stuck_invoice()
+
+        self.run_command()
+
+        invoice.refresh_from_db()
+        self.assertEqual(invoice.status, Invoice.Status.SENT)
+        self.assertTrue(invoice.pdf.name)
+        self.assertIsNotNone(invoice.sent_at)
+        self.assertEqual(invoice.reviewed_by, self.staff)
+        self.assertTrue(os.path.exists(invoice.pdf.path))
+
+    def test_a_fresh_approval_is_left_for_the_worker(self):
+        """An invoice approved seconds ago most likely has a worker on it. The
+        age cutoff keeps the command from piling a second job on top."""
+        invoice = self.make_stuck_invoice(approved_minutes_ago=0)
+
+        output = self.run_command()
+
+        invoice.refresh_from_db()
+        self.assertEqual(invoice.status, Invoice.Status.APPROVED)
+        self.assertIn("No invoices are awaiting a document", output)
+
+    def test_min_age_zero_takes_the_fresh_one_too(self):
+        """For the case where you know the broker was down and there is no
+        worker to wait for."""
+        invoice = self.make_stuck_invoice(approved_minutes_ago=0)
+
+        self.run_command("--min-age", "0")
+
+        invoice.refresh_from_db()
+        self.assertEqual(invoice.status, Invoice.Status.SENT)
+
+    def test_dry_run_reports_but_queues_nothing(self):
+        invoice = self.make_stuck_invoice()
+
+        output = self.run_command("--dry-run")
+
+        invoice.refresh_from_db()
+        self.assertEqual(invoice.status, Invoice.Status.APPROVED)
+        self.assertEqual(invoice.pdf.name, "")
+        self.assertIn("would be re-queued", output)
+        self.assertIn(self.package.tracking_number, output)
+
+    def test_an_already_sent_invoice_is_not_touched(self):
+        """The command's filter is the dashboard's filter. A sent invoice is
+        not in it, so a re-run cannot produce a second document."""
+        invoice = self.make_stuck_invoice()
+        self.run_command()
+
+        invoice.refresh_from_db()
+        first_name, first_sent_at = invoice.pdf.name, invoice.sent_at
+
+        output = self.run_command()
+
+        invoice.refresh_from_db()
+        self.assertEqual(invoice.pdf.name, first_name)
+        self.assertEqual(invoice.sent_at, first_sent_at)
+        self.assertIn("No invoices are awaiting a document", output)
+        self.assertEqual(len(os.listdir(os.path.dirname(invoice.pdf.path))), 1)
+
+    def test_naming_an_invoice_that_is_not_stuck_is_an_error(self):
+        """Naming one invoice is a specific claim about it. Being told nothing
+        happened beats a clean exit that did nothing."""
+        invoice = self.make_invoice()  # still pending review
+
+        with self.assertRaises(CommandError):
+            self.run_command("--invoice", str(invoice.pk))
+
+    def test_naming_an_invoice_ignores_the_age_cutoff(self):
+        invoice = self.make_stuck_invoice(approved_minutes_ago=0)
+
+        self.run_command("--invoice", str(invoice.pk))
+
+        invoice.refresh_from_db()
+        self.assertEqual(invoice.status, Invoice.Status.SENT)
+
+    def test_a_broker_that_is_still_down_exits_non_zero(self):
+        """A cron calling this has to be able to tell a rescue from a no-op."""
+        invoice = self.make_stuck_invoice()
+
+        with mock.patch(
+            "invoicing.tasks.render_approved_invoice.delay",
+            side_effect=OSError("still no broker"),
+        ):
+            with self.assertRaises(CommandError):
+                self.run_command()
+
+        invoice.refresh_from_db()
+        self.assertEqual(invoice.status, Invoice.Status.APPROVED)
+
+    def test_limit_takes_the_oldest_approval_first(self):
+        """A --limit run should rescue what has waited longest, not whichever
+        row the database happened to hand back."""
+        older = self.make_stuck_invoice(approved_minutes_ago=120)
+        newer = self.make_stuck_invoice(
+            package=self.second_package(), approved_minutes_ago=30
+        )
+
+        self.run_command("--limit", "1")
+
+        older.refresh_from_db()
+        newer.refresh_from_db()
+        self.assertEqual(older.status, Invoice.Status.SENT)
+        self.assertEqual(newer.status, Invoice.Status.APPROVED)
