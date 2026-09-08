@@ -19,6 +19,9 @@ function rather than a post_save signal on Package:
 
 from django.db import transaction
 
+from accounts.events import record_event
+from accounts.models import PackageEvent
+
 from .models import Invoice
 
 
@@ -44,5 +47,15 @@ def ensure_invoice_for_package(package):
         # observe the intermediate DRAFT row.
         invoice = Invoice.objects.create(package=package)
         invoice.submit_for_review()
+
+        # No actor. Raising an invoice is a consequence of a package being
+        # marked paid, not a separate decision — the STATUS_CHANGED event
+        # written immediately before this one carries the name of whoever
+        # marked it, which is the person a reader is actually looking for.
+        record_event(
+            package,
+            PackageEvent.Kind.INVOICE_RAISED,
+            invoice_id=invoice.pk,
+        )
 
     return invoice

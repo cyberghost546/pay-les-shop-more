@@ -29,14 +29,31 @@ class StaffInvoiceSerializer(serializers.ModelSerializer):
         decimal_places=2,
         read_only=True,
     )
-    # use_url with the request in the serializer context gives an absolute
-    # URL, which is what the dashboard needs — it runs on a different origin
-    # from the API, so a path relative to the API host would resolve against
-    # the Vite dev server. Empty until the render task has run, and null rather
-    # than "" so the React side can test it directly.
-    pdf_url = serializers.FileField(source="pdf", read_only=True, use_url=True)
+    # The route that streams the document, not the file's own storage URL.
+    #
+    # This was a FileField with use_url=True, which serves an absolute media
+    # path — a working download only where MEDIA_ROOT is published by the web
+    # server, and a published MEDIA_ROOT is one where
+    # invoices/2026/INV-2026-00002-PLSM-0002.pdf can be fetched by anyone able
+    # to guess a tracking number. Every customer can guess one: they are
+    # sequential and we print theirs on the label. The customer-facing
+    # serializer below already refused to emit a storage path for exactly this
+    # reason; the two disagreed, and this is the side that was wrong.
+    #
+    # Still absolute, still called pdf_url, still null before the render has
+    # run — the dashboard cannot tell the difference.
+    pdf_url = serializers.SerializerMethodField()
     customer = serializers.SerializerMethodField()
     reviewed_by_name = serializers.SerializerMethodField()
+
+    def get_pdf_url(self, obj):
+        """None until there is a document, so the React side can test it."""
+        if not obj.pdf:
+            return None
+
+        path = reverse("staff-invoice-pdf", kwargs={"pk": obj.pk})
+        request = self.context.get("request")
+        return request.build_absolute_uri(path) if request else path
 
     class Meta:
         model = Invoice

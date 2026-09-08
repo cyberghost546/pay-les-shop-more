@@ -1440,3 +1440,96 @@ class RerenderCommandTests(InvoiceTestCase):
         newer.refresh_from_db()
         self.assertEqual(older.status, Invoice.Status.SENT)
         self.assertEqual(newer.status, Invoice.Status.APPROVED)
+
+
+class StaffInvoicePdfRouteTests(InvoiceTestCase):
+    """The staff download route, and the reason it exists.
+
+    StaffInvoiceSerializer used to publish the file's own media URL. That is a
+    working link only where MEDIA_ROOT is served by the web server, and a
+    MEDIA_ROOT that is served is one where the storage path can be fetched by
+    anyone who can construct it. The paths are constructible: invoice numbers
+    are sequential and tracking numbers are printed on the label.
+    """
+
+    def setUp(self):
+        super().setUp()
+
+        self.media_root = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, self.media_root, ignore_errors=True)
+
+        override = override_settings(MEDIA_ROOT=self.media_root)
+        override.enable()
+        self.addCleanup(override.disable)
+
+    def sent_invoice(self):
+        """An invoice with a real rendered document behind it."""
+        invoice = self.make_invoice()
+        with self.captureOnCommitCallbacks(execute=True):
+            invoice.approve(self.staff)
+        invoice.refresh_from_db()
+        return invoice
+
+    def pdf_url(self, invoice):
+        return reverse("staff-invoice-pdf", args=[invoice.pk])
+
+    def test_the_serializer_never_publishes_a_storage_path(self):
+        """The regression test for the whole change. Whatever else moves, this
+        value must not become a /media/ URL again."""
+        invoice = self.sent_invoice()
+        self.client.force_authenticate(self.staff)
+
+        response = self.client.get(reverse("staff-invoice-list"), {"status": "sent"})
+        row = response.data["results"][0]
+
+        self.assertIsNotNone(row["pdf_url"])
+        self.assertNotIn("/media/", row["pdf_url"])
+        self.assertIn(f"/api/staff/invoices/{invoice.pk}/pdf/", row["pdf_url"])
+
+    def test_staff_can_fetch_the_document(self):
+        invoice = self.sent_invoice()
+        self.client.force_authenticate(self.staff)
+
+        response = self.client.get(self.pdf_url(invoice))
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response["Content-Type"], "application/pdf")
+        self.assertTrue(b"".join(response.streaming_content).startswith(b"%PDF-"))
+
+    def test_it_opens_in_the_tab_rather_than_downloading(self):
+        """Staff work through a queue of these. The customer route attaches;
+        this one does not, on purpose."""
+        invoice = self.sent_invoice()
+        self.client.force_authenticate(self.staff)
+
+        response = self.client.get(self.pdf_url(invoice))
+
+        self.assertNotIn("attachment", response.get("Content-Disposition", ""))
+
+    def test_a_customer_cannot_use_the_staff_route(self):
+        """IsStaff, checked by DRF before the handler runs."""
+        invoice = self.sent_invoice()
+        self.client.force_authenticate(self.customer)
+
+        response = self.client.get(self.pdf_url(invoice))
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_an_anonymous_caller_cannot_use_the_staff_route(self):
+        invoice = self.sent_invoice()
+
+        response = self.client.get(self.pdf_url(invoice))
+
+        self.assertIn(
+            response.status_code,
+            (status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN),
+        )
+
+    def test_an_invoice_with_no_document_is_a_404(self):
+        """Not a 500 from opening a file that is not there."""
+        invoice = self.make_invoice()
+        self.client.force_authenticate(self.staff)
+
+        response = self.client.get(self.pdf_url(invoice))
+
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)

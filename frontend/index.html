@@ -2,6 +2,45 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+
+    <!-- Content Security Policy. Placed first, because a policy the browser
+         has not read yet does not apply to anything above it.
+
+         script-src is strict: no 'unsafe-inline', no 'unsafe-eval'. That is
+         affordable because the Vite build emits no inline scripts at all —
+         one module tag with a src, and nothing else — so the usual reason
+         people weaken this does not apply here. It is the directive that
+         actually stops an injected <script> from running.
+
+         style-src does allow 'unsafe-inline'. React sets the style prop
+         through the CSSOM rather than as a parsed attribute, so it is not
+         strictly needed today, but a stylesheet that silently fails to load
+         takes the whole site's appearance with it and styles are a far
+         smaller injection risk than scripts. The trade is deliberate.
+
+         connect-src 'self' because api/client.js talks to a relative /api,
+         so the API is same-origin in production whatever hosts it.
+         frame-src is the embedded map on the contact page.
+
+         Note what a <meta> policy cannot do: frame-ancestors, sandbox and
+         report-uri are header-only and are ignored here. Clickjacking cover
+         for this app therefore has to come from the host serving these files
+         — Django's X_FRAME_OPTIONS protects Django's own responses, not the
+         built React bundle. -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self';
+               script-src 'self';
+               style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+               font-src 'self' https://fonts.gstatic.com;
+               img-src 'self' data:;
+               connect-src 'self';
+               frame-src https://www.google.com;
+               base-uri 'self';
+               form-action 'self';
+               object-src 'none'"
+    />
+
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 

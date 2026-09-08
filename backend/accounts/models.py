@@ -511,3 +511,137 @@ class PackageDocument(models.Model):
             else f"document-{self.pk}"
         )
         return f"{stem}-{self.kind}{extension}"
+
+
+class PackageEvent(models.Model):
+    """One thing that happened to an order, kept for good.
+
+    The system had no memory. Package carries a status and two timestamps —
+    shipped_at and delivered_at — which is the current state plus two moments
+    out of seven, and Invoice.submit_for_review() deliberately erases
+    reviewed_by, reviewed_at and rejection_reason every time a corrected
+    invoice comes back round. An invoice rejected three times and then approved
+    showed the approval and nothing else. None of that was recoverable, because
+    none of it was ever written down.
+
+    So this is the write-down. Append-only, one row per thing that happened,
+    keyed to the order rather than to the package or the invoice separately:
+    Invoice is OneToOne with Package, so an order's whole history — shipping
+    and billing both — is one query in one chronological list, which is exactly
+    what a timeline is.
+
+    Two kinds of question it answers, from the same rows:
+
+      * What happened to my order, and when.
+      * Who approved that invoice, and what did the reviewer who rejected it
+        the first time actually say.
+
+    Rows are never updated. save() refuses it rather than trusting everyone to
+    remember, because a log that can be edited answers the second question with
+    whatever the last editor wanted it to say.
+    """
+
+    class Kind(models.TextChoices):
+        # Written by staff.views.PackageViewSet.perform_update, the one place
+        # a package's status changes.
+        STATUS_CHANGED = "status_changed", "Shipment status changed"
+
+        # Written by invoicing. Kept as distinct kinds rather than one
+        # "invoice_changed" with the status in context, because a timeline
+        # renders them with different words and a reader filtering for
+        # rejections should not have to know the shape of a JSON blob.
+        INVOICE_RAISED = "invoice_raised", "Invoice raised"
+        INVOICE_RESUBMITTED = "invoice_resubmitted", "Invoice resubmitted"
+        INVOICE_APPROVED = "invoice_approved", "Invoice approved"
+        INVOICE_REJECTED = "invoice_rejected", "Invoice rejected"
+        INVOICE_SENT = "invoice_sent", "Invoice sent"
+
+    # The verdicts. Split out because the constraint below needs them and
+    # because "show me the review history" is a query somebody will want.
+    REVIEW_KINDS = (Kind.INVOICE_APPROVED, Kind.INVOICE_REJECTED)
+
+    # CASCADE, matching Invoice.package: the history of an order that no longer
+    # exists is not a record of anything. The erasure path customers actually
+    # take is User.anonymise(), which keeps every package and so keeps this.
+    package = models.ForeignKey(
+        Package,
+        on_delete=models.CASCADE,
+        related_name="events",
+    )
+
+    kind = models.CharField(max_length=32, choices=Kind.choices)
+
+    # When it happened, which is not always when the row was written: the
+    # backfill in migration 0008 states times it read from shipped_at and
+    # reviewed_at, and those are years older than the row. Hence a default
+    # rather than auto_now_add — the caller is allowed to know better.
+    at = models.DateTimeField(default=timezone.now)
+
+    # When we found out. Separate from `at` so a backfilled row is honest about
+    # being backfilled, and so two events claiming the same moment can still be
+    # put in the order they were recorded.
+    recorded_at = models.DateTimeField(auto_now_add=True)
+
+    # PROTECT for the same reason as Invoice.reviewed_by: this is the audit
+    # trail, and a staff account that has approved things cannot be deleted out
+    # from under the record of it having done so. Null for events with no
+    # person behind them — the render task marking an invoice sent is the
+    # system finishing a job, not somebody deciding something.
+    actor = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="package_events",
+    )
+
+    # The facts the wording is built from: from_status and to_status for a
+    # shipment move, reason for a rejection, invoice_number for the billing
+    # ones. Denormalised on the same reasoning as Notification.context — the
+    # line has to still read correctly after the invoice it describes has been
+    # corrected out from under it.
+    context = models.JSONField(default=dict, blank=True)
+
+    class Meta:
+        # Chronological, with the primary key breaking ties: a backfill can
+        # write several events carrying the same timestamp, and a timeline that
+        # reorders itself between two requests looks broken.
+        ordering = ["at", "id"]
+        indexes = [
+            # The timeline query, and the only one that matters.
+            models.Index(fields=["package", "at"]),
+            # "Every rejection last month", for the review log.
+            models.Index(fields=["kind", "-at"]),
+        ]
+        constraints = [
+            # A verdict is somebody's. An approval with no approver is the
+            # exact hole this table was built to close, so it is closed in the
+            # database and not only in the helper that writes the rows.
+            models.CheckConstraint(
+                condition=(
+                    ~Q(kind__in=["invoice_approved", "invoice_rejected"])
+                    | Q(actor__isnull=False)
+                ),
+                name="package_event_verdict_has_an_actor",
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.package.tracking_number}: {self.get_kind_display()}"
+
+    def save(self, *args, **kwargs):
+        """Write once.
+
+        Refused rather than merely discouraged. The whole value of this table
+        is that a row means what it said when it was written; a log that can be
+        edited after the fact proves nothing about who did what.
+
+        Deleting is left alone: the CASCADE from Package has to work, and a
+        history without its order is not a record anybody can read anyway.
+        """
+        if self.pk is not None and not self._state.adding:
+            raise ValueError(
+                "PackageEvent rows are append-only and cannot be changed. "
+                "Record a new event instead."
+            )
+        return super().save(*args, **kwargs)

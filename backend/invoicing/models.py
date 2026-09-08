@@ -15,6 +15,8 @@ way in that skips it.
 
 import logging
 
+from accounts.events import record_event
+from accounts.models import PackageEvent
 from django.conf import settings
 from django.db import models, transaction
 from django.db.models import Q
@@ -229,12 +231,30 @@ class Invoice(models.Model):
         of every rejection would need a table of its own, which this milestone
         does not have.
         """
-        return self._transition(
+        # Read before the transition, which is what erases the evidence: a
+        # first submission and a resubmission are the same UPDATE, and only
+        # the state it came from tells them apart.
+        was_rejected = self.status == self.Status.REJECTED
+
+        self._transition(
             self.Status.PENDING_REVIEW,
             reviewed_by=None,
             reviewed_at=None,
             rejection_reason="",
         )
+
+        # Only a resubmission is news. The DRAFT -> PENDING_REVIEW hop every
+        # invoice makes inside ensure_invoice_for_package is part of being
+        # raised, and is recorded there — a second line saying the same thing
+        # would put every invoice on the timeline twice.
+        if was_rejected:
+            record_event(
+                self.package,
+                PackageEvent.Kind.INVOICE_RESUBMITTED,
+                invoice_id=self.pk,
+            )
+
+        return self
 
     def approve(self, reviewed_by):
         """PENDING_REVIEW -> APPROVED, and queue the PDF that follows from it.
@@ -256,6 +276,16 @@ class Invoice(models.Model):
             reviewed_by=reviewed_by,
             reviewed_at=timezone.now(),
             rejection_reason="",
+        )
+
+        # After the transition, never before: _transition is the conditional
+        # UPDATE that decides who actually won, so only the winner gets here
+        # and the history cannot record two approvals for one invoice.
+        record_event(
+            self.package,
+            PackageEvent.Kind.INVOICE_APPROVED,
+            actor=reviewed_by,
+            invoice_id=self.pk,
         )
 
         # Imported here, not at module scope: tasks.py imports this module, and
@@ -296,12 +326,26 @@ class Invoice(models.Model):
         if not reason:
             raise InvalidInvoiceTransition("A rejection has to say what is wrong.")
 
-        return self._transition(
+        self._transition(
             self.Status.REJECTED,
             reviewed_by=reviewed_by,
             reviewed_at=timezone.now(),
             rejection_reason=reason,
         )
+
+        # The row this table exists for. submit_for_review() clears
+        # rejection_reason the moment a corrected invoice comes back, so
+        # without this line the reviewer's actual words are gone and an invoice
+        # rejected three times looks like one that was approved first time.
+        record_event(
+            self.package,
+            PackageEvent.Kind.INVOICE_REJECTED,
+            actor=reviewed_by,
+            reason=reason,
+            invoice_id=self.pk,
+        )
+
+        return self
 
     def replace_document(self, pdf_name):
         """Swap the document on an invoice the customer already has.
@@ -352,6 +396,15 @@ class Invoice(models.Model):
             )
 
         self._transition(self.Status.SENT, sent_at=timezone.now(), pdf=pdf_name)
+
+        # No actor: a worker finishing a render is the system completing a job
+        # somebody else decided on, not a person making a decision. The
+        # approval two lines up the timeline is where the name belongs.
+        record_event(
+            self.package,
+            PackageEvent.Kind.INVOICE_SENT,
+            invoice_id=self.pk,
+        )
 
         # Telling the customer is part of sending, not a step the caller has to
         # remember. _transition is a conditional UPDATE that only one caller can

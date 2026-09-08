@@ -3,7 +3,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 
-from .models import Address, Package, User
+from .models import Address, Package, PackageEvent, User
 
 
 class AddressInline(admin.TabularInline):
@@ -48,3 +48,62 @@ class PackageAdmin(admin.ModelAdmin):
     # A plain select would load every address in the database into the page.
     autocomplete_fields = ("user", "delivery_address")
     date_hierarchy = "created_at"
+
+
+@admin.register(PackageEvent)
+class PackageEventAdmin(admin.ModelAdmin):
+    """The order history, read-only — which is the whole point of it.
+
+    Every permission below is closed. An append-only log with an edit form in
+    front of it is not an audit trail, it is a note somebody can change after
+    being asked about it, and the model's own save() refuses updates anyway.
+    This makes the admin agree rather than offer a form that would only fail.
+
+    It is registered mainly so the review history is reachable at all: "who
+    rejected this invoice and what did they say" is now answerable, and until
+    there is a screen for it this is the screen.
+    """
+
+    list_display = ("at", "tracking_number", "kind", "actor", "summary")
+    list_filter = ("kind", "at")
+    search_fields = (
+        "package__tracking_number",
+        "package__user__email",
+        "actor__email",
+    )
+    list_select_related = ("package", "actor")
+    date_hierarchy = "at"
+    ordering = ("-at", "-id")
+
+    def has_add_permission(self, request):
+        # Events are recorded by record_event at the point the thing happened,
+        # never typed in afterwards.
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+    @admin.display(description="tracking number", ordering="package__tracking_number")
+    def tracking_number(self, obj):
+        return obj.package.tracking_number
+
+    @admin.display(description="detail")
+    def summary(self, obj):
+        """The one fact that makes each kind worth reading, out of context."""
+        context = obj.context or {}
+
+        if obj.kind == PackageEvent.Kind.STATUS_CHANGED:
+            before = context.get("from_status")
+            after = context.get("to_status", "?")
+            return f"{before} → {after}" if before else after
+
+        if obj.kind == PackageEvent.Kind.INVOICE_REJECTED:
+            return context.get("reason", "")
+
+        if context.get("backfilled"):
+            return "(backfilled)"
+
+        return ""

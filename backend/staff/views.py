@@ -13,6 +13,7 @@ from django.db import transaction
 from django.db.models import Count, DecimalField, OuterRef, Q, Subquery, Sum
 from django.db.models.functions import Coalesce
 from django.db.models.functions import TruncDate
+from django.http import FileResponse, Http404
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from rest_framework import mixins, status as http_status, viewsets
@@ -22,7 +23,8 @@ from rest_framework.exceptions import APIException, PermissionDenied, Validation
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from accounts.models import Package, PackageDocument
+from accounts.events import record_event
+from accounts.models import Package, PackageDocument, PackageEvent
 from bookings.models import Booking
 from bookings.serializers import StaffBookingSerializer
 from enquiries.models import ContactMessage, QuoteRequest
@@ -301,6 +303,20 @@ class PackageViewSet(StaffViewSet):
         with transaction.atomic():
             package = serializer.save(**stamps)
 
+            # The order's own record of the move, written before anything that
+            # follows from it so the history reads in the order it happened.
+            # Guarded on an actual change for the same reason the invoice is:
+            # a corrected weight is not progress and does not belong on a
+            # timeline as though it were.
+            if status != previous_status:
+                record_event(
+                    package,
+                    PackageEvent.Kind.STATUS_CHANGED,
+                    actor=self.request.user,
+                    from_status=previous_status,
+                    to_status=status,
+                )
+
             # Entering PAID is the event, not being in it. Without the
             # before-and-after comparison, every later edit to a paid package —
             # a corrected weight, a note — would re-run this.
@@ -440,6 +456,54 @@ class InvoiceViewSet(
             raise InvoiceTransitionRefused(str(exc))
 
         return Response(self.get_serializer(self.base_queryset().get(pk=invoice.pk)).data)
+
+    @action(detail=True, methods=["get"])
+    def pdf(self, request, pk=None):
+        """Stream the rendered invoice to a member of staff.
+
+        Exists so that StaffInvoiceSerializer does not have to hand out the
+        storage path. It used to expose the file's own media URL, which is a
+        working download only if MEDIA_ROOT is published by the web server —
+        and a MEDIA_ROOT that is published is one where invoices/2026/
+        INV-2026-00002-PLSM-0002.pdf can be fetched by anyone who can guess a
+        tracking number, which every customer of ours can. The customer-facing
+        serializer already refused to do this and said why; this is the
+        dashboard catching up with it.
+
+        IsStaff is checked by DRF before this runs, so unlike the customer
+        route there is no per-object narrowing to do: staff may see every
+        invoice, which is the job.
+        """
+        invoice = self.get_object()
+
+        if not invoice.pdf:
+            raise Http404("This invoice has no document yet.")
+
+        try:
+            handle = invoice.pdf.open("rb")
+        except FileNotFoundError:
+            # A row pointing at bytes that are not there — a media directory
+            # restored without its contents. A 404, not the 500 that opening a
+            # missing file would otherwise produce.
+            raise Http404("This invoice's document is missing.")
+
+        # Inline, unlike the customer route, which sends as_attachment so the
+        # document lands in a downloads folder under a name that means
+        # something. The dashboard opens this in a new tab and staff work
+        # through a queue of them; forcing a download for each would be a
+        # worse job than the one they had before this route existed.
+        #
+        # Safe to render in place: every PDF here is either drawn by our own
+        # ReportLab code or an upload that InvoiceDocumentSerializer checked
+        # for a %PDF- signature, the content type is stated rather than
+        # guessed, and SECURE_CONTENT_TYPE_NOSNIFF stops a browser from
+        # deciding it is HTML after all.
+        return FileResponse(
+            handle,
+            as_attachment=False,
+            filename=f"{invoice_number(invoice)}.pdf",
+            content_type="application/pdf",
+        )
 
     @action(detail=True, methods=["post"])
     def approve(self, request, pk=None):

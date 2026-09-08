@@ -232,6 +232,19 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
     ],
+    # JSON only in production. DRF's default renderer list includes the
+    # browsable HTML API, which is a genuinely useful thing to click around in
+    # development and a self-documenting map of every endpoint, field and
+    # filter to anyone who finds it in production. Permissions still apply to
+    # it, so this is not a breach — but there is no reason to publish the map.
+    'DEFAULT_RENDERER_CLASSES': (
+        [
+            'rest_framework.renderers.JSONRenderer',
+            'rest_framework.renderers.BrowsableAPIRenderer',
+        ]
+        if DEBUG
+        else ['rest_framework.renderers.JSONRenderer']
+    ),
     'DEFAULT_THROTTLE_CLASSES': [
         'rest_framework.throttling.AnonRateThrottle',
     ],
@@ -309,6 +322,17 @@ if not DEBUG:
     SECURE_CONTENT_TYPE_NOSNIFF = True
     # Behind a proxy or load balancer that terminates TLS.
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+    # Send the full URL only to ourselves. Django's own default is
+    # same-origin, but it is set explicitly here because the value matters:
+    # invoice and document routes carry ids in the path, and a link followed
+    # out to a third party should not hand them that path in a Referer header.
+    SECURE_REFERRER_POLICY = 'same-origin'
+
+    # Browsers that still honour it; frame-ancestors in a CSP is the modern
+    # spelling, but that has to be a real header and this project's HTML is
+    # served by whatever hosts the built React app, not by Django.
+    X_FRAME_OPTIONS = 'DENY'
 
 
 # ---------------------------------------------------------------------------
