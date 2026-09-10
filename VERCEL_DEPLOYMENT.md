@@ -53,6 +53,14 @@ instead:
 Replace that host with wherever your Django deployment answers. Everything else
 in the file is correct as it stands.
 
+Leave the `(.*)` alone while you are in there. The obvious spelling is
+`/api/:path*`, and it is wrong: it does not match a path that ends in a
+slash, so `/api/auth/login/` falls past it to the single-page fallback below
+and the browser is handed the homepage HTML instead of reaching Django. Every
+route this API has ends in a slash, because that is what DRF's router
+generates, so the named-parameter form silently breaks all of them while
+looking correct. `(.*)` captures the trailing slash and `$1` puts it back.
+
 ## Vercel project settings
 
 Import the repository and leave the framework preset alone — `vercel.json`
