@@ -79,6 +79,52 @@ No environment variables are needed on Vercel. The site talks to `/api`, and
 which API that is comes from the rewrite. Set `VITE_API_BASE_URL` only if you
 cannot use a rewrite — see the last section.
 
+## Deploying the API to Railway
+
+`backend/Dockerfile` and `backend/railway.json` are written for this. The health
+check, the restart policy and the build are declared there, so the only things
+left are the ones Railway cannot guess.
+
+**Two services from the same repository, both with the root directory set to
+`backend`.** They must run the same image: a task queued by the web process is
+unknown to a worker running different code.
+
+| Service | Start command | What it does |
+| --- | --- | --- |
+| `api` | leave empty, so the Dockerfile runs migrations then gunicorn | Answers requests |
+| `worker` | `celery -A config worker --loglevel=info` | Renders invoice PDFs, sends notification e-mail |
+
+**Add Postgres and Redis** from Railway's own catalogue, in the same project.
+Both publish their connection strings as variables you reference rather than
+copy, so a rotated password does not have to be chased across services:
+
+```
+DATABASE_URL=${{Postgres.DATABASE_URL}}
+CELERY_BROKER_URL=${{Redis.REDIS_URL}}
+REDIS_URL=${{Redis.REDIS_URL}}
+```
+
+Set these, and every variable in the table below, on **both** services. The
+worker needs the database and the broker exactly as much as the web process
+does, and it sends the invoice e-mail, so it needs the mail settings too.
+
+**Generate a domain** for the `api` service. Then set `DJANGO_ALLOWED_HOSTS` to
+that hostname, and put the same hostname into the `/api` rewrite in
+`vercel.json`.
+
+**Do not set `PORT`.** Railway injects it and the Dockerfile reads it.
+
+Migrations run at container start rather than in a release step, because
+Railway has no release phase guaranteed to finish before traffic arrives.
+Django holds a lock in Postgres while they run, so a second replica starting at
+the same moment waits rather than applying the same migration twice.
+
+Create the first administrator once the service is up, from Railway's shell:
+
+```sh
+python manage.py createsuperuser
+```
+
 ## Environment variables on the API host
 
 `backend/.env.example` documents all of them. These are the ones without which

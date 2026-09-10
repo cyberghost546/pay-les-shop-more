@@ -1,0 +1,32 @@
+# What must never reach the image.
+#
+# The virtualenv first, and it is not only a size problem: .venv here was
+# built on Windows, so its scripts and compiled extensions are useless in a
+# Linux container and would sit on top of the ones pip installs.
+.venv/
+venv/
+env/
+
+# Secrets. The container is configured by the platform's environment
+# variables; a .env baked into an image is a secret that travels with it.
+.env
+
+# The local database. Real data does not belong in an image any more than it
+# belongs in git.
+db.sqlite3
+*.sqlite3
+
+# Uploaded files. These live in object storage in production — see the
+# AWS_STORAGE_BUCKET_NAME section of config/settings.py.
+media/
+
+# Written by collectstatic during the build, so a stale local copy must not
+# be copied in on top of it.
+staticfiles/
+
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.coverage
+htmlcov/
