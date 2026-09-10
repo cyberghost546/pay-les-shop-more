@@ -495,6 +495,23 @@ if not DEBUG:
     # Behind a proxy or load balancer that terminates TLS.
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
+    # The two probes, and only the two probes, are answered over plain HTTP.
+    #
+    # A container platform checks health by calling the container directly on
+    # its internal network. There is no proxy in front of that request, so
+    # nothing sets X-Forwarded-Proto, so SECURE_SSL_REDIRECT answers the probe
+    # with a 301 — and a platform reading anything but a 2xx as unhealthy will
+    # refuse to route traffic to a process that is working perfectly well.
+    # Found by running the image against a real Postgres and watching the
+    # health check come back 301.
+    #
+    # Narrower than turning the redirect off. These two endpoints are public
+    # by design and deliberately say nothing about the deployment, so there is
+    # nothing here worth protecting in transit; every other URL still gets the
+    # redirect. Matched without the leading slash, which is what Django's
+    # SecurityMiddleware compares against.
+    SECURE_REDIRECT_EXEMPT = [r'^api/health/$', r'^api/ready/$']
+
     # Send the full URL only to ourselves. Django's own default is
     # same-origin, but it is set explicitly here because the value matters:
     # invoice and document routes carry ids in the path, and a link followed
