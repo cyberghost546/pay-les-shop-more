@@ -1812,3 +1812,288 @@
   font-size: 0.75rem;
   color: var(--muted);
 }
+
+/* ------------------------------------------------- add invoice, and details
+
+   Sized larger than the rest of the dashboard on purpose. This form is used
+   by the office rather than by a developer reading a table all day: the
+   labels are numbered, the hints sit under the fields rather than in a
+   tooltip, and the buttons are big enough to hit without aiming. */
+
+/* A page heading with an action on the right of it. Same card as .head, with
+   the two halves pushed apart; it wraps rather than shrinking the button,
+   because a primary action squeezed to three characters on a narrow screen is
+   worse than one on its own line. */
+.headWithAction {
+  composes: head;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1.25rem;
+}
+
+.headWithAction .subtitle {
+  max-width: 60ch;
+}
+
+.primaryButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  padding: 0.8rem 1.4rem;
+  border: none;
+  border-radius: 10px;
+  background: var(--cyan);
+  color: #ffffff;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.2;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.primaryButton:hover:not(:disabled) {
+  background: var(--cyan-bright);
+}
+
+.primaryButton:disabled {
+  background: var(--line);
+  color: var(--muted);
+  cursor: not-allowed;
+}
+
+.secondaryButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.8rem 1.4rem;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #ffffff;
+  color: var(--navy);
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.secondaryButton:hover:not(:disabled) {
+  border-color: var(--cyan);
+  color: var(--cyan);
+}
+
+.modalCard {
+  margin-bottom: 1.75rem;
+  padding: 1.75rem;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: #ffffff;
+  box-shadow: var(--shadow);
+}
+
+.modalTitle {
+  margin: 0 0 0.4rem;
+  font-size: 1.35rem;
+  color: var(--navy);
+}
+
+.modalIntro {
+  margin: 0 0 1.5rem;
+  color: var(--muted);
+  font-size: 0.95rem;
+  max-width: 60ch;
+}
+
+.modalNote {
+  margin: 1rem 0 0;
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+.modalError {
+  margin: 1rem 0 0;
+  padding: 0.85rem 1rem;
+  border-left: 4px solid #dc2626;
+  border-radius: 6px;
+  background: #fef2f2;
+  color: #991b1b;
+  font-size: 0.95rem;
+}
+
+/* The duplicate refusal. Not an error colour: nothing went wrong and nothing
+   needs correcting, the answer already exists and is one button away. */
+.modalWarning {
+  margin: 1rem 0 0;
+  padding: 1rem 1.15rem;
+  border-left: 4px solid #f59e0b;
+  border-radius: 6px;
+  background: #fffbeb;
+  color: #78350f;
+  font-size: 0.95rem;
+}
+
+.modalWarningTitle {
+  margin: 0 0 0.35rem;
+  font-weight: 700;
+}
+
+.modalWarning p {
+  margin: 0 0 0.75rem;
+}
+
+.modalActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.85rem;
+  margin-top: 1.5rem;
+}
+
+/* ---- the two pickers --------------------------------------------------- */
+
+.pickerBlock {
+  display: block;
+  margin-bottom: 1.5rem;
+}
+
+.pickerLabel {
+  display: block;
+  margin-bottom: 0.2rem;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--navy);
+}
+
+.pickerHint {
+  display: block;
+  margin-bottom: 0.55rem;
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+
+/* Scrolls rather than growing, so the form's own buttons stay reachable with
+   two hundred customers in the list. */
+.pickerResults {
+  max-height: 15rem;
+  overflow-y: auto;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+
+.pickerRow {
+  display: block;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: none;
+  border-bottom: 1px solid var(--line);
+  background: none;
+  text-align: left;
+  cursor: pointer;
+}
+
+.pickerRow:last-child {
+  border-bottom: none;
+}
+
+.pickerRow:hover,
+.pickerRow:focus-visible {
+  background: #f1f5f9;
+}
+
+.pickerMessage {
+  margin: 0;
+  padding: 0.9rem 1rem;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.pickerPrimary {
+  display: block;
+  font-weight: 700;
+  color: var(--navy);
+}
+
+.pickerMeta {
+  display: block;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+/* What was chosen, kept on screen after the list closes. Bordered in the
+   accent colour so it reads as settled rather than as another option. */
+.pickerChosen {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.85rem 1rem;
+  border: 2px solid var(--cyan);
+  border-radius: 10px;
+  background: #f0f9ff;
+}
+
+.formRow {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.fileInput {
+  display: block;
+  width: 100%;
+  padding: 0.7rem;
+  border: 1px dashed var(--line);
+  border-radius: 10px;
+  font-size: 0.95rem;
+}
+
+.chosenFile {
+  display: block;
+  margin-top: 0.5rem;
+  font-weight: 600;
+  color: var(--navy);
+  font-size: 0.9rem;
+}
+
+/* The confirmation after a save: the three things somebody checks before
+   believing it worked. */
+.summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  gap: 1rem;
+  margin: 1.25rem 0 0;
+}
+
+.summary dt {
+  color: var(--muted);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.summary dd {
+  margin: 0.2rem 0 0;
+  font-weight: 700;
+  color: var(--navy);
+}
+
+.detailHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+/* Tall enough to read a page of an invoice without scrolling the panel
+   itself. The route behind it checks the session, so this is the guarded URL
+   and not a media path. */
+.pdfPreview {
+  width: 100%;
+  height: 32rem;
+  margin-top: 1.25rem;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #f8fafc;
+}

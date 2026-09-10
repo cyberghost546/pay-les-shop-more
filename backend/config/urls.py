@@ -5,8 +5,14 @@ from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import include, path
 
+from .health import health, ready
+
 urlpatterns = [
     path('admin/', admin.site.urls),
+    # Above the app routes so a probe never depends on an app's URL module
+    # importing cleanly. Public by design — see config/health.py.
+    path('api/health/', health, name='health'),
+    path('api/ready/', ready, name='ready'),
     path('api/', include('accounts.urls')),
     path('api/', include('enquiries.urls')),
     path('api/', include('bookings.urls')),

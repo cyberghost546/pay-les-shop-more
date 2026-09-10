@@ -187,6 +187,12 @@ export const translations = {
       notKnown: 'Nog niet bekend',
       privacyNote:
         'Op deze pagina tonen wij alleen de status en de bestemming. Log in op uw account voor de volledige gegevens van uw zending.',
+      locked: {
+        title: 'Zending is onderweg',
+        body: 'Deze zending is al verstuurd en kan niet meer worden gewijzigd. Nieuwe aankopen worden als aparte zending verstuurd, met een eigen trackingnummer.',
+        delivered: 'Deze zending is afgeleverd en kan niet meer worden gewijzigd.',
+        cancelled: 'Deze zending is geannuleerd en kan niet meer worden gewijzigd.',
+      },
       errors: {
         required: 'Vul een trackingnummer in.',
         notFound:
@@ -293,6 +299,7 @@ export const translations = {
       sections: {
         details: 'Persoonlijke gegevens',
         address: 'Bezorgadres',
+        shipments: 'Mijn zendingen',
         invoices: 'Mijn facturen',
         receipts: 'Mijn bonnen',
         password: 'Wachtwoord wijzigen',
@@ -311,11 +318,30 @@ export const translations = {
         newPassword: 'Nieuw wachtwoord',
         confirmPassword: 'Nieuw wachtwoord bevestigen',
       },
+      shipments: {
+        intro:
+          'Elke zending staat hier apart, met een eigen trackingnummer. Zo ziet u meteen welke spullen bij welke zending horen. Koopt u iets nadat een zending al verstuurd is? Dan komt dat op een nieuwe zending te staan.',
+        loading: 'Uw zendingen worden geladen…',
+        failed: 'Uw zendingen konden niet worden geladen.',
+        empty: 'U heeft nog geen zendingen.',
+        shipped: 'Verscheept op',
+        delivered: 'Afgeleverd op',
+        notShippedYet: 'Nog niet verscheept',
+        locked: {
+          title: 'Zending is onderweg',
+          body: 'Deze zending is al verstuurd en kan niet meer worden gewijzigd. Nieuwe aankopen worden als aparte zending verstuurd, met een eigen trackingnummer.',
+          delivered: 'Deze zending is afgeleverd en kan niet meer worden gewijzigd.',
+          cancelled: 'Deze zending is geannuleerd en kan niet meer worden gewijzigd.',
+        },
+      },
       receipts: {
         intro:
           'Heeft u een kassabon of factuur van de winkel? Kies het bestand, beschrijf kort wat het is en druk op versturen — daarna kan ons kantoor het inzien, handig voor de douane. Heeft u nog geen zending? Stuur de bon alvast; wij koppelen die later aan de juiste zending.',
         loading: 'Uw bestanden worden geladen…',
         shipment: 'Bij welke zending hoort dit?',
+        shipmentClosed: 'al verstuurd',
+        separate:
+          'Die zending is al verstuurd, dus wij hebben uw bestand los bewaard. Wij koppelen het aan de nieuwe zending waar het bij hoort.',
         noShipment: 'Nog geen zending — voeg later toe',
         unlinked: 'Nog geen zending',
         kind: 'Wat voor bestand is dit?',
@@ -608,6 +634,7 @@ export const translations = {
       breadcrumb: 'Diensten',
       sectionTitle: 'Onze diensten',
       forIsland: 'Onze diensten voor',
+      brandsTitle: 'Onze merken',
       lead: 'Van uw bestelling bij een Nederlandse webshop tot de aflevering bij u thuis op het eiland.',
       islandsTitle: 'Waar wij naartoe verzenden',
       islandsLead: 'Kies uw bestemming om te zien hoe het werkt en een offerte aan te vragen.',
@@ -950,6 +977,12 @@ export const translations = {
       notKnown: 'Not known yet',
       privacyNote:
         'This page shows only the status and destination. Log in to your account for the full details of your shipment.',
+      locked: {
+        title: 'Shipment sent',
+        body: 'This shipment has already been sent and can no longer be changed. New purchases are sent as a separate shipment, with their own tracking number.',
+        delivered: 'This shipment has been delivered and can no longer be changed.',
+        cancelled: 'This shipment was cancelled and can no longer be changed.',
+      },
       errors: {
         required: 'Please enter a tracking number.',
         notFound:
@@ -1056,6 +1089,7 @@ export const translations = {
       sections: {
         details: 'Personal details',
         address: 'Delivery address',
+        shipments: 'My shipments',
         invoices: 'My invoices',
         receipts: 'My receipts',
         password: 'Change password',
@@ -1074,11 +1108,30 @@ export const translations = {
         newPassword: 'New password',
         confirmPassword: 'Confirm new password',
       },
+      shipments: {
+        intro:
+          'Every shipment is listed on its own, with its own tracking number, so you can see which things belong to which shipment. Buy something after a shipment has been sent and it goes on a new shipment of its own.',
+        loading: 'Loading your shipments…',
+        failed: 'Your shipments could not be loaded.',
+        empty: 'You have no shipments yet.',
+        shipped: 'Shipped',
+        delivered: 'Delivered',
+        notShippedYet: 'Not shipped yet',
+        locked: {
+          title: 'Shipment sent',
+          body: 'This shipment has already been sent and can no longer be changed. New purchases are sent as a separate shipment, with their own tracking number.',
+          delivered: 'This shipment has been delivered and can no longer be changed.',
+          cancelled: 'This shipment was cancelled and can no longer be changed.',
+        },
+      },
       receipts: {
         intro:
           'Have a till receipt or an invoice from the shop? Choose the file, say briefly what it is, and press send — our office can read it from then on, which is useful for customs. No shipment yet? Send it anyway; we will link it to the right shipment later.',
         loading: 'Loading your files…',
         shipment: 'Which shipment is this for?',
+        shipmentClosed: 'already sent',
+        separate:
+          'That shipment has already been sent, so we have kept your file on its own. We will link it to the new shipment it belongs to.',
         noShipment: 'No shipment yet — link it later',
         unlinked: 'No shipment yet',
         kind: 'What kind of file is this?',
@@ -1371,6 +1424,7 @@ export const translations = {
       breadcrumb: 'Services',
       sectionTitle: 'Our services',
       forIsland: 'Our services for',
+      brandsTitle: 'Our brands',
       lead: 'From your order at a Dutch webshop to delivery at your door on the island.',
       islandsTitle: 'Where we ship',
       islandsLead: 'Choose your destination to see how it works and request a quote.',
@@ -1713,6 +1767,12 @@ export const translations = {
       notKnown: 'Ainda no konosí',
       privacyNote:
         'E página aki ta mustra solamente e status i e destinashon. Log in den bo kuenta pa e detayenan kompleto di bo enbio.',
+      locked: {
+        title: 'Enbio ta na kaminda',
+        body: 'E enbio aki a sali kaba i no por wòrdu kambiá mas. Kompranan nobo ta bai komo un enbio separá, ku su mes number di tracking.',
+        delivered: 'E enbio aki a wòrdu entregá i no por wòrdu kambiá mas.',
+        cancelled: 'E enbio aki a wòrdu kanselá i no por wòrdu kambiá mas.',
+      },
       errors: {
         required: 'Yena un number di tracking.',
         notFound:
@@ -1819,6 +1879,7 @@ export const translations = {
       sections: {
         details: 'Datonan personal',
         address: 'Adres di entrega',
+        shipments: 'Mi enbionan',
         invoices: 'Mi fakturanan',
         receipts: 'Mi bonnan',
         password: 'Kambia kontraseña',
@@ -1837,11 +1898,30 @@ export const translations = {
         newPassword: 'Kontraseña nobo',
         confirmPassword: 'Konfirmá kontraseña nobo',
       },
+      shipments: {
+        intro:
+          'Kada enbio ta pará su so aki, ku su mes number di tracking, pa bo por mira kua kosnan ta pertenesé na kua enbio. Si bo kumpra algu despues ku un enbio a sali, esei ta bai riba un enbio nobo.',
+        loading: 'Ta karga bo enbionan…',
+        failed: 'No por a karga bo enbionan.',
+        empty: 'Ainda bo no tin enbio.',
+        shipped: 'A sali',
+        delivered: 'Entregá',
+        notShippedYet: 'Ainda no a sali',
+        locked: {
+          title: 'Enbio ta na kaminda',
+          body: 'E enbio aki a sali kaba i no por wòrdu kambiá mas. Kompranan nobo ta bai komo un enbio separá, ku su mes number di tracking.',
+          delivered: 'E enbio aki a wòrdu entregá i no por wòrdu kambiá mas.',
+          cancelled: 'E enbio aki a wòrdu kanselá i no por wòrdu kambiá mas.',
+        },
+      },
       receipts: {
         intro:
           'Bo tin un bon of un faktura di e tienda? Skohe e dokumento, bisa kòrtiku kiko e ta, i primi manda — for di e ora ei nos ofisina por miré, konveniente pa aduana. Ainda bo no tin enbio? Manda e bon tòg; nos ta konekté ku e enbio korekto despues.',
         loading: 'Ta karga bo dokumentonan…',
         shipment: 'Pa kua enbio esaki ta?',
+        shipmentClosed: 'a sali kaba',
+        separate:
+          'E enbio ei a sali kaba, pues nos a warda bo dokumento apart. Nos ta konekté ku e enbio nobo ku e ta pertenesé na dje.',
         noShipment: 'Ainda no tin enbio — konektá despues',
         unlinked: 'Ainda no tin enbio',
         kind: 'Ki sorto di dokumento esaki ta?',
@@ -2134,6 +2214,7 @@ export const translations = {
       breadcrumb: 'Servisionan',
       sectionTitle: 'Nos servisionan',
       forIsland: 'Nos servisionan pa',
+      brandsTitle: 'Nos markanan',
       lead: 'For di bo òrdu na un webshop hulandes te na entrega na bo kas riba e isla.',
       islandsTitle: 'Unda nos ta manda',
       islandsLead: 'Skohe bo destinashon pa mira kon e ta funshoná i pidi un preis.',

@@ -748,3 +748,57 @@
     transition: none;
   }
 }
+
+/* ---- shipment history ---------------------------------------------------
+
+   One card per shipment rather than one list of rows. The separation is the
+   information: a customer with two shipments needs to see two things, not a
+   run of lines they have to group by tracking number themselves. */
+
+.shipmentList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.9rem;
+}
+
+.shipment {
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+
+.shipmentHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.shipmentStatus {
+  flex-shrink: 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* The read-only notice on a shipment that has gone. Set apart from the meta
+   lines above it, because it is the one thing on the card that answers a
+   question the customer is about to ask. */
+.shipmentLocked {
+  margin-top: 0.75rem;
+  padding: 0.7rem 0.85rem;
+  border-left: 3px solid var(--line);
+  border-radius: 4px;
+  background: rgba(15, 23, 42, 0.035);
+}
+
+.shipmentLockedTitle {
+  margin: 0;
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: var(--navy);
+}

@@ -2,7 +2,7 @@
 import { Link } from 'react-router-dom';
 import { DESTINATIONS } from '../../data/destinations';
 import DestinationHero from '../../components/DestinationHero/DestinationHero';
-import portHaven from '../../images/port-haven-ship.jpeg';
+import { portHavenShip as portHaven } from '../../images/optimized/photos';
 import { useLanguage } from '../../i18n/useLanguage';
 import { usePageMeta } from '../../hooks/usePageMeta';
 import styles from './Destinations.module.css';
@@ -17,7 +17,7 @@ export default function Destinations() {
 
   return (
     <main>
-      <DestinationHero title={t('destinations.other')} image={portHaven} />
+      <DestinationHero title={t('destinations.other')} image={portHaven.src} />
 
       <section className={styles.page}>
         <header className={styles.head}>
@@ -31,7 +31,7 @@ export default function Destinations() {
               <Link to={`/destinations/${item.slug}`} className={styles.card}>
                 <span
                   className={styles.thumb}
-                  style={{ backgroundImage: `url(${item.hero})` }}
+                  style={{ backgroundImage: `url(${item.hero.small})` }}
                   aria-hidden="true"
                 />
 

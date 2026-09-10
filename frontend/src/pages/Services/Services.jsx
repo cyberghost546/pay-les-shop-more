@@ -1,7 +1,13 @@
 // src/pages/Services/Services.jsx
+//
+// The page is four bands, in this order: the split banner, the yellow strip of
+// selling points, one panel per island listing what is offered there, and the
+// brands strip. That is the whole page — the rates table and the frequently
+// asked questions that used to sit between them have been removed.
+
 import { Link } from 'react-router-dom';
-import containerShip from '../../images/container-ship.webp';
-import { DESTINATIONS } from '../../data/destinations';
+import { containerShip } from '../../images/optimized/photos';
+import { BRANDS, ISLAND_SERVICES } from '../../data/islandServices';
 import { useLanguage } from '../../i18n/useLanguage';
 import { usePageMeta } from '../../hooks/usePageMeta';
 import styles from './Services.module.css';
@@ -42,116 +48,6 @@ const HIGHLIGHTS = [
   },
 ];
 
-// The same six the homepage advertises, and the same translation keys — every
-// homepage card links here, so if the two lists drifted apart the page would
-// not answer the question the card asked.
-//
-// Every card now leads somewhere: a card that describes a service and then
-// leaves the reader with nowhere to go wastes the interest it just earned.
-// `to` is a route; `href` is an anchor into a section further down this page.
-const SERVICES = [
-  { id: 'shopAndShip', icon: 'cart', to: '/booking' },
-  { id: 'consolidation', icon: 'boxes', to: '/booking' },
-  { id: 'doorToDoor', icon: 'truck', to: '/destinations' },
-  { id: 'customs', icon: 'document', href: '#faq' },
-  { id: 'tracking', icon: 'pin', to: '/tracking' },
-  { id: 'business', icon: 'building', to: '/contact' },
-];
-
-// The call to action differs per card, so each link says what it actually
-// does instead of repeating one generic "learn more" six times.
-const SERVICE_ACTIONS = {
-  shopAndShip: 'services.actions.book',
-  consolidation: 'services.actions.book',
-  doorToDoor: 'services.actions.destinations',
-  customs: 'services.actions.faq',
-  tracking: 'services.actions.track',
-  business: 'services.actions.contact',
-};
-
-const SERVICE_ICONS = {
-  cart: (
-    <>
-      <path d="M6 8h30l-3 16H10Z" />
-      <path d="M6 8 4 3H1" />
-      <circle cx="14" cy="32" r="3" />
-      <circle cx="30" cy="32" r="3" />
-    </>
-  ),
-  boxes: (
-    <>
-      <path d="M4 14h16v16H4zM24 14h16v16H24z" />
-      <path d="M14 4h16v10H14z" />
-    </>
-  ),
-  truck: (
-    <>
-      <path d="M3 10h22v18H3z" />
-      <path d="M25 16h7l5 6v6h-12z" />
-      <circle cx="11" cy="31" r="3" />
-      <circle cx="30" cy="31" r="3" />
-    </>
-  ),
-  document: (
-    <>
-      <path d="M9 3h16l8 8v26H9z" />
-      <path d="M25 3v8h8" />
-      <path d="M15 21h12M15 27h8" />
-    </>
-  ),
-  pin: (
-    <>
-      <path d="M21 4a12 12 0 0 1 12 12c0 8-12 21-12 21S9 24 9 16A12 12 0 0 1 21 4Z" />
-      <circle cx="21" cy="16" r="4.5" />
-    </>
-  ),
-  building: (
-    <>
-      <path d="M6 37V7h18v30" />
-      <path d="M24 17h12v20" />
-      <path d="M11 13h8M11 20h8M11 27h8M29 23h3M29 29h3" />
-    </>
-  ),
-};
-
-/* ------------------------------------------------------------------ rates */
-
-// PLACEHOLDER RATES — replace `price` with the real tariff before publishing.
-// Nothing else on the site quotes a price: the booking form notes that weight
-// and volume are assessed at the counter afterwards, so these are advertised
-// as indicative and the written quote stays the binding number. Keeping them
-// in one constant makes the real figures a single edit, in one place.
-const RATE_TIERS = [
-  { id: 'parcel', price: '€ 25', featured: false },
-  { id: 'box', price: '€ 60', featured: true },
-  { id: 'pallet', price: '€ 180', featured: false },
-];
-
-// What actually moves the price, shown under the table so the numbers above
-// read as a starting point rather than a promise.
-const RATE_FACTORS = ['volume', 'destination', 'insurance'];
-
-/* ------------------------------------------------------------------ shops */
-
-// Shops customers order from most, grouped so the block answers "can I order
-// the kind of thing I want?" instead of just listing twelve names.
-//
-// Brand names, so they are not translated — and not links: sending someone to
-// bol.com from here would be sending them away from the order they came to
-// place.
-const SHOP_GROUPS = [
-  { id: 'general', shops: ['Bol.com', 'Wehkamp'] },
-  { id: 'electronics', shops: ['Coolblue', 'MediaMarkt'] },
-  { id: 'fashion', shops: ['Zalando', 'IKEA'] },
-  { id: 'beauty', shops: ['Rituals', 'DA Drogist'] },
-  { id: 'kids', shops: ['Top 1 Toys', 'Prénatal'] },
-  { id: 'specialist', shops: ['Autodoc', 'Bruna'] },
-];
-
-/* -------------------------------------------------------------------- faq */
-
-const FAQ_IDS = ['transit', 'customs', 'vat', 'prohibited', 'insurance'];
-
 export default function Services() {
   const { t } = useLanguage();
   usePageMeta(t('services.title'), t('services.lead'), '/services');
@@ -172,9 +68,17 @@ export default function Services() {
         </div>
 
         <img
-          src={containerShip}
+          src={containerShip.src}
+          srcSet={containerShip.srcSet}
+          // Full-bleed banner, so the slot really is the window's width.
+          sizes="100vw"
+          width={containerShip.width}
+          height={containerShip.height}
           alt="Container ship at sea loaded with freight"
           className={styles.bannerImage}
+          // Top of the page: the visitor is looking at it before it loads.
+          fetchPriority="high"
+          decoding="async"
         />
       </section>
 
@@ -187,219 +91,102 @@ export default function Services() {
         ))}
       </ul>
 
-      {/* What we actually do ------------------------------------------- */}
-      <section className={styles.section}>
-        <header className={styles.sectionHead}>
-          <h2 className={styles.sectionTitle}>{t('services.sectionTitle')}</h2>
-          <p className={styles.sectionLead}>{t('services.lead')}</p>
-        </header>
+      {/* One panel per island ------------------------------------------- */}
+      <section className={styles.islands}>
+        <ul className={styles.islandGrid}>
+          {ISLAND_SERVICES.map((island) => {
+            const name = t(island.nameKey);
 
-        <ul className={styles.serviceGrid}>
-          {SERVICES.map((service) => (
-            <li key={service.id}>
-              {/* The customs card points at the FAQ below, which is where that
-                  question is actually answered. An in-page jump is a plain
-                  <a>: react-router's Link would push a history entry for a
-                  move within the same document. */}
-              {service.href ? (
-                <a href={service.href} className={styles.serviceCard}>
-                  <ServiceBody service={service} t={t} />
-                </a>
+            return (
+              <li key={island.slug} className={styles.islandCard}>
+                <div className={styles.islandBody}>
+                  <h2 className={styles.islandTitle}>
+                    {t('services.forIsland')} {name}
+                  </h2>
+
+                  <ul className={styles.serviceList}>
+                    {island.services.map((service) => (
+                      <li key={service} className={styles.serviceItem}>
+                        {/* The arrow is drawn, not typed: an arrow character
+                            is read out as "downwards arrow with tip
+                            rightwards" by a screen reader, once per line. */}
+                        <svg
+                          className={styles.serviceArrow}
+                          viewBox="0 0 16 16"
+                          aria-hidden="true"
+                        >
+                          <path d="M3 2v7.5h9" />
+                          <path d="m9 6.5 3.5 3L9 12.5" />
+                        </svg>
+
+                        {/* Every item leads to the island's own page, which is
+                            where the quote form for it lives. The names are
+                            shops rather than pages of this site, so sending
+                            someone to bol.com from here would be sending them
+                            away from the order they came to place. */}
+                        <Link
+                          to={`/destinations/${island.slug}`}
+                          className={styles.serviceLink}
+                        >
+                          {service}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                <img
+                  src={island.hero.src}
+                  srcSet={island.hero.srcSet}
+                  sizes="(max-width: 900px) 100vw, 340px"
+                  width={island.hero.width}
+                  height={island.hero.height}
+                  // Decorative: the panel is already titled with the island's
+                  // name, and repeating it here would have a screen reader
+                  // say it twice.
+                  alt=""
+                  className={styles.islandImage}
+                  loading="lazy"
+                  decoding="async"
+                />
+              </li>
+            );
+          })}
+        </ul>
+      </section>
+
+      {/* The brands ------------------------------------------------------ */}
+      <section className={styles.brands}>
+        <h2 className={styles.brandsTitle}>{t('services.brandsTitle')}</h2>
+
+        {/* Scrolls sideways rather than wrapping, and says so to a screen
+            reader: a region with tabIndex is reachable by keyboard, which is
+            what lets somebody not using a mouse scroll it at all. */}
+        <ul
+          className={styles.brandRow}
+          tabIndex={0}
+          role="group"
+          aria-label={t('services.brandsTitle')}
+        >
+          {BRANDS.map((brand) => (
+            <li key={brand.name} className={styles.brandCard}>
+              {brand.logo ? (
+                <img
+                  src={brand.logo}
+                  alt={brand.name}
+                  className={styles.brandLogo}
+                  loading="lazy"
+                  decoding="async"
+                />
               ) : (
-                <Link to={service.to} className={styles.serviceCard}>
-                  <ServiceBody service={service} t={t} />
-                </Link>
+                // No logo file for this brand yet. See src/data/islandServices.js
+                // for where one goes; until then the name carries the box.
+                <span className={styles.brandName}>{brand.name}</span>
               )}
             </li>
           ))}
         </ul>
       </section>
-
-      {/* What it costs --------------------------------------------------- */}
-      <section className={styles.rates}>
-        <div className={styles.ratesInner}>
-          <header className={styles.sectionHead}>
-            <h2 className={styles.sectionTitle}>{t('services.rates.title')}</h2>
-            <p className={styles.sectionLead}>{t('services.rates.lead')}</p>
-          </header>
-
-          <ul className={styles.rateGrid}>
-            {RATE_TIERS.map((tier) => (
-              <li
-                key={tier.id}
-                className={
-                  tier.featured
-                    ? `${styles.rateCard} ${styles.rateCardFeatured}`
-                    : styles.rateCard
-                }
-              >
-                {tier.featured && (
-                  <span className={styles.rateBadge}>
-                    {t('services.rates.popular')}
-                  </span>
-                )}
-                <h3 className={styles.rateName}>
-                  {t(`services.rates.tiers.${tier.id}.name`)}
-                </h3>
-                <p className={styles.rateSize}>
-                  {t(`services.rates.tiers.${tier.id}.size`)}
-                </p>
-                <p className={styles.ratePrice}>
-                  <span className={styles.rateFrom}>{t('services.rates.from')}</span>
-                  {tier.price}
-                </p>
-                <p className={styles.rateText}>
-                  {t(`services.rates.tiers.${tier.id}.body`)}
-                </p>
-              </li>
-            ))}
-          </ul>
-
-          <div className={styles.rateFactors}>
-            <h3 className={styles.rateFactorsTitle}>
-              {t('services.rates.factorsTitle')}
-            </h3>
-            <ul className={styles.rateFactorList}>
-              {RATE_FACTORS.map((factor) => (
-                <li key={factor} className={styles.rateFactor}>
-                  {t(`services.rates.factors.${factor}`)}
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* The written quote, not this table, is the number that counts. */}
-          <p className={styles.rateNote}>{t('services.rates.note')}</p>
-
-          <Link to="/booking" className={styles.rateCta}>
-            {t('services.rates.cta')}
-          </Link>
-        </div>
-      </section>
-
-      {/* Where we ship -------------------------------------------------- */}
-      <section className={styles.section}>
-        <header className={styles.sectionHead}>
-          <h2 className={styles.sectionTitle}>{t('services.islandsTitle')}</h2>
-          <p className={styles.sectionLead}>{t('services.islandsLead')}</p>
-        </header>
-
-        {/* Driven by the shared island list, so adding an island updates the
-            header menu, the destinations index and this page together. */}
-        <ul className={styles.islandGrid}>
-          {DESTINATIONS.map((island) => (
-            <li key={island.slug}>
-              <Link
-                to={`/destinations/${island.slug}`}
-                className={styles.islandCard}
-              >
-                <img
-                  src={island.hero}
-                  alt=""
-                  className={styles.islandImage}
-                  loading="lazy"
-                />
-                <span className={styles.islandBody}>
-                  <span className={styles.islandName}>{t(island.nameKey)}</span>
-                  <span className={styles.islandMore}>
-                    {t('services.viewDestination')} <span aria-hidden="true">→</span>
-                  </span>
-                </span>
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </section>
-
-      {/* Shops people order from ---------------------------------------- */}
-      <section className={styles.section}>
-        <header className={styles.sectionHead}>
-          <h2 className={styles.sectionTitle}>{t('services.shopsTitle')}</h2>
-          <p className={styles.sectionLead}>{t('services.shopsLead')}</p>
-        </header>
-
-        <ul className={styles.shopGroups}>
-          {SHOP_GROUPS.map((group) => (
-            <li key={group.id} className={styles.shopGroup}>
-              <h3 className={styles.shopGroupTitle}>
-                {t(`services.shops.${group.id}.title`)}
-              </h3>
-              <p className={styles.shopGroupNote}>
-                {t(`services.shops.${group.id}.note`)}
-              </p>
-              <ul className={styles.shopList}>
-                {group.shops.map((shop) => (
-                  <li key={shop} className={styles.shop}>
-                    {shop}
-                  </li>
-                ))}
-              </ul>
-            </li>
-          ))}
-        </ul>
-
-        <p className={styles.shopsFooter}>{t('services.shopsFooter')}</p>
-      </section>
-
-      {/* Questions we get asked most ------------------------------------ */}
-      {/* Plain <details>, so it opens without JavaScript and the browser
-          handles the keyboard and screen-reader behaviour correctly — the
-          same pattern the destination pages use for their own questions. */}
-      <section className={styles.faq} id="faq">
-        <div className={styles.faqInner}>
-          <h2 className={styles.faqTitle}>{t('services.faq.title')}</h2>
-
-          <div className={styles.faqList}>
-            {FAQ_IDS.map((id) => (
-              <details key={id} className={styles.faqItem}>
-                <summary className={styles.faqQuestion}>
-                  {t(`services.faq.${id}.q`)}
-                  <span className={styles.faqChevron} aria-hidden="true" />
-                </summary>
-                <p className={styles.faqAnswer}>{t(`services.faq.${id}.a`)}</p>
-              </details>
-            ))}
-          </div>
-
-          <p className={styles.faqMore}>
-            {t('services.faq.more')}{' '}
-            <Link to="/contact" className={styles.faqLink}>
-              {t('services.faq.contact')}
-            </Link>
-          </p>
-        </div>
-      </section>
-
-      <section className={styles.cta}>
-        <h2 className={styles.ctaTitle}>{t('services.ctaTitle')}</h2>
-        <p className={styles.ctaBody}>{t('services.ctaBody')}</p>
-        <div className={styles.ctaButtons}>
-          <Link to="/contact" className={styles.ctaPrimary}>
-            {t('services.ctaPrimary')}
-          </Link>
-          <Link to="/destinations" className={styles.ctaGhost}>
-            {t('services.ctaSecondary')}
-          </Link>
-        </div>
-      </section>
-    </>
-  );
-}
-
-/** The inside of a service card, shared by the routed and anchored versions. */
-function ServiceBody({ service, t }) {
-  return (
-    <>
-      <span className={styles.serviceIcon} aria-hidden="true">
-        <svg viewBox="0 0 42 42">{SERVICE_ICONS[service.icon]}</svg>
-      </span>
-      <h3 className={styles.serviceTitle}>
-        {t(`home.services.${service.id}.title`)}
-      </h3>
-      <p className={styles.serviceText}>{t(`home.services.${service.id}.body`)}</p>
-      <span className={styles.serviceMore}>
-        {t(SERVICE_ACTIONS[service.id])} <span aria-hidden="true">→</span>
-      </span>
     </>
   );
 }

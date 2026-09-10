@@ -89,18 +89,26 @@ class TrackingTests(ApiTestCase):
     def test_the_timeline_marks_where_the_shipment_is(self):
         data = self.client.get(self.url()).data
 
-        self.assertEqual([stage["value"] for stage in data["stages"]][2], "in_transit")
-        self.assertEqual(data["stage_index"], 2)
+        stages = [stage["value"] for stage in data["stages"]]
+        self.assertEqual(stages.index("in_transit"), data["stage_index"])
 
     def test_a_quoted_shipment_is_not_yet_on_the_timeline(self):
-        self.package.status = Package.Status.QUOTED
-        self.package.save()
+        # Written straight onto the row rather than saved through the model.
+        # A shipment cannot travel back from in transit to quoted - see
+        # Package.check_transition - and this test is about what the tracking
+        # page draws for a quoted shipment, not about how it got there.
+        Package.objects.filter(pk=self.package.pk).force_update(
+            status=Package.Status.QUOTED
+        )
 
         self.assertEqual(self.client.get(self.url()).data["stage_index"], -1)
 
     def test_a_cancelled_shipment_shows_no_progress(self):
-        self.package.status = Package.Status.CANCELLED
-        self.package.save()
+        # As above: a shipment already in transit can no longer be cancelled,
+        # and what is under test here is the display of one that was.
+        Package.objects.filter(pk=self.package.pk).force_update(
+            status=Package.Status.CANCELLED
+        )
 
         data = self.client.get(self.url()).data
         self.assertEqual(data["progress"], 0)

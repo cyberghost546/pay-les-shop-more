@@ -25,13 +25,17 @@ from accounts.models import PackageEvent
 from .models import Invoice
 
 
-def ensure_invoice_for_package(package):
+def ensure_invoice_for_package(package, *, created_by=None):
     """Create the invoice for a paid package and put it in the review queue.
 
     Idempotent: a package that already has an invoice is left alone, whatever
     state that invoice is in. Marking a package paid twice, or moving it back
     to paid after a correction, must not reset a review that is already under
     way or resurrect one that was approved.
+
+    `created_by` names the staff member when somebody raised this one by
+    hand. Left None on the automatic path, where there is no person behind it
+    - see Invoice.created_by.
 
     Returns the invoice, existing or new.
     """
@@ -45,7 +49,7 @@ def ensure_invoice_for_package(package):
         # passes through it, so there is one path into the queue instead of
         # two. Both statements are in one transaction, so no other request can
         # observe the intermediate DRAFT row.
-        invoice = Invoice.objects.create(package=package)
+        invoice = Invoice.objects.create(package=package, created_by=created_by)
         invoice.submit_for_review()
 
         # No actor. Raising an invoice is a consequence of a package being

@@ -103,6 +103,43 @@ class Invoice(models.Model):
     # is wrong with it, or the rejection is just a closed door.
     rejection_reason = models.TextField(blank=True)
 
+    # Who raised it by hand, when somebody did.
+    #
+    # Null for the ordinary invoice, and that null is information rather than a
+    # gap: an invoice raised by ensure_invoice_for_package is a consequence of
+    # a shipment being marked paid, and there is no person behind it to name.
+    # The staff member who marked the shipment is on the timeline immediately
+    # before it. A name here means somebody sat down and made this one.
+    #
+    # PROTECT, like reviewed_by and for the same reason: this is part of the
+    # record of who did what, and an account that has raised invoices cannot be
+    # deleted out from under them. Erasure goes through User.anonymise(), which
+    # keeps the row.
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="created_invoices",
+        limit_choices_to={"is_staff": True},
+        help_text="The staff member who raised it by hand. Empty when it was raised automatically.",
+    )
+
+    # The date the invoice is *for*, which is not always the date the row was
+    # written. An invoice entered on Monday for work done the previous Friday
+    # carries Friday's date; created_at still says Monday, and the two are kept
+    # apart on purpose so neither has to lie about the other.
+    #
+    # Null on an automatically raised invoice, where the two are the same thing
+    # and inventing a second copy of created_at would only give something else
+    # the chance to disagree with it. Read through `dated_on` below rather than
+    # directly, which answers with created_at when this is empty.
+    invoice_date = models.DateField(
+        null=True,
+        blank=True,
+        help_text="The date on the document. Defaults to the day it was raised.",
+    )
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     sent_at = models.DateTimeField(null=True, blank=True)
@@ -117,6 +154,62 @@ class Invoice(models.Model):
         upload_to=invoice_pdf_path,
         blank=True,
         help_text="Rendered on approval. Not written by hand.",
+    )
+
+    # ---- what the document is, as opposed to where it is ----------------
+    #
+    # `pdf` already answers "where", and everything below can be derived from
+    # it by asking storage. That is exactly the reason to record it: asking
+    # storage means a network round trip per row once media lives in a bucket,
+    # so a list of forty invoices showing a file size would make forty calls
+    # to S3 to render one page. These are written once, when the document is
+    # attached, and read from the row forever after.
+    #
+    # They also answer a question the file cannot. `pdf.name` is the name we
+    # chose; storage may have suffixed it to avoid a collision, and the name
+    # the customer should see is the one below.
+
+    document_filename = models.CharField(
+        max_length=255,
+        blank=True,
+        help_text="The name the document is offered under. Not its storage path.",
+    )
+
+    document_size = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        help_text="Size in bytes, recorded when the document was attached.",
+    )
+
+    document_content_type = models.CharField(
+        max_length=100,
+        blank=True,
+        help_text="Always application/pdf today. Stored rather than assumed.",
+    )
+
+    # Distinct from created_at, which is when the invoice row was written.
+    # An invoice can be raised on Monday, rejected, corrected and given its
+    # final document on Thursday, and "when did the customer's copy come into
+    # existence" is Thursday.
+    document_uploaded_at = models.DateTimeField(null=True, blank=True)
+
+    # Distinct from created_by, which names whoever raised the invoice, and
+    # from reviewed_by, which names whoever approved it. This is whoever put
+    # this particular file on it — the same person in the ordinary case, and
+    # not the same person when a document is replaced after the fact.
+    #
+    # Null when the render task drew it: there is no person behind an
+    # automatic render, and naming the approver here would claim they chose a
+    # file they never saw. PROTECT for the same reason as the other two: this
+    # is the audit trail, and erasure goes through User.anonymise().
+    document_uploaded_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="uploaded_invoice_documents",
+        limit_choices_to={"is_staff": True},
+        help_text="Who attached this file. Empty when it was rendered automatically.",
     )
 
     class Meta:
@@ -182,6 +275,19 @@ class Invoice(models.Model):
 
     def __str__(self):
         return f"Invoice for {self.package.tracking_number} ({self.get_status_display()})"
+
+    @property
+    def dated_on(self):
+        """The date the invoice carries.
+
+        `invoice_date` when somebody set one, and the day the row was written
+        otherwise. One property rather than the same `or` written out at each
+        of the four places that display a date, which is how two of them end
+        up disagreeing.
+        """
+        if self.invoice_date:
+            return self.invoice_date
+        return timezone.localtime(self.created_at).date() if self.created_at else None
 
     # ---- the state machine ---------------------------------------------
 
@@ -377,6 +483,82 @@ class Invoice(models.Model):
 
         self.refresh_from_db()
         return self
+
+    def record_document(self, *, filename, uploaded_by=None, content_type="application/pdf"):
+        """Stamp what was just attached to `pdf` onto the row.
+
+        Called immediately after `pdf.save()` by every path that puts a
+        document on an invoice — the render task, the Add invoice form and the
+        replace-document action. Kept as one method rather than three copies
+        of the same five assignments, because three copies is how the render
+        task ends up recording a size and the upload form does not.
+
+        The size is read from storage rather than from the upload, so it is
+        the size of the bytes that actually landed. A file that was truncated
+        on the way in is then visible as a row whose size disagrees with what
+        the browser sent, instead of a row confidently reporting a number for
+        a document nobody can open.
+
+        A separate UPDATE rather than part of a transition: this is
+        description, not state. Nothing in the state machine depends on it,
+        the constraints do not mention it, and a storage backend that cannot
+        answer for a size must not be able to refuse an approval.
+        """
+        size = None
+        try:
+            size = self.pdf.size
+        except (OSError, ValueError):
+            # Storage cannot say. Recorded as unknown, which is honest, rather
+            # than as zero, which reads as an empty file.
+            logger.warning(
+                "Invoice %s: could not read the size of %s.", self.pk, self.pdf.name
+            )
+
+        uploaded_at = timezone.now()
+
+        self.__class__.objects.filter(pk=self.pk).update(
+            document_filename=filename,
+            document_size=size,
+            document_content_type=content_type,
+            document_uploaded_at=uploaded_at,
+            document_uploaded_by=uploaded_by,
+        )
+
+        # Written onto the in-memory copy rather than re-read with
+        # refresh_from_db, which would be the obvious thing and is wrong here.
+        # Every caller has just done `pdf.save(..., save=False)`, so the name
+        # of the file that was written lives only in memory — the column is
+        # still empty, because the transition that follows is what writes it.
+        # A refresh would replace that name with the empty column and the next
+        # line would try to send an invoice with no document.
+        self.document_filename = filename
+        self.document_size = size
+        self.document_content_type = content_type
+        self.document_uploaded_at = uploaded_at
+        self.document_uploaded_by = uploaded_by
+
+        return self
+
+    def send_attached(self):
+        """APPROVED -> SENT, using the document already on the row.
+
+        mark_sent() takes a storage name because its usual caller has just
+        written the bytes and is the only one who knows what they were stored
+        under. This is the other case: an invoice approved with its document
+        already attached, waiting for somebody to decide it should go. There
+        is nothing to write, so there is nothing to name.
+
+        Refused when there is no document, by mark_sent and by the
+        invoice_sent_needs_pdf constraint behind it. "Sent" is a claim that
+        something left the building.
+        """
+        if not self.pdf:
+            raise InvalidInvoiceTransition(
+                "This invoice has no document, so there is nothing to send. "
+                "Upload one first."
+            )
+
+        return self.mark_sent(self.pdf.name)
 
     def mark_sent(self, pdf_name):
         """APPROVED -> SENT, recording the document that was sent.

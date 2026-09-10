@@ -18,4 +18,23 @@ export default defineConfig([
       parserOptions: { ecmaFeatures: { jsx: true } },
     },
   },
+  {
+    // Everything that runs in Node rather than in a browser: the Vite config,
+    // the build-time scripts, and the tests that read files off disk. Without
+    // this, `process` and `console` here read as undefined globals.
+    files: [
+      '*.config.js',
+      'scripts/**/*.js',
+      'src/test/**/*.{js,jsx}',
+      'src/**/*.test.{js,jsx}',
+    ],
+    languageOptions: {
+      globals: { ...globals.node },
+    },
+  },
+  {
+    // Written by `npm run images`, and formatted by the generator rather than
+    // by anything a linter should have an opinion about.
+    ignores: ['src/images/optimized/photos.js'],
+  },
 ])

@@ -42,12 +42,34 @@ class AddressAdmin(admin.ModelAdmin):
 
 @admin.register(Package)
 class PackageAdmin(admin.ModelAdmin):
-    list_display = ("tracking_number", "user", "status", "created_at")
+    list_display = ("tracking_number", "user", "status", "locked", "created_at")
     list_filter = ("status", "created_at")
     search_fields = ("tracking_number", "user__username", "user__email")
     # A plain select would load every address in the database into the page.
     autocomplete_fields = ("user", "delivery_address")
     date_hierarchy = "created_at"
+
+    @admin.display(boolean=True, description="Locked")
+    def locked(self, package):
+        return package.locked
+
+    def get_readonly_fields(self, request, obj=None):
+        """Grey out what a shipment that has left no longer gets to change.
+
+        Package.save() refuses these anyway, so without this the admin offers
+        a form that can only end in an error page. The fields are the model's
+        own list rather than a second copy of it, so a column added to
+        FROZEN_FIELDS later is greyed out here without anybody remembering to
+        come back.
+
+        Not a security boundary — an admin user with a shell can call save()
+        with force_unlock=True, which is the deliberate way to repair a record
+        and reads as exactly that at the call site.
+        """
+        readonly = super().get_readonly_fields(request, obj)
+        if obj is not None and obj.locked:
+            return tuple(readonly) + Package.FROZEN_FIELDS + ("status",)
+        return readonly
 
 
 @admin.register(PackageEvent)

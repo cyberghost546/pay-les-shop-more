@@ -308,3 +308,33 @@
   clip-path: inset(50%);
   white-space: nowrap;
 }
+
+/* The notice on a shipment that has already gone.
+
+   Stated rather than merely implied by a greyed-out control: there is nothing
+   to grey out on this page, and the thing the reader needs to know is not
+   "you cannot edit this" but "your next purchase travels separately". */
+.locked {
+  margin-top: 1rem;
+  padding: 0.875rem 1rem;
+  border-radius: 0.5rem;
+  border-left: 3px solid currentColor;
+  background: rgba(15, 23, 42, 0.05);
+}
+
+.lockedTitle {
+  margin: 0 0 0.25rem;
+  font-weight: 600;
+  font-size: 0.9375rem;
+}
+
+.lockedBody {
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  opacity: 0.85;
+}
+
+.hero .locked {
+  background: rgba(255, 255, 255, 0.12);
+}

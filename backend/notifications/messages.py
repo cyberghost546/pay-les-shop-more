@@ -27,6 +27,10 @@ SHIPMENT_LINES = {
     "quoted": "We have prepared a quote for your shipment.",
     "paid": "We have received your payment. Your shipment is being prepared.",
     "purchased": "Your products have been purchased.",
+    "ready_for_shipping": (
+        "Your shipment is packed and waiting to leave. It can no longer be "
+        "added to - anything bought now travels as a separate shipment."
+    ),
     "in_transit": "Your shipment is on its way.",
     "arrived": "Your shipment has arrived at its destination.",
     "delivered": "Your shipment has been delivered.",
@@ -37,6 +41,7 @@ SHIPMENT_SUBJECTS = {
     "quoted": "Your quote is ready",
     "paid": "Payment received",
     "purchased": "Your products have been purchased",
+    "ready_for_shipping": "Your shipment is packed and ready to leave",
     "in_transit": "Your shipment is on its way",
     "arrived": "Your shipment has arrived",
     "delivered": "Your shipment has been delivered",

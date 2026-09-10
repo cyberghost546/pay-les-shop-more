@@ -35,10 +35,17 @@ const AWAITING = new Set(['quoted', 'paid']);
 const BILLABLE = new Set([
   'paid',
   'purchased',
+  'ready_for_shipping',
   'in_transit',
   'arrived',
   'delivered',
 ]);
+
+// Where the journey stops, so the status dropdown has nowhere left to go.
+// Narrower than `pkg.locked`, which is true from `in_transit` onwards: a
+// shipment at sea is locked in the sense that nobody may change what is in it,
+// and it still has to be marked arrived and then delivered.
+const FINISHED = new Set(['delivered', 'cancelled']);
 
 export default function Packages() {
   const [params] = useSearchParams();
@@ -98,8 +105,17 @@ export default function Packages() {
       // stamps itself when the status says they happened — so the dates in
       // the table update without a refetch.
       list.replaceRow(await updatePackage(pkg.id, { status }));
-    } catch {
-      setError('That change could not be saved. Check the connection and try again.');
+    } catch (failure) {
+      // A 409 is the shipment lock, not a broken connection, and it arrives
+      // with a sentence worth showing: the row moved on, or it has gone and
+      // cannot go back. Anything else is the generic failure.
+      setError(
+        failure.status === 409 || failure.fields?.status
+          ? (failure.fields?.detail ??
+              failure.fields?.status ??
+              'That shipment can no longer be changed.')
+          : 'That change could not be saved. Check the connection and try again.',
+      );
     } finally {
       setSavingId(null);
     }
@@ -112,7 +128,9 @@ export default function Packages() {
         <p className={styles.subtitle}>
           Every customer&apos;s shipments. Moving one to “In transit” or
           “Delivered” stamps the date automatically. New packages are created
-          in the Django admin.
+          in the Django admin. A shipment that has left is read-only — what
+          was sent and where it went cannot change afterwards, and a later
+          purchase belongs on a new shipment of its own.
         </p>
       </header>
 
@@ -247,9 +265,10 @@ export default function Packages() {
                         value={pkg.status}
                         options={PACKAGE_STATUSES}
                         busy={savingId === pkg.id}
+                        locked={FINISHED.has(pkg.status)}
                         onChange={(value) => changeStatus(pkg, value)}
                       />
-                      {/* Seven statuses is too many to tell apart at a glance
+                      {/* Eight statuses is too many to tell apart at a glance
                           in a dropdown, so the badge carries the shape of it:
                           waiting, moving, done, closed. */}
                       <div style={{ marginTop: '0.35rem' }}>
@@ -257,6 +276,17 @@ export default function Packages() {
                           {pkg.status_display}
                         </StatusBadge>
                       </div>
+
+                      {/* Why the row is read-only, in the server's own words.
+                          Said rather than left to be inferred from a greyed
+                          dropdown: the office needs to know that a late parcel
+                          goes on a new shipment, not that a control is
+                          disabled. */}
+                      {pkg.locked && (
+                        <div className={styles.mutedCell} style={{ marginTop: '0.35rem' }}>
+                          {pkg.lock_reason}
+                        </div>
+                      )}
 
                       {/* Where the invoice for this shipment stands, and the
                           way to start one when there is none. Without this a

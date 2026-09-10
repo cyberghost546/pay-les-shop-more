@@ -1,0 +1,19 @@
+# Installed from the lockfile, never committed. The copy at the repository
+# root is not used by either application — frontend/ has its own — and the
+# 262 files of it currently tracked in git can be removed with:
+#
+#   git rm -r --cached node_modules
+node_modules/
+
+# Editor and OS noise
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db
+
+# Vercel's local CLI state. Contains the project and organisation ids.
+.vercel/
+
+# Build output, produced by `npm run build` in frontend/.
+frontend/dist/

@@ -1,5 +1,8 @@
 {
-  "dependencies": {
-    "react-router-dom": "^7.18.3"
+  "name": "pay-les-shop-more",
+  "private": true,
+  "description": "Repository root. The application lives in frontend/ (React) and backend/ (Django); this file exists only to pin the Node version the site is built with.",
+  "engines": {
+    "node": "22.x"
   }
 }

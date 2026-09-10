@@ -32,6 +32,12 @@ function toDocument(data) {
     // receipt carries a name, an address and what somebody bought.
     downloadUrl: data.download_url,
     createdAt: data.created_at,
+    // True when the server declined to file this against the shipment that
+    // was asked for, because that shipment has already gone. The upload still
+    // succeeded; it is simply unfiled, and belongs to whatever shipment
+    // carries it next. See accounts/views.py.
+    filedSeparately: Boolean(data.filed_separately),
+    detail: data.detail ?? '',
   };
 }
 

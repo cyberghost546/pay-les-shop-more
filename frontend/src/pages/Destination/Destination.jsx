@@ -90,7 +90,7 @@ export default function Destination() {
 
   return (
     <main>
-      <DestinationHero title={name} image={destination.hero} />
+      <DestinationHero title={name} image={destination.hero.src} />
 
       {/* The three things people ask before anything else. */}
       <section className={styles.facts}>

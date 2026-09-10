@@ -1,0 +1,34 @@
+# Production only, on top of requirements.txt.
+#
+# Kept separate because these are the packages that need a real build
+# environment or a service to talk to: installing them is not part of getting
+# a fresh clone running, and gunicorn does not run on Windows at all.
+#
+#     pip install -r requirements-prod.txt
+-r requirements.txt
+
+# The WSGI server. manage.py runserver is a development tool and says so —
+# single-threaded, auto-reloading, and explicitly not audited for production.
+gunicorn==23.0.0
+
+# PostgreSQL. The [binary] extra ships a compiled wheel, so no libpq and no
+# compiler are needed on the host.
+psycopg[binary]==3.2.10
+
+# Backs both the Celery broker and the cache, including the throttle counters
+# that are wrong when each worker keeps its own.
+redis==5.2.1
+
+# Error reporting. Inert unless SENTRY_DSN is set — see config/settings.py.
+sentry-sdk==2.35.0
+
+# Object storage for uploaded and rendered files. Inert unless
+# AWS_STORAGE_BUCKET_NAME is set — see the "Object storage" section of
+# config/settings.py — so the filesystem stays the default for a host with a
+# real disk, and nothing here is imported when it is not configured.
+#
+# "S3" is the protocol rather than the vendor: Cloudflare R2, Backblaze B2,
+# DigitalOcean Spaces, MinIO and Supabase Storage all speak it and differ only
+# in AWS_S3_ENDPOINT_URL.
+django-storages==1.14.6
+boto3==1.35.99

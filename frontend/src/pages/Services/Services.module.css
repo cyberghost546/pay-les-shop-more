@@ -128,583 +128,168 @@
   }
 }
 
-/* "Onze diensten" section: one card per island */
-.services {
+
+/* ------------------------------------------------------------------ islands
+
+   One panel per island: the heading and the list of what is offered on the
+   left, the island itself on the right. Two panels to a row on a desktop,
+   one on anything narrower.                                                 */
+
+.islands {
   max-width: 1400px;
-  margin: 2.5rem auto 3rem;
-  padding: 0 1rem;
-}
-
-.sectionTitle {
-  margin: 0 0 0.9rem;
-  padding-bottom: 0.9rem;
-  border-bottom: 1px solid #e5e7eb;
-  font-size: 1.15rem;
-  font-weight: 700;
-  color: #111827;
-}
-
-/* --------------------------------------------------------------- sections */
-
-.section {
-  max-width: 1180px;
   margin: 0 auto;
-  padding: 3.5rem 1.25rem;
+  padding: 3rem 1rem;
 }
 
-.sectionHead {
-  max-width: 60ch;
-  margin: 0 auto 2.25rem;
-  text-align: center;
-}
-
-.sectionLead {
-  margin: 0.75rem 0 0;
-  font-size: 1rem;
-  line-height: 1.7;
-  color: #4b5563;
-}
-
-/* --------------------------------------------------------- service cards */
-
-.serviceGrid,
-.islandGrid,
-.shopList {
+.islandGrid {
   display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 2rem;
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.serviceGrid {
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 1.25rem;
-}
-
-.serviceCard {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  box-sizing: border-box;
-  padding: 1.75rem;
-  border: 1px solid #e2e8f0;
-  border-radius: 14px;
+.islandCard {
+  display: grid;
+  /* The list takes what it needs; the island takes the rest. */
+  grid-template-columns: minmax(0, 1fr) minmax(0, 0.9fr);
+  align-items: center;
+  gap: 1.5rem;
+  padding: 2.5rem 2rem;
+  border: 1px solid #e4e7ec;
   background: #ffffff;
-  color: inherit;
-  text-decoration: none;
-  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
 }
 
-/* All six cards lead somewhere now, so all six lift. */
-a.serviceCard:hover,
-a.serviceCard:focus-visible {
-  transform: translateY(-4px);
-  border-color: #bae6fd;
-  box-shadow: 0 16px 36px rgba(11, 37, 69, 0.1);
+.islandBody {
+  min-width: 0;
 }
 
-.serviceIcon {
+.islandTitle {
+  margin: 0 0 1.75rem;
+  color: #0b1220;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.serviceList {
+  display: grid;
+  gap: 0.55rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.serviceItem {
   display: flex;
   align-items: center;
-  justify-content: center;
-  width: 52px;
-  height: 52px;
-  margin-bottom: 1.1rem;
-  border-radius: 12px;
-  background: #e0f2fe;
-  color: #0b2545;
+  gap: 0.85rem;
 }
 
-.serviceIcon svg {
-  width: 26px;
-  height: 26px;
+/* The corner-and-arrow marker in front of every line. Drawn rather than
+   typed, so it keeps its weight next to the text at any size. */
+.serviceArrow {
+  flex: 0 0 auto;
+  width: 16px;
+  height: 16px;
   fill: none;
-  stroke: currentColor;
-  stroke-width: 2.2;
+  stroke: #4b5563;
+  stroke-width: 1.4;
   stroke-linecap: round;
   stroke-linejoin: round;
 }
 
-a.serviceCard:hover .serviceIcon {
-  background: #0ea5e9;
-  color: #ffffff;
-}
-
-.serviceTitle {
-  margin: 0 0 0.5rem;
-  font-size: 1.12rem;
-  font-weight: 700;
-  color: #0b2545;
-}
-
-.serviceText {
-  margin: 0;
-  /* Pushes any "learn more" to the bottom, so the links line up across cards
-     whose descriptions run to different lengths. */
-  flex: 1 1 auto;
-  font-size: 0.94rem;
-  line-height: 1.6;
-  color: #4b5563;
-}
-
-.serviceMore {
-  margin-top: 1.25rem;
-  font-size: 0.9rem;
-  font-weight: 700;
-  color: #0ea5e9;
-}
-
-/* -------------------------------------------------------------- islands */
-
-.islandGrid {
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 1.25rem;
-}
-
-.islandCard {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  overflow: hidden;
-  border: 1px solid #e2e8f0;
-  border-radius: 14px;
-  background: #ffffff;
+.serviceLink {
+  color: #38a0dc;
+  font-size: 1.02rem;
   text-decoration: none;
-  transition: transform 0.18s ease, box-shadow 0.18s ease;
 }
 
-.islandCard:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 16px 36px rgba(11, 37, 69, 0.12);
+.serviceLink:hover,
+.serviceLink:focus-visible {
+  text-decoration: underline;
 }
 
 .islandImage {
   width: 100%;
-  height: 150px;
-  /* The photographs are different shapes; cover crops them to one height
-     rather than letting the row of cards go ragged. */
+  height: auto;
+  /* Squared off, like the rest of the page: nothing else here is rounded. */
   object-fit: cover;
+  aspect-ratio: 4 / 3;
 }
 
-.islandBody {
-  display: flex;
-  flex: 1 1 auto;
-  flex-direction: column;
-  justify-content: space-between;
-  gap: 0.6rem;
-  padding: 1rem 1.15rem 1.15rem;
+/* ------------------------------------------------------------------- brands
+
+   A row of bordered boxes that scrolls sideways rather than wrapping, so the
+   strip stays one line however many brands are in it.                       */
+
+.brands {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 1rem 4rem;
 }
 
-.islandName {
+.brandsTitle {
+  margin: 0 0 1.25rem;
+  color: #0b1220;
   font-size: 1.05rem;
   font-weight: 700;
-  color: #0b2545;
 }
 
-.islandMore {
-  font-size: 0.86rem;
-  font-weight: 700;
-  color: #0ea5e9;
-}
-
-/* ---------------------------------------------------------------- rates */
-
-.rates {
-  background: #f8fafc;
-  border-top: 1px solid #e2e8f0;
-  border-bottom: 1px solid #e2e8f0;
-}
-
-.ratesInner {
-  max-width: 1180px;
-  margin: 0 auto;
-  padding: 3.5rem 1.25rem;
-  text-align: center;
-}
-
-.rateGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+.brandRow {
+  display: flex;
   gap: 1.25rem;
   margin: 0;
-  padding: 0;
+  padding: 0 0 1rem;
   list-style: none;
-  text-align: left;
+  overflow-x: auto;
+  /* Each box keeps its width instead of being squeezed by the ones after it. */
+  scroll-snap-type: x proximity;
 }
 
-.rateCard {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  box-sizing: border-box;
-  padding: 1.75rem;
-  border: 1px solid #e2e8f0;
-  border-radius: 14px;
-  background: #ffffff;
+.brandRow:focus-visible {
+  outline: 2px solid #38a0dc;
+  outline-offset: 4px;
 }
 
-/* The middle tier is the one most customers land on, so it is the one the
-   eye should reach first. */
-.rateCardFeatured {
-  border-color: #0ea5e9;
-  box-shadow: 0 16px 36px rgba(11, 37, 69, 0.1);
-}
-
-.rateBadge {
-  position: absolute;
-  top: -0.7rem;
-  left: 1.75rem;
-  padding: 0.25rem 0.7rem;
-  border-radius: 999px;
-  background: #0ea5e9;
-  color: #04121f;
-  font-size: 0.72rem;
-  font-weight: 800;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-}
-
-.rateName {
-  margin: 0;
-  font-size: 1.05rem;
-  font-weight: 800;
-  color: #0b2545;
-}
-
-.rateSize {
-  margin: 0.3rem 0 0;
-  font-size: 0.86rem;
-  color: #64748b;
-}
-
-.ratePrice {
-  display: flex;
-  align-items: baseline;
-  gap: 0.4rem;
-  margin: 1rem 0 0.9rem;
-  font-size: 1.9rem;
-  font-weight: 800;
-  color: #0b2545;
-}
-
-.rateFrom {
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: #64748b;
-  text-transform: lowercase;
-}
-
-.rateText {
-  margin: 0;
-  font-size: 0.92rem;
-  line-height: 1.6;
-  color: #4b5563;
-}
-
-.rateFactors {
-  max-width: 760px;
-  margin: 2.5rem auto 0;
-  padding: 1.5rem;
-  border: 1px dashed #cbd5e1;
-  border-radius: 14px;
-  text-align: left;
-}
-
-.rateFactorsTitle {
-  margin: 0 0 0.9rem;
-  font-size: 0.95rem;
-  font-weight: 800;
-  color: #0b2545;
-}
-
-.rateFactorList {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 0.6rem;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.rateFactor {
-  position: relative;
-  padding-left: 1.4rem;
-  font-size: 0.9rem;
-  line-height: 1.55;
-  color: #4b5563;
-}
-
-/* A tick, drawn in CSS so the list needs no icon set. */
-.rateFactor::before {
-  content: '';
-  position: absolute;
-  top: 0.35em;
-  left: 0.1rem;
-  width: 5px;
-  height: 9px;
-  border-right: 2px solid #0ea5e9;
-  border-bottom: 2px solid #0ea5e9;
-  transform: rotate(45deg);
-}
-
-.rateNote {
-  max-width: 62ch;
-  margin: 1.75rem auto 0;
-  font-size: 0.88rem;
-  line-height: 1.65;
-  color: #64748b;
-}
-
-.rateCta {
-  display: inline-block;
-  margin-top: 1.5rem;
-  padding: 0.85rem 1.7rem;
-  border: 2px solid #0ea5e9;
-  border-radius: 10px;
-  background: #0ea5e9;
-  color: #04121f;
-  font-size: 1rem;
-  font-weight: 700;
-  text-decoration: none;
-  transition: transform 0.15s ease, background 0.15s ease;
-}
-
-.rateCta:hover {
-  background: #38bdf8;
-  transform: translateY(-2px);
-}
-
-/* ---------------------------------------------------------------- shops */
-
-.shopGroups {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 1.25rem;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.shopGroup {
-  padding: 1.5rem;
-  border: 1px solid #e2e8f0;
-  border-radius: 14px;
-  background: #ffffff;
-}
-
-.shopGroupTitle {
-  margin: 0;
-  font-size: 1rem;
-  font-weight: 800;
-  color: #0b2545;
-}
-
-.shopGroupNote {
-  margin: 0.35rem 0 1rem;
-  font-size: 0.88rem;
-  line-height: 1.55;
-  color: #64748b;
-}
-
-.shopList {
-  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-  gap: 0.6rem;
-}
-
-.shopsFooter {
-  max-width: 62ch;
-  margin: 2rem auto 0;
-  font-size: 0.92rem;
-  line-height: 1.65;
-  color: #4b5563;
-  text-align: center;
-}
-
-.shop {
-  padding: 0.8rem 1rem;
-  border: 1px solid #e2e8f0;
-  border-radius: 10px;
-  background: #f8fafc;
-  font-size: 0.92rem;
-  font-weight: 600;
-  color: #334155;
-  text-align: center;
-}
-
-/* ------------------------------------------------------------------ faq */
-/* Deliberately the same shapes as the destination pages' FAQ, so the two
-   read as one component even though they live in separate stylesheets. */
-
-.faq {
-  background: #f8fafc;
-  border-top: 1px solid #e2e8f0;
-}
-
-.faqInner {
-  max-width: 760px;
-  margin: 0 auto;
-  padding: 4rem 1.25rem;
-}
-
-.faqTitle {
-  margin: 0 0 2rem;
-  font-size: clamp(1.5rem, 3vw, 2rem);
-  font-weight: 800;
-  color: #0b2545;
-  text-align: center;
-}
-
-.faqList {
-  display: flex;
-  flex-direction: column;
-  gap: 0.6rem;
-}
-
-.faqItem {
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
-  background: #ffffff;
-  overflow: hidden;
-}
-
-.faqQuestion {
+.brandCard {
+  flex: 0 0 auto;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: 1.1rem 1.25rem;
-  font-size: 1rem;
-  font-weight: 700;
-  color: #0b2545;
-  cursor: pointer;
-  /* Removes the default disclosure triangle; the chevron below replaces it. */
-  list-style: none;
-}
-
-.faqQuestion::-webkit-details-marker {
-  display: none;
-}
-
-.faqQuestion:hover {
-  background: #f8fafc;
-}
-
-.faqChevron {
-  flex-shrink: 0;
-  width: 10px;
-  height: 10px;
-  border-right: 2px solid #94a3b8;
-  border-bottom: 2px solid #94a3b8;
-  transform: rotate(45deg) translate(-2px, -2px);
-  transition: transform 0.2s ease;
-}
-
-.faqItem[open] .faqChevron {
-  transform: rotate(-135deg) translate(-2px, -2px);
-}
-
-.faqAnswer {
-  margin: 0;
-  padding: 0 1.25rem 1.25rem;
-  font-size: 0.95rem;
-  line-height: 1.7;
-  color: #4b5563;
-}
-
-.faqMore {
-  margin: 2rem 0 0;
-  font-size: 0.95rem;
-  color: #4b5563;
-  text-align: center;
-}
-
-.faqLink {
-  color: #0ea5e9;
-  font-weight: 700;
-  text-decoration: none;
-}
-
-.faqLink:hover {
-  text-decoration: underline;
-}
-
-/* ------------------------------------------------------------------ cta */
-
-.cta {
-  padding: 4rem 1.25rem;
-  background:
-    radial-gradient(700px 300px at 50% 0%, rgba(56, 189, 248, 0.2), transparent 65%),
-    linear-gradient(160deg, #0b2545 0%, #071a30 100%);
-  color: #ffffff;
-  text-align: center;
-}
-
-.ctaTitle {
-  margin: 0 0 0.75rem;
-  font-size: clamp(1.6rem, 3.6vw, 2.2rem);
-  font-weight: 800;
-  letter-spacing: -0.02em;
-}
-
-.ctaBody {
-  max-width: 52ch;
-  margin: 0 auto 2rem;
-  font-size: 1.02rem;
-  line-height: 1.7;
-  color: #b9cbe0;
-}
-
-.ctaButtons {
-  display: flex;
-  flex-wrap: wrap;
   justify-content: center;
-  gap: 0.75rem;
+  width: clamp(200px, 24vw, 300px);
+  height: 190px;
+  padding: 1.5rem;
+  box-sizing: border-box;
+  border: 1px solid #e4e7ec;
+  background: #fafafa;
+  scroll-snap-align: start;
 }
 
-.ctaPrimary,
-.ctaGhost {
-  padding: 0.85rem 1.7rem;
-  border-radius: 10px;
-  font-size: 1rem;
+.brandLogo {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+/* Shown until a logo file exists for that brand. Set in type rather than
+   left blank, so the strip reads as a list of names instead of a row of
+   empty boxes. */
+.brandName {
+  color: #4b5563;
+  font-size: 1.2rem;
   font-weight: 700;
-  text-decoration: none;
-  transition: transform 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+  text-align: center;
 }
 
-.ctaPrimary {
-  border: 2px solid #0ea5e9;
-  background: #0ea5e9;
-  color: #04121f;
-}
-
-.ctaPrimary:hover {
-  background: #38bdf8;
-  border-color: #38bdf8;
-  transform: translateY(-2px);
-}
-
-.ctaGhost {
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  color: #ffffff;
-}
-
-.ctaGhost:hover {
-  border-color: #ffffff;
-  background: rgba(255, 255, 255, 0.08);
-  transform: translateY(-2px);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  a.serviceCard:hover,
-  a.serviceCard:focus-visible,
-  .islandCard:hover,
-  .rateCta:hover,
-  .ctaPrimary:hover,
-  .ctaGhost:hover {
-    transform: none;
+@media (max-width: 900px) {
+  .islandGrid {
+    grid-template-columns: 1fr;
   }
 
-  .faqChevron {
-    transition: none;
+  .islandCard {
+    /* The island moves under the list rather than shrinking beside it. */
+    grid-template-columns: 1fr;
+    padding: 2rem 1.5rem;
   }
 }

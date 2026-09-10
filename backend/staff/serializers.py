@@ -8,9 +8,10 @@ that is a record of what happened rather than a decision staff get to make.
 """
 
 from django.contrib.auth import get_user_model
+from django.urls import reverse
 from rest_framework import serializers
 
-from accounts.models import Address, Package
+from accounts.models import Address, InvalidShipmentTransition, Package
 from accounts.serializers import PackageDocumentSerializer
 from enquiries.models import ContactMessage, QuoteRequest
 
@@ -256,6 +257,17 @@ class StaffPackageSerializer(_StaffPackageInvoiceMixin, serializers.ModelSeriali
     # guess, and pressing it on a shipment that already has an invoice would
     # look like it had done nothing.
     invoice = serializers.SerializerMethodField()
+    # The dashboard greys the row out with these rather than working the rule
+    # out from the status itself, so that "what may still be edited" is
+    # decided once, on the model, and not re-derived in JavaScript where it
+    # could drift.
+    locked = serializers.BooleanField(read_only=True)
+    locked_for_customer = serializers.BooleanField(read_only=True)
+    lock_reason = serializers.CharField(read_only=True)
+    # Where it is going, at country level. The full address is on the row as
+    # delivery_address_text; this is the one line the Add invoice form needs to
+    # let an admin recognise a shipment in a list of them.
+    destination = serializers.CharField(source="destination_label", read_only=True)
 
     class Meta:
         model = Package
@@ -266,6 +278,10 @@ class StaffPackageSerializer(_StaffPackageInvoiceMixin, serializers.ModelSeriali
             "description",
             "status",
             "status_display",
+            "destination",
+            "locked",
+            "locked_for_customer",
+            "lock_reason",
             "weight_kg",
             "value_eur",
             "delivery_address_text",
@@ -292,14 +308,59 @@ class StaffPackageSerializer(_StaffPackageInvoiceMixin, serializers.ModelSeriali
             "invoice",
             "shipped_at",
             "delivered_at",
+            "destination",
+            "locked",
+            "locked_for_customer",
+            "lock_reason",
         ]
+
+    def validate(self, attrs):
+        """Refuse the edit here as well as in the model.
+
+        Package.save() is the rule and would raise on its own; this runs first
+        so the dashboard gets a 400 naming the offending field rather than a
+        bare 409, which is the difference between a form that highlights what
+        is wrong and one that just says no.
+        """
+        package = self.instance
+        if package is None:
+            return attrs
+
+        if "status" in attrs and attrs["status"] != package.status:
+            try:
+                package.check_transition(attrs["status"])
+            except InvalidShipmentTransition as exc:
+                raise serializers.ValidationError({"status": str(exc)})
+
+        if package.locked:
+            # Whatever else the request carries, a shipment that has left is
+            # not describable any differently than it already is.
+            frozen = {
+                field: attrs[field]
+                for field in Package.FROZEN_FIELDS
+                if field in attrs and attrs[field] != getattr(package, field)
+            }
+            if frozen:
+                raise serializers.ValidationError(
+                    {field: package.lock_reason for field in frozen}
+                )
+
+        return attrs
 
 
 class StaffQuoteRequestSerializer(serializers.ModelSerializer):
     status_display = serializers.CharField(source="get_status_display", read_only=True)
     full_name = serializers.CharField(read_only=True)
-    # The stored path is useless to the browser; this is the URL that serves
-    # it, absolute when the serializer was given the request.
+    # The route that streams the attachment, not the file's own storage URL.
+    #
+    # `obj.file.url` was a MEDIA_URL path, and MEDIA_URL is served by
+    # django.conf.urls.static in development and by nothing at all in
+    # production — so this link worked on a developer's machine and answered
+    # 404 on the deployed site. Publishing MEDIA_ROOT to fix that would have
+    # been worse: these are files visitors attached to a quote request, and a
+    # published media directory is one where they can be fetched by anyone who
+    # guesses a name. The same reasoning as the invoice routes, arrived at
+    # late for the same reason.
     file_url = serializers.SerializerMethodField()
 
     class Meta:
@@ -326,11 +387,16 @@ class StaffQuoteRequestSerializer(serializers.ModelSerializer):
         ]
 
     def get_file_url(self, obj):
+        """None when nothing was attached, so the dashboard can test it.
+
+        A path rather than an absolute URL: behind a static host that rewrites
+        /api to the API, an absolute URL names the API's own host, the browser
+        declines to attach a SameSite cookie to an off-origin link, and the
+        download comes back 403.
+        """
         if not obj.file:
             return None
-        url = obj.file.url
-        request = self.context.get("request")
-        return request.build_absolute_uri(url) if request else url
+        return reverse("staff-quote-file", kwargs={"pk": obj.pk})
 
 
 class StaffContactMessageSerializer(serializers.ModelSerializer):

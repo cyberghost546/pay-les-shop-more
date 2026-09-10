@@ -192,6 +192,7 @@ export const PACKAGE_STATUSES = [
   { value: 'quoted', label: 'Quote sent' },
   { value: 'paid', label: 'Paid' },
   { value: 'purchased', label: 'Products purchased' },
+  { value: 'ready_for_shipping', label: 'Ready for shipping' },
   { value: 'in_transit', label: 'In transit' },
   { value: 'arrived', label: 'Arrived at destination' },
   { value: 'delivered', label: 'Delivered' },
@@ -220,6 +221,68 @@ export async function listInvoices(filters) {
   return toPage(await request(`/staff/invoices/${query({ ...filters, status })}`));
 }
 
+// The three an invoice may be raised into by hand. Draft is not offered —
+// nothing reads a draft, and an invoice raised by hand is raised in order to
+// go somewhere — and rejected is a verdict rather than a starting point. The
+// server refuses the other two; this only decides what the form offers.
+export const CREATABLE_INVOICE_STATUSES = [
+  {
+    value: 'sent',
+    label: 'Send it to the customer now',
+    hint: 'Approved in your name and published to their profile page straight away.',
+  },
+  {
+    value: 'pending_review',
+    label: 'Put it in the review queue',
+    hint: 'Someone else approves it before the customer sees it.',
+  },
+  {
+    value: 'approved',
+    label: 'Approve it, but do not send yet',
+    hint: 'Approved in your name. Send it later from this page.',
+  },
+];
+
+/**
+ * Raises an invoice by hand, with the document already in hand.
+ *
+ * The automatic path is untouched: an invoice still appears by itself when a
+ * shipment is marked paid. This is for the shipment that never went through
+ * that transition, where the office has the PDF and wants it on the
+ * customer's profile.
+ *
+ * Both ids go up and neither is believed. The server checks the shipment
+ * against the customer in the database before anything is written — see
+ * InvoiceCreateSerializer — so a stale dropdown cannot put one customer's
+ * invoice on another customer's shipment.
+ *
+ * A 409 means the shipment already has an invoice; the body carries
+ * `existing_invoice` so the page can offer to open it.
+ *
+ * @param {{ customerId: number, packageId: number, file: File,
+ *           status?: string, invoiceDate?: string }} invoice
+ */
+export async function createInvoice({
+  customerId,
+  packageId,
+  file,
+  status = 'sent',
+  invoiceDate,
+}) {
+  const body = new FormData();
+  body.append('customer', String(customerId));
+  body.append('package', String(packageId));
+  body.append('pdf', file);
+  body.append('status', status);
+  // Omitted rather than sent empty: the server reads a missing date as today,
+  // and an empty string as a malformed one.
+  if (invoiceDate) body.append('invoice_date', invoiceDate);
+
+  // formData, so request() lets the browser write the multipart Content-Type
+  // and its boundary — the one header that must never be set by hand.
+  return request('/staff/invoices/', { method: 'POST', formData: body });
+}
+
 /**
  * pending_review -> approved, which queues the PDF and, once that lands,
  * marks the invoice sent and shows it to the customer.
@@ -235,6 +298,20 @@ export async function approveInvoice(id) {
  * pending_review -> rejected. The reason is required and is shown to whoever
  * corrects the invoice, so it has to say what is actually wrong.
  */
+/**
+ * approved -> sent, for an invoice that already carries its document.
+ *
+ * The other half of "approve it, but do not send yet" on the Add invoice
+ * form. An invoice raised that way sits approved with its PDF attached and
+ * deliberately off the customer's profile; this is what finishes it.
+ *
+ * A 409 means it is not in a state where sending makes sense - still in
+ * review, or already sent.
+ */
+export async function sendInvoice(id) {
+  return request(`/staff/invoices/${id}/send/`, { method: 'POST' });
+}
+
 export async function rejectInvoice(id, reason) {
   return request(`/staff/invoices/${id}/reject/`, {
     method: 'POST',

@@ -18,6 +18,11 @@ function toInvoice(data) {
     // A string, not a Number: these are euro amounts and the API sends them as
     // decimals for a reason. Formatting happens at the point of display.
     valueEur: data.value_eur,
+    // The date on the document, which is not always the day it was sent: an
+    // invoice raised by the office on Monday for Friday's shipment carries
+    // Friday. The profile page shows this one, so the list and the PDF the
+    // customer downloads agree.
+    datedOn: data.dated_on,
     sentAt: data.sent_at,
     // Points at the API view that checks the session, never at /media. The
     // PDF is a document with somebody's name, address and shipment value on

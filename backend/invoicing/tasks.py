@@ -65,6 +65,24 @@ def render_approved_invoice(self, invoice_id):
         )
         return
 
+    if invoice.pdf:
+        # Somebody attached a document by hand before this ran - an invoice
+        # raised through the dashboard's Add invoice form, where the PDF is
+        # part of creating it. Drawing over it would replace the document a
+        # person chose with one this code invented, which is the opposite of
+        # what attaching it meant.
+        #
+        # Nothing is sent either. An approved invoice that already carries a
+        # document got there by somebody choosing "approve it, but do not send
+        # yet", and sending it here would overrule that decision from a worker
+        # they cannot see. It waits for the Send button, which is what they
+        # said they wanted.
+        logger.info(
+            "Invoice %s already has a document; leaving it approved and unsent.",
+            invoice_id,
+        )
+        return
+
     content = ContentFile(render_invoice_pdf(invoice))
     filename = f"{invoice_number(invoice)}-{invoice.package.tracking_number}.pdf"
 
@@ -74,6 +92,10 @@ def render_approved_invoice(self, invoice_id):
     # tells us the name they were stored under, which may differ from the name
     # asked for if something is already there.
     invoice.pdf.save(filename, content, save=False)
+
+    # No uploaded_by: nobody chose this file, the worker drew it. See
+    # Invoice.document_uploaded_by for why that null is information.
+    invoice.record_document(filename=filename)
 
     try:
         invoice.mark_sent(invoice.pdf.name)

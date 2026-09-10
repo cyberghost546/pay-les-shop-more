@@ -25,6 +25,7 @@ export const PACKAGE_TONES = {
   quoted: ATTENTION,
   paid: ATTENTION,
   purchased: PROGRESS,
+  ready_for_shipping: PROGRESS,
   in_transit: PROGRESS,
   arrived: PROGRESS,
   delivered: DONE,

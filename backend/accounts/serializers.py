@@ -251,6 +251,15 @@ class AccountDeleteSerializer(serializers.Serializer):
 class PackageSerializer(serializers.ModelSerializer):
     status_display = serializers.CharField(source="get_status_display", read_only=True)
 
+    # Whether this shipment can still be added to, and why not when it cannot.
+    # Sent with every shipment rather than fetched per row, so the profile page
+    # can render a sent shipment read-only without a second request - and so
+    # that a client which ignores it still meets the same refusal from the API,
+    # which is where the rule actually lives. See Package.locked.
+    locked = serializers.BooleanField(read_only=True)
+    locked_for_customer = serializers.BooleanField(read_only=True)
+    lock_reason = serializers.CharField(read_only=True)
+
     class Meta:
         model = Package
         fields = [
@@ -259,6 +268,9 @@ class PackageSerializer(serializers.ModelSerializer):
             "description",
             "status",
             "status_display",
+            "locked",
+            "locked_for_customer",
+            "lock_reason",
             "weight_kg",
             "value_eur",
             "delivery_address",
@@ -326,9 +338,21 @@ class PackageDocumentSerializer(serializers.ModelSerializer):
         return str(obj.uploaded_by) if obj.uploaded_by_id else None
 
     def get_download_url(self, obj):
-        path = reverse("package-document-file", kwargs={"pk": obj.pk})
-        request = self.context.get("request")
-        return request.build_absolute_uri(path) if request else path
+        """The path, not an absolute URL, and deliberately.
+
+        `request.build_absolute_uri` answers with the host Django was reached
+        on. Behind a static host that rewrites /api to the API — which is how
+        this site is deployed, and what keeps the session cookie first-party —
+        that host is the API's own, not the one the browser is on. The link
+        would then point off-origin, the browser would not attach a SameSite
+        cookie to it, and the download would come back 403.
+
+        A path resolves against whatever origin the page is already on, which
+        is right in every arrangement this project supports: the Vite proxy in
+        development, the rewrite in production, and Django serving both if it
+        ever does.
+        """
+        return reverse("package-document-file", kwargs={"pk": obj.pk})
 
 
 class PackageDocumentUploadSerializer(serializers.Serializer):

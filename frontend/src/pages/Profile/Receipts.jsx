@@ -40,6 +40,11 @@ export default function Receipts() {
   const [busy, setBusy] = useState(false);
   const [problem, setProblem] = useState('');
   const [done, setDone] = useState('');
+  // Set when the server files an upload separately because the shipment it
+  // named has already gone. Its own slot rather than sharing `problem`: the
+  // upload succeeded, and colouring it as a failure would tell the customer
+  // their receipt was lost when it was not.
+  const [separate, setSeparate] = useState('');
 
   useEffect(() => {
     let cancelled = false;
@@ -51,9 +56,11 @@ export default function Receipts() {
         if (cancelled) return;
         setPackages(shipments);
         setDocuments(files);
-        // Preselect when there is only one, which is the common case: a
-        // picker with a single option is a question not worth asking.
-        if (shipments.length === 1) setPackageId(String(shipments[0].id));
+        // Preselect when there is only one that can still be added to.
+        // A picker with a single option is a question not worth asking, and a
+        // shipment that has already gone is not an option at all.
+        const open = shipments.filter((row) => !row.locked_for_customer);
+        if (open.length === 1) setPackageId(String(open[0].id));
         setState('ready');
       })
       .catch(() => {
@@ -84,6 +91,7 @@ export default function Receipts() {
     setBusy(true);
     setProblem('');
     setDone('');
+    setSeparate('');
 
     try {
       const saved = await uploadDocument({
@@ -96,6 +104,16 @@ export default function Receipts() {
       });
 
       setDocuments((current) => [saved, ...current]);
+
+      // The shipment named was already gone, so the server kept the file and
+      // filed it against nothing rather than folding it into a shipment that
+      // has left. Say so plainly - the customer chose that shipment, and
+      // silently putting the file somewhere else would be the surprise.
+      if (saved.filedSeparately) {
+        setSeparate(t('profile.receipts.separate'));
+        setPackageId('');
+      }
+
       // Cleared only on success. A failed send leaves the file staged and the
       // description typed, so trying again is one button rather than filling
       // the whole thing in a second time.
@@ -116,15 +134,35 @@ export default function Receipts() {
     }
   }
 
+  /**
+   * Whether this file may still be withdrawn.
+   *
+   * A receipt on a shipment that has left is part of what was sent. The
+   * server refuses the delete either way; this is so the button is not
+   * offered when pressing it can only produce a refusal.
+   */
+  function canWithdraw(document) {
+    if (!document.packageId) return true;
+    const shipment = packages.find((row) => row.id === document.packageId);
+    return !shipment?.locked;
+  }
+
   async function handleDelete(document) {
     setProblem('');
     setDone('');
+    setSeparate('');
 
     try {
       await deleteDocument(document.id);
       setDocuments((current) => current.filter((row) => row.id !== document.id));
-    } catch {
-      setProblem(t('profile.receipts.deleteFailed'));
+    } catch (failure) {
+      // 409 is the shipment lock and arrives with its own sentence, which
+      // says more than any wording here could.
+      setProblem(
+        failure.status === 409 && failure.fields?.detail
+          ? String(failure.fields.detail)
+          : t('profile.receipts.deleteFailed'),
+      );
     }
   }
 
@@ -169,10 +207,21 @@ export default function Receipts() {
                   onChange={(event) => setPackageId(event.target.value)}
                 >
                   <option value="">{t('profile.receipts.noShipment')}</option>
+                  {/* A shipment that has gone stays in the list and
+                      cannot be chosen. Removing it would leave the customer
+                      hunting for a tracking number they can see on the card
+                      above; disabling it answers the question instead. */}
                   {packages.map((shipment) => (
-                    <option key={shipment.id} value={shipment.id}>
+                    <option
+                      key={shipment.id}
+                      value={shipment.id}
+                      disabled={shipment.locked_for_customer}
+                    >
                       {shipment.tracking_number}
                       {shipment.description ? ` — ${shipment.description}` : ''}
+                      {shipment.locked_for_customer
+                        ? ` (${t('profile.receipts.shipmentClosed')})`
+                        : ''}
                     </option>
                   ))}
                 </select>
@@ -268,6 +317,11 @@ export default function Receipts() {
               {done}
             </p>
           )}
+          {separate && (
+            <p className={styles.invoiceMessage} role="status">
+              {separate}
+            </p>
+          )}
       </>
 
       {documents.length > 0 && (
@@ -299,13 +353,15 @@ export default function Receipts() {
                 >
                   {t('profile.receipts.download')}
                 </a>
-                <button
-                  type="button"
-                  className={styles.linkButton}
-                  onClick={() => handleDelete(document)}
-                >
-                  {t('profile.receipts.remove')}
-                </button>
+                {canWithdraw(document) && (
+                  <button
+                    type="button"
+                    className={styles.linkButton}
+                    onClick={() => handleDelete(document)}
+                  >
+                    {t('profile.receipts.remove')}
+                  </button>
+                )}
               </div>
             </li>
           ))}

@@ -13,14 +13,18 @@ from django.views.decorators.csrf import ensure_csrf_cookie
 from django.utils.decorators import method_decorator
 from rest_framework import generics, mixins, status, viewsets
 from rest_framework.decorators import action
-from rest_framework.exceptions import PermissionDenied, ValidationError
+from rest_framework.exceptions import (
+    APIException,
+    PermissionDenied,
+    ValidationError,
+)
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 
 from .emails import send_password_reset
-from .models import Address, Package, PackageDocument
+from .models import Address, Package, PackageDocument, ShipmentLocked
 from .serializers import (
     AccountDeleteSerializer,
     AddressSerializer,
@@ -34,6 +38,23 @@ from .serializers import (
     SignupSerializer,
     UserSerializer,
 )
+
+
+class ShipmentChangeRefused(APIException):
+    """A change to a shipment that has gone too far to be changed.
+
+    409 rather than 400: the request was well formed and the caller was
+    allowed to make it, so there is no field to highlight. The shipment has
+    simply left, and a record of what was sent is not a form.
+
+    Defined here, in the app that owns Package, and imported by the staff API
+    as well - so a customer and a member of staff meeting the same rule get
+    the same status code and the same sentence, rather than each API deciding
+    for itself what a refusal looks like.
+    """
+
+    status_code = status.HTTP_409_CONFLICT
+    default_detail = "This shipment can no longer be changed."
 
 
 @method_decorator(ensure_csrf_cookie, name="get")
@@ -275,8 +296,15 @@ class AddressViewSet(viewsets.ModelViewSet):
 class PackageViewSet(
     mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet
 ):
-    """Read-only: customers follow their shipments, staff update them in the
-    admin."""
+    """Read-only: customers follow their shipments, staff move them along.
+
+    There is deliberately no write half here, and there never was. A customer
+    changing their own shipment's status or destination is not a thing the
+    business does - the office does it, at the counter, from the dashboard.
+    Each shipment carries `locked`, `locked_for_customer` and `lock_reason`
+    (see PackageSerializer) so the profile page can render a shipment that has
+    already gone as a record rather than as a form.
+    """
 
     serializer_class = PackageSerializer
     permission_classes = [IsAuthenticated]
@@ -372,6 +400,18 @@ class PackageDocumentViewSet(
         package = self._package_for(request)
         upload = body.validated_data["file"]
 
+        # The rule at the heart of this: paperwork for something bought now
+        # cannot be filed against a shipment that has already left. The
+        # receipt is still kept - it arrives unfiled, exactly as a receipt for
+        # a parcel that does not exist yet does, and the office files it
+        # against the new shipment when that shipment is created. Losing the
+        # upload would teach customers to keep quiet about the second purchase.
+        filed_separately = False
+        if package is not None and not package.can_change(by_staff=request.user.is_staff):
+            lock_reason = package.lock_reason
+            package = None
+            filed_separately = True
+
         # Whose it is. The shipment's owner when there is a shipment — so a
         # staff member attaching a receipt on a customer's behalf files it
         # under that customer and not under themselves — and otherwise the
@@ -393,9 +433,20 @@ class PackageDocumentViewSet(
             size_bytes=upload.size,
         )
 
-        return Response(
-            self.get_serializer(document).data, status=status.HTTP_201_CREATED
-        )
+        data = self.get_serializer(document).data
+
+        if filed_separately:
+            # Said in the body rather than by a different status code: the
+            # upload did succeed, and 201 is the truth about it. What changed
+            # is where it landed, and the caller is told so plainly enough to
+            # put on the screen.
+            data["filed_separately"] = True
+            data["detail"] = (
+                f"{lock_reason} Your file has been received and will be filed "
+                "against the new shipment."
+            )
+
+        return Response(data, status=status.HTTP_201_CREATED)
 
     def _package_for(self, request):
         """The shipment this upload is for, if any, or a refusal.
@@ -434,9 +485,17 @@ class PackageDocumentViewSet(
         outcome a delete button must not have.
 
         A customer may withdraw what they sent in - the wrong photograph, the
-        wrong parcel. Staff may remove anything, because they are the ones who
-        have to clear up a receipt filed against the wrong shipment.
+        wrong parcel - right up until the shipment leaves. After that the
+        paperwork is part of what was sent, and taking a receipt off a
+        shipment already at sea is editing a record, not correcting a form.
+
+        Staff may still remove anything. Somebody has to be able to clear up a
+        receipt filed against the wrong shipment, and a misfiling discovered
+        after the boat sailed is exactly when that matters most.
         """
+        if not self.request.user.is_staff and instance.package_id:
+            instance.package.check_can_change(by_staff=False)
+
         stored = instance.file.name
         instance.delete()
         if stored:
@@ -463,6 +522,10 @@ class PackageDocumentViewSet(
         document = self.get_object()
         package_id = request.data.get("package")
 
+        # Unfiling is not blocked on a locked shipment, and filing onto one
+        # is. The asymmetry is deliberate: taking a document off a shipment it
+        # was never part of corrects a mistake in the filing, while putting a
+        # new one on says something travelled that did not.
         if package_id in (None, "", "null"):
             # Unfiling is a real action: a receipt on the wrong parcel has to
             # be able to come off it, and setting it to nothing is how.
@@ -473,9 +536,17 @@ class PackageDocumentViewSet(
                 # owner does not change: whose paperwork this is was decided
                 # at upload, and moving it between parcels must not quietly
                 # reassign it to somebody else.
-                document.package = Package.objects.get(pk=package_id)
+                target = Package.objects.get(pk=package_id)
             except (Package.DoesNotExist, ValueError, TypeError):
                 raise ValidationError({"package": "No such shipment."})
+
+            if target.locked:
+                raise ShipmentChangeRefused(
+                    f"{target.lock_reason} File this against the shipment "
+                    "that carries it instead."
+                )
+
+            document.package = target
 
         document.save(update_fields=["package"])
 

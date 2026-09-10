@@ -11,6 +11,8 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 import os
+import sys
+from importlib.util import find_spec
 from pathlib import Path
 
 from django.core.exceptions import ImproperlyConfigured
@@ -100,6 +102,18 @@ AUTH_USER_MODEL = 'accounts.User'
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    # Directly below SecurityMiddleware and above everything else, which is
+    # where WhiteNoise has to sit: a static file should be answered without
+    # opening a session or touching the database.
+    #
+    # Guarded because it is a deployment concern. An existing virtualenv that
+    # predates it in requirements.txt keeps working rather than failing to
+    # start with an import error on a package nobody has installed yet.
+    *(
+        ['whitenoise.middleware.WhiteNoiseMiddleware']
+        if find_spec('whitenoise')
+        else []
+    ),
     # Above CommonMiddleware, so it can answer CORS preflight requests.
     'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -133,10 +147,74 @@ WSGI_APPLICATION = 'config.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-# SQLite by default so a fresh clone runs with no setup. Set the POSTGRES_*
-# variables to point at a real database — SQLite locks the whole file on
-# write, so it does not survive more than one concurrent user in production.
-if os.environ.get("POSTGRES_DB"):
+# Three ways in, tried in order, so that no existing deployment has to change
+# and a hosted database can be attached with the one variable its provider
+# actually gives you:
+#
+#   DATABASE_URL   postgres://user:password@host:5432/name — what Neon,
+#                  Supabase, Railway, Render and Heroku all hand out. Parsed
+#                  below rather than with dj-database-url, to keep
+#                  requirements.txt free of a dependency for twenty lines.
+#   POSTGRES_*     the separate variables this project started with. Still
+#                  supported, and still the clearer thing to read in a compose
+#                  file.
+#   neither        SQLite, so a fresh clone runs with no setup. Never in
+#                  production: it locks the whole file on write and does not
+#                  survive a second concurrent user.
+
+# How long a connection is kept open between requests. 60 seconds is right for
+# a long-lived process — gunicorn, a container — where reusing a connection
+# saves the handshake on every request.
+#
+# It is wrong for anything serverless, and wrong behind a transaction-mode
+# connection pooler such as PgBouncer or Supabase's port 6543: there, each
+# invocation holds a connection it will never reuse, and a burst of traffic
+# exhausts the pool while every process sits idle. Set it to 0 there.
+CONN_MAX_AGE = int(os.environ.get("DJANGO_CONN_MAX_AGE", 60))
+
+# Postgres over the public internet must be encrypted. Providers vary in
+# whether they enforce it, so it is asked for here rather than assumed.
+DB_SSL_REQUIRE = env_flag("DJANGO_DB_SSL_REQUIRE", default=not DEBUG)
+
+
+def database_from_url(url):
+    """Parse a postgres:// URL into Django's DATABASES shape.
+
+    Only Postgres is recognised. A URL naming anything else is a configuration
+    mistake worth failing on rather than quietly falling back to SQLite and
+    letting the site come up with an empty database.
+    """
+    from urllib.parse import unquote, urlparse
+
+    parsed = urlparse(url)
+
+    if parsed.scheme not in {"postgres", "postgresql", "postgis"}:
+        raise ImproperlyConfigured(
+            f"DATABASE_URL must be a PostgreSQL URL, not {parsed.scheme!r}."
+        )
+
+    # unquote: a password containing @ or / arrives percent-encoded, and
+    # passing it through as-is is the classic "authentication failed" that
+    # looks like a wrong password.
+    config = {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': unquote(parsed.path.lstrip("/")),
+        'USER': unquote(parsed.username or ""),
+        'PASSWORD': unquote(parsed.password or ""),
+        'HOST': unquote(parsed.hostname or ""),
+        'PORT': str(parsed.port or "5432"),
+        'CONN_MAX_AGE': CONN_MAX_AGE,
+    }
+
+    if DB_SSL_REQUIRE:
+        config['OPTIONS'] = {'sslmode': 'require'}
+
+    return config
+
+
+if os.environ.get("DATABASE_URL"):
+    DATABASES = {'default': database_from_url(os.environ["DATABASE_URL"])}
+elif os.environ.get("POSTGRES_DB"):
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql',
@@ -146,10 +224,25 @@ if os.environ.get("POSTGRES_DB"):
             'HOST': os.environ.get("POSTGRES_HOST", "localhost"),
             'PORT': os.environ.get("POSTGRES_PORT", "5432"),
             # Reuse connections rather than opening one per request.
-            'CONN_MAX_AGE': 60,
+            'CONN_MAX_AGE': CONN_MAX_AGE,
+            **(
+                {'OPTIONS': {'sslmode': 'require'}}
+                if DB_SSL_REQUIRE and os.environ.get("POSTGRES_HOST", "localhost")
+                not in {"localhost", "127.0.0.1"}
+                else {}
+            ),
         }
     }
 else:
+    if not DEBUG and "test" not in sys.argv:
+        # A production deployment that reaches here has no database
+        # configured and would come up serving an empty SQLite file on a disk
+        # that disappears at the next restart. Fail loudly instead.
+        raise ImproperlyConfigured(
+            "No database is configured. Set DATABASE_URL (or the POSTGRES_* "
+            "variables) when DJANGO_DEBUG is off."
+        )
+
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
@@ -194,6 +287,20 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 
+# Where `manage.py collectstatic` gathers the admin's own CSS and JavaScript
+# for WhiteNoise to serve. Nothing writes here by hand, and it is not the
+# React build — that is deployed as its own set of files.
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+# STORAGES — both the static half and the media half — is configured together
+# further down, under "Uploaded files". It has to be one statement: assigning
+# STORAGES twice replaces the whole dictionary rather than merging it, so a
+# block here that named only 'staticfiles' would quietly put media back on the
+# local filesystem after the object-storage section had moved it off.
+#
+# Compressed manifest storage stamps each file's contents into its name, so
+# static files can be cached forever and a deploy still invalidates them.
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
@@ -221,6 +328,10 @@ del _validator
 # ---------------------------------------------------------------------------
 
 REST_FRAMEWORK = {
+    # DRF's own handler, plus one rule: a refused change to a shipment
+    # that has already left is a 409 and not a 500. See
+    # accounts/errors.py for why that mapping lives outside the views.
+    'EXCEPTION_HANDLER': 'accounts.errors.api_exception_handler',
     # Session auth, not tokens: the credential lives in an HttpOnly cookie the
     # browser will not hand to JavaScript, so an XSS bug cannot steal it.
     'DEFAULT_AUTHENTICATION_CLASSES': [
@@ -247,10 +358,18 @@ REST_FRAMEWORK = {
     ),
     'DEFAULT_THROTTLE_CLASSES': [
         'rest_framework.throttling.AnonRateThrottle',
+        # Signing in must not buy an unlimited budget. Counted per account
+        # rather than per IP address, so one compromised or scripted login
+        # cannot walk the customer list from a thousand addresses.
+        'rest_framework.throttling.UserRateThrottle',
     ],
     'DEFAULT_THROTTLE_RATES': {
         # Blunt but effective against credential stuffing on login/signup.
         'anon': '60/hour',
+        # Well above what the dashboard costs a staff member working through
+        # a queue — several full page loads a minute, all day — and far below
+        # what enumerating the API would take.
+        'user': '1000/hour',
         'login': '10/hour',
         # Password resets send mail to an address the requester types in, so
         # an open one is a way to have this site spam a stranger. Tighter than
@@ -279,15 +398,30 @@ REST_FRAMEWORK = {
 # CORS and CSRF
 # ---------------------------------------------------------------------------
 
+# Where the React app is served from. Used to build password-reset links, and
+# trusted below for CORS and CSRF so that the one URL does not have to be
+# repeated across three variables that can drift apart.
+FRONTEND_URL = os.environ.get("DJANGO_FRONTEND_URL", "http://localhost:5173").rstrip("/")
+
 # The Vite dev server runs on a different origin from Django, so the browser
 # treats API calls as cross-origin. Only these origins may call the API, and
-# only they may send cookies with the request.
+# only they may send cookies with the request. Never a wildcard: this API is
+# authenticated with a cookie, and Access-Control-Allow-Origin: * cannot carry
+# credentials anyway.
 CORS_ALLOWED_ORIGINS = env_list(
     "DJANGO_CORS_ORIGINS",
     "http://localhost:5173,http://127.0.0.1:5173" if DEBUG else "",
 )
-# Required for the session cookie to be sent at all cross-origin. Note this
-# only works with an explicit origin list, never with a wildcard.
+
+# Vercel gives every deployment its own hostname, so a preview build is on an
+# origin nobody could have listed in advance. Off unless a pattern is given,
+# because a careless one here is an open API: anchor it, escape the dots, and
+# name your own project.
+#
+#   DJANGO_CORS_ORIGIN_REGEX=^https://paylesshopmore-[a-z0-9-]+\.vercel\.app$
+CORS_ALLOWED_ORIGIN_REGEXES = env_list("DJANGO_CORS_ORIGIN_REGEX")
+
+# Required for the session cookie to be sent at all cross-origin.
 CORS_ALLOW_CREDENTIALS = True
 
 CSRF_TRUSTED_ORIGINS = env_list(
@@ -295,12 +429,50 @@ CSRF_TRUSTED_ORIGINS = env_list(
     "http://localhost:5173,http://127.0.0.1:5173" if DEBUG else "",
 )
 
+# The frontend's own origin is always trusted, without having to be repeated
+# in two more variables. Guarded so that the development default does not add
+# a localhost origin to a production deployment that forgot to set it.
+if not DEBUG and FRONTEND_URL.startswith("https://"):
+    if FRONTEND_URL not in CORS_ALLOWED_ORIGINS:
+        CORS_ALLOWED_ORIGINS.append(FRONTEND_URL)
+    if FRONTEND_URL not in CSRF_TRUSTED_ORIGINS:
+        CSRF_TRUSTED_ORIGINS.append(FRONTEND_URL)
+
 # The React app has to read this cookie to echo the token back in a header,
 # so it cannot be HttpOnly. That is safe: the CSRF token is not a credential.
 CSRF_COOKIE_HTTPONLY = False
-# 'Lax' would drop the session cookie on cross-origin XHR from the dev server.
-CSRF_COOKIE_SAMESITE = 'Lax' if DEBUG else 'None'
-SESSION_COOKIE_SAMESITE = 'Lax' if DEBUG else 'None'
+
+# SameSite, and why the default changed.
+#
+# This used to be 'None' whenever DEBUG was off, because the React app was
+# assumed to be on a different origin from the API. That is no longer a safe
+# default: Safari blocks third-party cookies outright and Firefox partitions
+# them, so a SameSite=None session cookie is discarded before it is ever sent
+# back and the customer simply cannot stay signed in.
+#
+# The deployment this project is set up for avoids the problem rather than
+# fighting it — the static host rewrites /api to Django, so the browser sees
+# one origin and the cookie is first-party. 'Lax' is then both correct and
+# stronger: it is CSRF protection the browser enforces on our behalf, on top
+# of the token.
+#
+# Set DJANGO_CROSS_SITE_COOKIES=1 only if the API really is on a different
+# origin from the site, and know that Safari will not keep the session.
+CROSS_SITE_COOKIES = env_flag("DJANGO_CROSS_SITE_COOKIES", default=False)
+
+# 'None' requires Secure, which is set below with DEBUG off. In development
+# there is no HTTPS, so a cross-site cookie could not be set at all and 'Lax'
+# through the Vite proxy is the only thing that works.
+_samesite = 'None' if (CROSS_SITE_COOKIES and not DEBUG) else 'Lax'
+CSRF_COOKIE_SAMESITE = _samesite
+SESSION_COOKIE_SAMESITE = _samesite
+
+# How long a signed-in session lasts. Two weeks is Django's default; this
+# names it so it is a decision rather than an accident, and refreshes it on
+# each request so somebody using the dashboard all day is not thrown out
+# mid-task.
+SESSION_COOKIE_AGE = int(os.environ.get("DJANGO_SESSION_COOKIE_AGE", 60 * 60 * 24 * 14))
+SESSION_SAVE_EVERY_REQUEST = True
 
 # The session cookie is never exposed to JavaScript.
 SESSION_COOKIE_HTTPONLY = True
@@ -359,10 +531,10 @@ DEFAULT_FROM_EMAIL = os.environ.get(
     "DJANGO_FROM_EMAIL", "PayLesShopMore.com <noreply@paylesshopmore.com>"
 )
 
-# Where the React app lives, for building the link in a reset e-mail. It has
-# to be absolute — the reader opens it from their mail client, which has no
-# idea what host the API is on.
-FRONTEND_URL = os.environ.get("DJANGO_FRONTEND_URL", "http://localhost:5173").rstrip("/")
+# FRONTEND_URL is set in the CORS section above, because the origin the site is
+# served from and the origins the API trusts are the same fact. It is used here
+# to build the link in a reset e-mail, which has to be absolute: the reader
+# opens it from their mail client, which has no idea what host the API is on.
 
 # How long a reset link stays valid. Django's default is three days, which is
 # a long time for a link that is one e-mail account away from being someone
@@ -374,10 +546,82 @@ PASSWORD_RESET_TIMEOUT = int(os.environ.get("DJANGO_PASSWORD_RESET_TIMEOUT", 360
 # Uploaded files
 # ---------------------------------------------------------------------------
 
-# Where quote attachments are written. Kept outside the static directory: this
-# is visitor-supplied content and must never be served as part of the site.
+# Where quote attachments and invoice PDFs are written. Kept outside the
+# static directory: this is visitor-supplied content and must never be served
+# as part of the site.
 MEDIA_URL = 'media/'
 MEDIA_ROOT = BASE_DIR / 'media'
+
+# --- Object storage --------------------------------------------------------
+#
+# The local filesystem is the default and is correct for development and for a
+# host with a real persistent disk. It is wrong anywhere the process can be
+# replaced without warning — a serverless function, a container with no volume,
+# more than one web process behind a load balancer. There, an invoice written
+# by the process that rendered it is simply not there when a different process
+# is asked for it, and the customer gets a 404 on a document they were told was
+# sent.
+#
+# So: any S3-compatible bucket when one is configured, and the filesystem when
+# there is not. Setting AWS_STORAGE_BUCKET_NAME is the switch. The endpoint URL
+# is what makes it "S3-compatible" rather than S3 — Cloudflare R2, Backblaze
+# B2, DigitalOcean Spaces, MinIO and Supabase Storage all speak the same
+# protocol and only differ in where they answer.
+#
+# Nothing else in the codebase changes. Invoice.pdf is a FileField, so it goes
+# through this backend wherever it is read or written, which is why it was
+# written as a FileField rather than a column holding a path.
+AWS_STORAGE_BUCKET_NAME = os.environ.get("AWS_STORAGE_BUCKET_NAME", "")
+
+if AWS_STORAGE_BUCKET_NAME:
+    if not find_spec("storages"):
+        raise ImproperlyConfigured(
+            "AWS_STORAGE_BUCKET_NAME is set but django-storages is not "
+            "installed. Add it with: pip install -r requirements-prod.txt"
+        )
+
+    AWS_ACCESS_KEY_ID = os.environ.get("AWS_ACCESS_KEY_ID", "")
+    AWS_SECRET_ACCESS_KEY = os.environ.get("AWS_SECRET_ACCESS_KEY", "")
+    AWS_S3_REGION_NAME = os.environ.get("AWS_S3_REGION_NAME", "auto")
+    # Empty for real S3; set for every other provider.
+    AWS_S3_ENDPOINT_URL = os.environ.get("AWS_S3_ENDPOINT_URL") or None
+
+    # Private, always. Every file in this bucket is either an invoice with a
+    # customer's name, address and shipment value on it, or an attachment a
+    # visitor sent us. Both are served by a Django view that checks who is
+    # asking — see invoicing/views.py — and a public bucket would make that
+    # check bypassable by anyone who can guess a filename.
+    AWS_DEFAULT_ACL = None
+    AWS_QUERYSTRING_AUTH = False
+    # Never overwrite. Two invoices that happen to produce the same name must
+    # not become one file, and a re-render must not destroy the document a
+    # customer has already been sent.
+    AWS_S3_FILE_OVERWRITE = False
+    # Signature v4, which is what every current provider requires.
+    AWS_S3_SIGNATURE_VERSION = "s3v4"
+    # Cloudflare R2 and several others do not implement checksum headers that
+    # boto3 began sending by default; without this, every upload fails.
+    AWS_S3_ADDRESSING_STYLE = os.environ.get("AWS_S3_ADDRESSING_STYLE", "virtual")
+
+    MEDIA_STORAGE_BACKEND = "storages.backends.s3.S3Storage"
+else:
+    MEDIA_STORAGE_BACKEND = "django.core.files.storage.FileSystemStorage"
+
+# STORAGES is set in one place, so the staticfiles half and the media half
+# cannot disagree about which of them was configured last. WhiteNoise's
+# manifest storage is only used with DEBUG off, as before.
+STORAGES = {
+    'default': {
+        'BACKEND': MEDIA_STORAGE_BACKEND,
+    },
+    'staticfiles': {
+        'BACKEND': (
+            'whitenoise.storage.CompressedManifestStaticFilesStorage'
+            if find_spec('whitenoise') and not DEBUG
+            else 'django.contrib.staticfiles.storage.StaticFilesStorage'
+        ),
+    },
+}
 
 # A request larger than this is rejected before it reaches a view, which caps
 # what an upload can cost in memory and disk.
@@ -427,3 +671,170 @@ CELERY_TIMEZONE = TIME_ZONE
 # A task that has been picked up but not finished goes back on the queue if the
 # worker dies. The invoice tasks are written to be safe to run twice.
 CELERY_TASK_ACKS_LATE = True
+
+
+# ---------------------------------------------------------------------------
+# Logging
+# ---------------------------------------------------------------------------
+
+# Everything goes to stdout as a single line per event. That is what a
+# container platform collects; writing to a file inside a container puts the
+# only copy of the evidence on a disk that disappears when the process
+# restarts.
+#
+# django.request logs every 4xx and 5xx with the traceback, which is the
+# difference between "a customer says the PDF never arrived" and a stack
+# trace. Django only mails these to ADMINS by default, and nothing here is
+# configured to send mail on errors.
+LOG_LEVEL = os.environ.get("DJANGO_LOG_LEVEL", "INFO").upper()
+
+LOGGING = {
+    'version': 1,
+    # Django's own default handlers stay in place; this adds to them rather
+    # than replacing the framework's internal configuration wholesale.
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{asctime} {levelname} {name} {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': LOG_LEVEL,
+    },
+    'loggers': {
+        # propagate False: these would otherwise be printed twice, once here
+        # and once by the root logger above.
+        'django.request': {
+            'handlers': ['console'],
+            'level': 'WARNING',
+            'propagate': False,
+        },
+        # The invoice pipeline. A render that fails inside a worker has no
+        # request and no response to carry the failure back, so its log line
+        # is the only trace it leaves.
+        'invoicing': {
+            'handlers': ['console'],
+            'level': LOG_LEVEL,
+            'propagate': False,
+        },
+        'celery': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        # Every SQL statement at DEBUG level. Left at INFO deliberately: this
+        # is useful for one afternoon of query tuning and unreadable noise the
+        # rest of the time.
+        'django.db.backends': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+    },
+}
+
+
+# ---------------------------------------------------------------------------
+# Error reporting
+# ---------------------------------------------------------------------------
+
+# Logs tell you what happened once you already know to go looking. Sentry is
+# what tells you that something happened at all.
+#
+# Entirely optional: no DSN means no reporting and no import, so a fresh clone
+# and the test suite do not need the package installed.
+SENTRY_DSN = os.environ.get("SENTRY_DSN", "")
+
+if SENTRY_DSN:
+    try:
+        import sentry_sdk
+    except ImportError:  # pragma: no cover - depends on the deployment
+        # A missing package must not take the site down over telemetry.
+        import logging
+
+        logging.getLogger(__name__).warning(
+            "SENTRY_DSN is set but sentry-sdk is not installed; "
+            "error reporting is off."
+        )
+    else:
+        sentry_sdk.init(
+            dsn=SENTRY_DSN,
+            # Which deployment an event came from. Without it, staging noise
+            # and production incidents land in the same list.
+            environment=os.environ.get("SENTRY_ENVIRONMENT", "production"),
+            release=os.environ.get("SENTRY_RELEASE") or None,
+            # Performance tracing is sampled and billed separately. Off by
+            # default; a small fraction is enough when it is wanted.
+            traces_sample_rate=float(os.environ.get("SENTRY_TRACES_SAMPLE_RATE", 0)),
+            # Never send the session cookie, the CSRF token, POST bodies or
+            # e-mail addresses to a third party. An invoice error report does
+            # not need the customer's address to be actionable.
+            send_default_pii=False,
+        )
+
+
+# ---------------------------------------------------------------------------
+# Cache
+# ---------------------------------------------------------------------------
+
+# Django's default cache is per-process memory, which is fine until the site
+# runs more than one worker — and then it quietly breaks throttling, because
+# each worker counts requests in its own copy and the real limit becomes the
+# configured rate times the number of processes.
+#
+# So: Redis when there is one, per-process memory when there is not. The same
+# switch as the Celery broker, and it defaults the same way for the same
+# reason — a fresh clone runs with nothing installed.
+REDIS_URL = os.environ.get("REDIS_URL", "")
+
+if REDIS_URL:
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+            'LOCATION': REDIS_URL,
+        }
+    }
+else:
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+            'LOCATION': 'paylesshopmore-local',
+        }
+    }
+
+
+# ---------------------------------------------------------------------------
+# Running the tests
+# ---------------------------------------------------------------------------
+
+# The suite creates and signs in users constantly, and Django's default
+# password hasher is deliberately slow — that slowness is the whole point of
+# it in production and pure cost in a test run.
+#
+# Detected from the command rather than from a separate settings module, so
+# there is one place describing how this project is configured and no chance
+# of the two drifting.
+TESTING = "test" in sys.argv
+
+if TESTING:
+    # Fast and worthless as a hash, which is exactly right here: nothing in a
+    # test database is a real credential. Never reached by a running site,
+    # because sys.argv says runserver or gunicorn there.
+    PASSWORD_HASHERS = ['django.contrib.auth.hashers.MD5PasswordHasher']
+
+    # Tests assert on 403s and 405s deliberately, and django.request logs
+    # every one of them at WARNING. Left on, the output buries a real failure
+    # in a few hundred lines of expected rejections.
+    LOGGING['loggers']['django.request']['level'] = 'ERROR'
+
+    # Same reasoning for the task log. Tasks run inline in tests, so every
+    # invoice the suite approves narrates itself twice.
+    LOGGING['loggers']['celery']['level'] = 'WARNING'

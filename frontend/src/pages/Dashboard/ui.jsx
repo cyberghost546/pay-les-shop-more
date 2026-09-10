@@ -123,13 +123,26 @@ export function Pagination({ page, count, hasNext, hasPrevious, onChange }) {
  *           onChange: (value: string) => void, busy?: boolean,
  *           label: string }} props
  */
-export function StatusSelect({ value, options, onChange, busy = false, label }) {
+/**
+ * @param {{ locked?: boolean }} props `locked` for a row whose status is no
+ *   longer anybody's to change - a shipment that has been delivered or
+ *   cancelled. The server refuses it either way; this is so the dashboard
+ *   does not offer a control that can only produce an error.
+ */
+export function StatusSelect({
+  value,
+  options,
+  onChange,
+  busy = false,
+  label,
+  locked = false,
+}) {
   return (
     <label>
       <span className={styles.srOnly}>{label}</span>
       <select
         value={value}
-        disabled={busy}
+        disabled={busy || locked}
         onChange={(event) => onChange(event.target.value)}
         className={styles.rowSelect}
       >

@@ -5,6 +5,21 @@ import ShipmentTimeline from '../ShipmentTimeline/ShipmentTimeline';
 import { useLanguage } from '../../i18n/useLanguage';
 import styles from './TrackingPanel.module.css';
 
+/**
+ * Which sentence a locked shipment gets.
+ *
+ * `locked` comes from the server, so the panel does not have to know which
+ * statuses mean "gone" — that list lives on the model, next to the rule it
+ * enforces. All this decides is the wording, which is a display question and
+ * belongs here where the three languages are.
+ */
+function lockKey(shipment) {
+  if (!shipment?.locked) return null;
+  if (shipment.status === 'delivered') return 'tracking.locked.delivered';
+  if (shipment.status === 'cancelled') return 'tracking.locked.cancelled';
+  return 'tracking.locked.body';
+}
+
 const FAILURE_KEYS = {
   [TRACKING_ERRORS.NOT_FOUND]: 'tracking.errors.notFound',
   [TRACKING_ERRORS.RATE_LIMITED]: 'tracking.errors.tooMany',
@@ -138,6 +153,13 @@ export default function TrackingPanel({ variant = 'page', autoFocus = false }) {
                 {shipment.status_display}
               </span>
             </div>
+
+            {lockKey(shipment) && (
+              <div className={styles.locked}>
+                <p className={styles.lockedTitle}>{t('tracking.locked.title')}</p>
+                <p className={styles.lockedBody}>{t(lockKey(shipment))}</p>
+              </div>
+            )}
 
             <div className={styles.facts}>
               <div className={styles.fact}>

@@ -69,7 +69,17 @@ export default function Slideshow() {
                 aria-label={`${i + 1} of ${SLIDES.length}`}
                 aria-hidden={i !== index}
               >
-                <img src={slide.image} alt={`Flag of ${slide.caption}`} className={styles.image} />
+                <img
+                  src={slide.image}
+                  alt={`Flag of ${slide.caption}`}
+                  className={styles.image}
+                  // The first slide is what the visitor sees; the rest are
+                  // off to the side until the track moves, and a phone on a
+                  // slow connection should not spend its first seconds on
+                  // eight flags nobody has scrolled to yet.
+                  loading={i === 0 ? 'eager' : 'lazy'}
+                  decoding="async"
+                />
                 <p className={styles.caption}>{slide.caption}</p>
               </li>
             ))}

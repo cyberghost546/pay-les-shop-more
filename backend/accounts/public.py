@@ -31,6 +31,7 @@ User = get_user_model()
 PUBLIC_STAGES = [
     Package.Status.PAID,
     Package.Status.PURCHASED,
+    Package.Status.READY_FOR_SHIPPING,
     Package.Status.IN_TRANSIT,
     Package.Status.ARRIVED,
     Package.Status.DELIVERED,
@@ -50,6 +51,11 @@ class PublicPackageSerializer(serializers.ModelSerializer):
     progress = serializers.IntegerField(read_only=True)
     stage_index = serializers.SerializerMethodField()
     stages = serializers.SerializerMethodField()
+    # Safe to publish, and the reason the tracking page can say "this one has
+    # gone" without the visitor having to know which statuses mean that. The
+    # sentence itself is not sent: the React app has it in three languages,
+    # and lock_reason is English. See Package.locked.
+    locked = serializers.BooleanField(read_only=True)
 
     class Meta:
         model = Package
@@ -57,6 +63,7 @@ class PublicPackageSerializer(serializers.ModelSerializer):
             "tracking_number",
             "status",
             "status_display",
+            "locked",
             "destination",
             "progress",
             "stage_index",

@@ -42,8 +42,14 @@ function toProfile(data) {
   };
 }
 
-export async function getProfile() {
-  return toProfile(await request('/profile/'));
+/**
+ * @param {{ silentAuthFailure?: boolean }} [options] pass it when this call is
+ *   how a refusal is being checked, rather than a call that could be refused.
+ *   A 403 here means nobody is signed in, which is an answer and not an
+ *   incident — see onAuthFailure in api/client.js.
+ */
+export async function getProfile(options = {}) {
+  return toProfile(await request('/profile/', { silentAuthFailure: true, ...options }));
 }
 
 /** @param {{ name?: string, email?: string, phone?: string }} changes */
@@ -122,6 +128,14 @@ export async function deleteAddress(id) {
   return request(`/addresses/${id}/`, { method: 'DELETE' });
 }
 
+/**
+ * The customer's shipments, newest first.
+ *
+ * Each row carries `locked` and `lock_reason` from the server. Pages read
+ * those rather than testing the status themselves: which statuses mean "gone"
+ * is a rule, it lives on the model next to what it enforces, and a second
+ * copy of it in JavaScript is a copy that will drift.
+ */
 export async function listPackages() {
   const data = await request('/packages/');
   return data.results ?? data;

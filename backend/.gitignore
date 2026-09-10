@@ -10,3 +10,6 @@ __pycache__/
 # Secrets, once settings read from the environment
 .env
 media/
+
+# Collected by `manage.py collectstatic` at deploy time.
+staticfiles/

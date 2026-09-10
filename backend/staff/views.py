@@ -6,7 +6,10 @@ exception, so the permission class is the whole security story and is applied
 once, on a shared base class, rather than remembered per view.
 """
 
+import re
 from datetime import timedelta
+
+from pathlib import Path
 
 from django.contrib.auth import get_user_model
 from django.db import transaction
@@ -24,13 +27,22 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from accounts.events import record_event
-from accounts.models import Package, PackageDocument, PackageEvent
+from accounts.views import ShipmentChangeRefused
+from accounts.models import (
+    InvalidShipmentTransition,
+    Package,
+    PackageDocument,
+    PackageEvent,
+    ShipmentLocked,
+)
 from bookings.models import Booking
 from bookings.serializers import StaffBookingSerializer
 from enquiries.models import ContactMessage, QuoteRequest
+from invoicing.errors import InvoiceAlreadyExists
 from invoicing.models import InvalidInvoiceTransition, Invoice
 from invoicing.pdf import invoice_number
 from invoicing.serializers import (
+    InvoiceCreateSerializer,
     InvoiceDocumentSerializer,
     InvoiceRejectSerializer,
     StaffInvoiceSerializer,
@@ -194,6 +206,45 @@ class QuoteRequestViewSet(StaffViewSet):
     filter_fields = ("status", "destination")
     ordering_fields = ("created_at", "updated_at", "status", "destination")
 
+    @action(detail=True, methods=["get"])
+    def file(self, request, pk=None):
+        """Stream the attachment a visitor sent with their quote request.
+
+        The same arrangement as the invoice routes, and here for the same two
+        reasons. The link the dashboard used to get was the file's MEDIA_URL,
+        which Django serves only while DEBUG is on — so opening an attachment
+        worked locally and answered 404 on the deployed site. And publishing
+        MEDIA_ROOT to make it work would have made every attachment fetchable
+        by anyone who could guess a name.
+
+        So the file is served here, where IsStaff has already been checked by
+        DRF. Nothing narrows it further: staff may read every quote request,
+        which is the job.
+
+        as_attachment, and the content type is not guessed. This is the one
+        kind of file on the site that arrives from a stranger, so it is handed
+        to the browser as an opaque download rather than as something to
+        render — a rendered attachment is a stored-XSS hole wearing a
+        paperclip. SECURE_CONTENT_TYPE_NOSNIFF stops the browser from
+        second-guessing that.
+        """
+        quote = self.get_object()
+
+        if not quote.file:
+            raise Http404("This quote request has no attachment.")
+
+        try:
+            handle = quote.file.open("rb")
+        except FileNotFoundError:
+            raise Http404("This attachment is missing.")
+
+        return FileResponse(
+            handle,
+            as_attachment=True,
+            filename=Path(quote.file.name).name,
+            content_type="application/octet-stream",
+        )
+
 
 class ContactMessageViewSet(StaffViewSet):
     """Messages from the contact form."""
@@ -218,7 +269,13 @@ class ContactMessageViewSet(StaffViewSet):
 
 
 class PackageViewSet(StaffViewSet):
-    """Every customer's shipments, not just the caller's."""
+    """Every customer's shipments, not just the caller's.
+
+    Staff may do more to a shipment than a customer can, but not everything:
+    once it is in transit it is locked to them too, because from that point
+    the row is a record of what was sent rather than a description of what is
+    going to be. See Package.LOCKED_STATUSES.
+    """
 
     serializer_class = StaffPackageSerializer
     # select_related, or rendering a page of 25 packages costs 25 extra
@@ -240,7 +297,12 @@ class PackageViewSet(StaffViewSet):
         "user__last_name",
         "user__email",
     )
-    filter_fields = ("status",)
+    # `user` is what the Add invoice form uses to show only the selected
+    # customer's shipments. It narrows the list the admin picks from; it is
+    # not what makes the pairing safe - InvoiceCreateSerializer re-checks the
+    # shipment against the customer on the way back in, because a filtered
+    # dropdown is a convenience and a request body is not evidence.
+    filter_fields = ("status", "user")
     ordering_fields = ("created_at", "updated_at", "status", "tracking_number")
 
     @action(detail=True, methods=["post"])
@@ -293,6 +355,16 @@ class PackageViewSet(StaffViewSet):
         status = serializer.validated_data.get("status", previous_status)
         stamps = {}
 
+        # The serializer has already asked this of the payload and answered
+        # with a 400 naming the field. Asked here of the object as well, so
+        # that a caller reaching perform_update by some other route still
+        # meets the rule, and so that a move nobody can blame a field for is
+        # a 409 instead.
+        try:
+            package.check_transition(status)
+        except InvalidShipmentTransition as exc:
+            raise ShipmentChangeRefused(str(exc))
+
         if status == Package.Status.IN_TRANSIT and package.shipped_at is None:
             stamps["shipped_at"] = timezone.now()
         if status == Package.Status.DELIVERED and package.delivered_at is None:
@@ -300,37 +372,45 @@ class PackageViewSet(StaffViewSet):
 
         # atomic, so a package is never left marked paid with no invoice behind
         # it: if raising the invoice fails, the status change goes back too.
-        with transaction.atomic():
-            package = serializer.save(**stamps)
+        try:
+            with transaction.atomic():
+                package = serializer.save(**stamps)
 
-            # The order's own record of the move, written before anything that
-            # follows from it so the history reads in the order it happened.
-            # Guarded on an actual change for the same reason the invoice is:
-            # a corrected weight is not progress and does not belong on a
-            # timeline as though it were.
-            if status != previous_status:
-                record_event(
-                    package,
-                    PackageEvent.Kind.STATUS_CHANGED,
-                    actor=self.request.user,
-                    from_status=previous_status,
-                    to_status=status,
-                )
+                # The order's own record of the move, written before anything that
+                # follows from it so the history reads in the order it happened.
+                # Guarded on an actual change for the same reason the invoice is:
+                # a corrected weight is not progress and does not belong on a
+                # timeline as though it were.
+                if status != previous_status:
+                    record_event(
+                        package,
+                        PackageEvent.Kind.STATUS_CHANGED,
+                        actor=self.request.user,
+                        from_status=previous_status,
+                        to_status=status,
+                    )
 
-            # Entering PAID is the event, not being in it. Without the
-            # before-and-after comparison, every later edit to a paid package —
-            # a corrected weight, a note — would re-run this.
-            if status == Package.Status.PAID and previous_status != status:
-                ensure_invoice_for_package(package)
+                # Entering PAID is the event, not being in it. Without the
+                # before-and-after comparison, every later edit to a paid package —
+                # a corrected weight, a note — would re-run this.
+                if status == Package.Status.PAID and previous_status != status:
+                    ensure_invoice_for_package(package)
 
-            # Every status change is news, not only the one that raises an
-            # invoice. Inside the transaction so a package is never left moved
-            # with no record of the customer having been told; the e-mail
-            # itself is queued on commit, so nothing is sent for a change that
-            # is about to be rolled back. Returns None when the status did not
-            # actually change, which is what keeps a corrected weight or an
-            # added note from being announced as progress.
-            notify_shipment_status(package, previous_status)
+                # Every status change is news, not only the one that raises an
+                # invoice. Inside the transaction so a package is never left moved
+                # with no record of the customer having been told; the e-mail
+                # itself is queued on commit, so nothing is sent for a change that
+                # is about to be rolled back. Returns None when the status did not
+                # actually change, which is what keeps a corrected weight or an
+                # added note from being announced as progress.
+                notify_shipment_status(package, previous_status)
+        except (ShipmentLocked, InvalidShipmentTransition) as exc:
+            # Package.save() had the last word - a bulk edit, a stale
+            # form, anything that got past the two checks above. The
+            # atomic block is gone with the exception, so the status
+            # change, the event, the invoice and the queued e-mail all
+            # go back together and the caller is told why.
+            raise ShipmentChangeRefused(str(exc))
 
 
 class BookingViewSet(StaffViewSet):
@@ -371,14 +451,25 @@ class InvoiceTransitionRefused(APIException):
 
 
 class InvoiceViewSet(
-    mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet
+    mixins.CreateModelMixin,
+    mixins.ListModelMixin,
+    mixins.RetrieveModelMixin,
+    viewsets.GenericViewSet,
 ):
-    """The invoice review queue.
+    """The invoice review queue, and the form that raises one by hand.
 
-    Read-only plus two actions, rather than the usual StaffViewSet: an invoice's
-    status is not a field staff assign, it is the result of a transition. A
-    PATCH-able status would be a way around the state machine, so there is no
-    update route at all and StaffInvoiceSerializer is read-only end to end.
+    Create, read and two actions - but still no update. An invoice's status is
+    not a field staff assign, it is the result of a transition, so a PATCH-able
+    status would be a way around the state machine and there is no update route
+    at all. StaffInvoiceSerializer is read-only end to end; POST goes through
+    InvoiceCreateSerializer, which is a plain Serializer and writes nothing by
+    itself - see `create` below for what actually happens.
+
+    Creating here does not replace the automatic path. An invoice still appears
+    by itself when a shipment is marked paid, through
+    ensure_invoice_for_package; this is for the shipment that never went
+    through that transition and has no invoice, where the office has the
+    document already and wants it on the customer's profile.
 
     Paginated by the project default (PageNumberPagination, 25 a page), so
     ?page= works here like everywhere else in the dashboard.
@@ -406,10 +497,34 @@ class InvoiceViewSet(
         "package__user__email",
     )
 
+    # An invoice reference is INV-<year>-<zero-padded pk>, derived rather than
+    # stored - see invoicing.pdf.invoice_number - so there is no column to
+    # search for it. Typing one off a document is still how somebody looks an
+    # invoice up, so the digits at the end are pulled out and matched against
+    # the primary key: "INV-2026-00007", "2026-00007" and "7" all find
+    # invoice 7. Bounded to nine digits, so a long string of them cannot be
+    # turned into an integer nobody wants to compare against.
+    INVOICE_REFERENCE = re.compile(r"^(?:inv[-\s]*)?(?:\d{4}[-\s]*)?0*(\d{1,9})$")
+
     def base_queryset(self):
         # select_related, or a page of 25 invoices costs 25 extra queries for
         # the tracking number and another 25 for the customer.
-        return Invoice.objects.select_related("package", "package__user", "reviewed_by")
+        return Invoice.objects.select_related(
+            "package",
+            "package__user",
+            "package__delivery_address",
+            "reviewed_by",
+            "created_by",
+        )
+
+    def get_serializer_class(self):
+        # The read serializer is read-only end to end, which is what keeps a
+        # PATCH from moving the status. The write one is a different shape
+        # entirely - a customer, a shipment and a file, none of which are
+        # columns on the row.
+        if self.action == "create":
+            return InvoiceCreateSerializer
+        return StaffInvoiceSerializer
 
     def get_queryset(self):
         queryset = self.base_queryset()
@@ -429,14 +544,135 @@ class InvoiceViewSet(
         else:
             queryset = queryset.filter(status=self.DEFAULT_STATUS)
 
+        # One customer's invoices, for the Customer filter on the page. An
+        # id rather than a name: two customers can share a name, and the
+        # dropdown already knows which row it means.
+        customer = self.request.query_params.get("customer", "").strip()
+        if customer.isdigit():
+            queryset = queryset.filter(package__user_id=int(customer))
+
         search = self.request.query_params.get("search", "").strip()
         if search:
             matches = Q()
             for field in self.SEARCH_FIELDS:
                 matches |= Q(**{f"{field}__icontains": search})
+
+            # Typing the reference off a document is the most natural way to
+            # look an invoice up, so it is matched even though there is no
+            # column holding it.
+            reference = self.INVOICE_REFERENCE.match(search.lower())
+            if reference:
+                matches |= Q(pk=int(reference.group(1)))
+
             queryset = queryset.filter(matches)
 
         return queryset
+
+    # The create route takes a file, so it takes a multipart body. The rest
+    # of the dashboard is JSON and stays that way; DRF's defaults accept both,
+    # and this is stated only so the reason is written down.
+    def get_parsers(self):
+        if getattr(self, "action", None) == "create":
+            return [MultiPartParser(), FormParser()]
+        return super().get_parsers()
+
+    def create(self, request, *args, **kwargs):
+        """Raise an invoice for a shipment, with the document already in hand.
+
+        The order of what follows matters. The pairing of customer to shipment
+        is checked first, by the serializer, against the stored rows and not
+        against anything the request claimed - that check is the reason this
+        endpoint exists, and everything else is bookkeeping around it. Only
+        then is the file written, and only then does the invoice move.
+
+        The status the form asked for decides how far it goes:
+
+          pending_review - the row is created and the document is stored, and
+              it waits in the queue like any other. Somebody still has to
+              approve it, which is the point of asking for review.
+
+          approved - approved in the creator's name, so the audit trail
+              answers who let it out of the building. The render task will
+              find a document already attached and send it rather than drawing
+              over it, which is what makes this a stable state rather than a
+              race against a worker.
+
+          sent - approved and sent in one step, and the customer has it. The
+              same thing the `document` action does from the queue, for the
+              same reason: attaching a document the office has already checked
+              is the whole decision, and splitting it across two buttons would
+              only invite the second one to be forgotten.
+        """
+        body = self.get_serializer(data=request.data)
+        body.is_valid(raise_exception=True)
+
+        package = body.validated_data["package"]
+        wanted = body.validated_data["status"]
+        upload = body.validated_data["pdf"]
+        dated = body.validated_data.get("invoice_date") or timezone.localdate()
+
+        # select_for_update on the shipment, so two admins filling in this form
+        # for the same shipment at the same moment queue up instead of both
+        # passing the duplicate check. The OneToOne would refuse the second one
+        # anyway, with an IntegrityError and a 500; this makes it a sentence.
+        try:
+            with transaction.atomic():
+                Package.objects.select_for_update().get(pk=package.pk)
+
+                # Asked again inside the lock. The serializer checked it
+                # too, and between those two moments another request can have
+                # raised one - which is the race select_for_update is here to
+                # settle.
+                duplicate = Invoice.objects.filter(package=package).first()
+                if duplicate is not None:
+                    raise InvoiceAlreadyExists(duplicate)
+
+                invoice = ensure_invoice_for_package(package, created_by=request.user)
+
+                # Written straight rather than through a transition: the date
+                # on the document is not part of the state machine, and it has
+                # to be on the row before invoice_number reads the year off it.
+                Invoice.objects.filter(pk=invoice.pk).update(invoice_date=dated)
+                invoice.refresh_from_db()
+
+                # Named the way the render task names its own output, so a
+                # hand-attached document and a drawn one are indistinguishable
+                # in storage. The uploaded file's own name is never used: it
+                # comes from a browser and would put whatever it says on disk.
+                filename = (
+                    f"{invoice_number(invoice)}-{package.tracking_number}.pdf"
+                )
+                invoice.pdf.save(filename, upload, save=False)
+                stored = invoice.pdf.name
+
+                # Recorded before the transition, so an invoice that is
+                # rejected further down still carries a description of the
+                # file somebody attached to it.
+                invoice.record_document(filename=filename, uploaded_by=request.user)
+
+                if wanted == Invoice.Status.PENDING_REVIEW:
+                    # No transition to make - ensure_invoice_for_package
+                    # already left it here. Only the document is new.
+                    Invoice.objects.filter(pk=invoice.pk).update(pdf=stored)
+                    invoice.refresh_from_db()
+                else:
+                    invoice.approve(request.user)
+                    if wanted == Invoice.Status.SENT:
+                        # Notifies the customer. This is the invoice arriving.
+                        invoice.mark_sent(stored)
+                    else:
+                        Invoice.objects.filter(pk=invoice.pk).update(pdf=stored)
+                        invoice.refresh_from_db()
+        except InvalidInvoiceTransition as exc:
+            raise InvoiceTransitionRefused(str(exc))
+
+        return Response(
+            StaffInvoiceSerializer(
+                self.base_queryset().get(pk=invoice.pk),
+                context=self.get_serializer_context(),
+            ).data,
+            status=http_status.HTTP_201_CREATED,
+        )
 
     def _transition(self, apply):
         """Run one transition and answer with the invoice as it now stands.
@@ -583,6 +819,11 @@ class InvoiceViewSet(
         invoice.pdf.save(filename, upload, save=False)
         stored = invoice.pdf.name
 
+        # Whoever uploads is the one who chose this file, which is not
+        # necessarily whoever raised the invoice or whoever approved it — the
+        # three are separate columns for exactly this case.
+        invoice.record_document(filename=filename, uploaded_by=request.user)
+
         try:
             # One transaction around the whole move, which is what keeps the
             # render out of the way. approve() schedules the drawing task
@@ -620,6 +861,21 @@ class InvoiceViewSet(
             invoice.pdf.storage.delete(previous)
 
         return Response(self.get_serializer(self.base_queryset().get(pk=invoice.pk)).data)
+
+    @action(detail=True, methods=["post"])
+    def send(self, request, pk=None):
+        """APPROVED -> SENT, for an invoice that already has its document.
+
+        The other half of "approve it, but do not send yet" on the Add invoice
+        form. An invoice raised that way is approved, carries the PDF the
+        office attached, and is deliberately not on the customer's profile —
+        the render worker leaves it exactly there rather than sending it from
+        somewhere nobody can see. This is the button that finishes it.
+
+        Anything else is a 409: an invoice still in review has not been
+        approved by anybody, and one already sent does not need sending twice.
+        """
+        return self._transition(lambda invoice: invoice.send_attached())
 
     @action(detail=True, methods=["post"])
     def reject(self, request, pk=None):

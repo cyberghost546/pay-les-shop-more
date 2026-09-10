@@ -1,17 +1,21 @@
 // src/pages/Dashboard/Invoices.jsx
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import Loading from '../../components/Loading/Loading';
 import ConnectionError from '../../components/ConnectionError/ConnectionError';
 import {
   INVOICE_STATUSES,
   approveInvoice,
+  listCustomers,
   listInvoices,
   rejectInvoice,
+  sendInvoice,
   uploadInvoiceDocument,
 } from '../../api/staff';
 import { useCollection } from './useCollection';
-import { formatDateTime, formatMoney } from './format';
+import { formatDate, formatDateTime, formatMoney } from './format';
+import AddInvoice from './AddInvoice';
+import InvoiceDetail from './InvoiceDetail';
 import {
   Banner,
   Empty,
@@ -144,7 +148,10 @@ export default function Invoices() {
     listInvoices,
     // Opens on the queue. Anything else has to be asked for, which is what
     // makes this page a to-do list rather than an archive.
-    { status: params.get('status') ?? 'pending_review' },
+    {
+      status: params.get('status') ?? 'pending_review',
+      customer: params.get('customer') ?? '',
+    },
     params.get('search') ?? '',
   );
 
@@ -152,6 +159,33 @@ export default function Invoices() {
   const [rejectingId, setRejectingId] = useState(null);
   const [error, setError] = useState('');
   const [done, setDone] = useState('');
+
+  // The Add invoice form, and the details panel, both open over the table.
+  const [adding, setAdding] = useState(false);
+  const [viewingId, setViewingId] = useState(null);
+
+  // Every customer, for the Customer filter. Loaded once rather than per
+  // keystroke: this is a dropdown of who exists, not a search.
+  const [customers, setCustomers] = useState([]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    listCustomers({ erased: 'false', page_size: 200, ordering: 'last_name' })
+      .then((page) => {
+        if (!cancelled) setCustomers(page.results);
+      })
+      // Not fatal, and deliberately silent: the invoices still list, the
+      // Customer dropdown just has nothing to offer. A banner about it would
+      // be an error message for a filter nobody has tried to use yet.
+      .catch(() => {});
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const viewing = list.rows.find((invoice) => invoice.id === viewingId) ?? null;
 
   /** The sentence to put in the banner for a failed call. */
   function fault(failure) {
@@ -189,23 +223,64 @@ export default function Invoices() {
 
   return (
     <>
-      <header className={styles.head}>
-        <h1 className={styles.title}>Invoices</h1>
-        <p className={styles.subtitle}>
-          An invoice is raised automatically when a shipment is marked paid on
-          the Packages page — and for a shipment that was already paid before
-          that, with the “Raise invoice” button there. Uploading the PDF here
-          approves it in your name and publishes it to the customer&apos;s own
-          profile page in one step, so there is nothing separate to send.
-        </p>
+      <header className={styles.headWithAction}>
+        <div>
+          <h1 className={styles.title}>Invoices</h1>
+          <p className={styles.subtitle}>
+            An invoice appears here by itself when a shipment is marked paid.
+            Use <strong>Add invoice</strong> when a shipment has none and you
+            already have the PDF. Uploading a document approves the invoice in
+            your name and puts it on the customer&apos;s profile page.
+          </p>
+        </div>
+
+        <button
+          type="button"
+          className={styles.primaryButton}
+          onClick={() => {
+            setAdding(true);
+            setViewingId(null);
+            setError('');
+            setDone('');
+          }}
+        >
+          + Add invoice
+        </button>
       </header>
+
+      {adding && (
+        <AddInvoice
+          onClose={() => setAdding(false)}
+          onCreated={(invoice) => {
+            setAdding(false);
+            setDone(
+              `Invoice ${invoice.number} created for ${invoice.customer}, on shipment ${invoice.tracking_number}.`,
+            );
+            // Back to every status, so the new invoice is on screen whichever
+            // state it was created in. Reloading the queue would hide an
+            // invoice that was sent straight away, which reads as it having
+            // failed.
+            list.setFilter('status', 'all');
+            setViewingId(invoice.id);
+          }}
+          onOpenExisting={(id) => {
+            setAdding(false);
+            list.setFilter('status', 'all');
+            setViewingId(id);
+          }}
+        />
+      )}
+
+      {viewing && (
+        <InvoiceDetail invoice={viewing} onClose={() => setViewingId(null)} />
+      )}
 
       <Toolbar>
         <SearchInput
           value={list.searchInput}
           onChange={list.setSearchInput}
           label="Search invoices"
-          placeholder="Search by tracking number or customer"
+          placeholder="Search customer, invoice number, tracking number…"
         />
         <FilterSelect
           label="Status"
@@ -213,6 +288,16 @@ export default function Invoices() {
           onChange={(value) => list.setFilter('status', value)}
           options={INVOICE_STATUSES}
           allLabel="Any status"
+        />
+        <FilterSelect
+          label="Customer"
+          value={list.filters.customer}
+          onChange={(value) => list.setFilter('customer', value)}
+          options={customers.map((row) => ({
+            value: String(row.id),
+            label: row.name || row.username,
+          }))}
+          allLabel="Any customer"
         />
       </Toolbar>
 
@@ -240,12 +325,13 @@ export default function Invoices() {
                   <Link className={styles.link} to="/dashboard/invoices?status=all">
                     every status
                   </Link>{' '}
-                  — and if there are no invoices at all, raise one from a paid
-                  shipment on{' '}
+                  — and if there are no invoices at all, either mark a
+                  shipment paid on{' '}
                   <Link className={styles.link} to="/dashboard/packages">
                     Packages
-                  </Link>
-                  .
+                  </Link>{' '}
+                  or use <strong>Add invoice</strong> above, which is the way
+                  in when you already have the document.
                 </span>
               </>
             ) : (
@@ -257,12 +343,14 @@ export default function Invoices() {
             <table className={styles.table}>
               <thead>
                 <tr>
-                  <th scope="col">Shipment</th>
+                  <th scope="col">Invoice</th>
                   <th scope="col">Customer</th>
-                  <th scope="col">Value</th>
-                  <th scope="col">Raised</th>
+                  <th scope="col">Tracking number</th>
+                  <th scope="col">Invoice date</th>
+                  <th scope="col">Amount</th>
                   <th scope="col">Status</th>
-                  <th scope="col">Review</th>
+                  <th scope="col">Created</th>
+                  <th scope="col">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -276,20 +364,48 @@ export default function Invoices() {
                     }
                   >
                     <td>
-                      <div className={styles.primaryCell}>
-                        {invoice.tracking_number}
-                      </div>
-                      <div className={styles.mutedCell}>Invoice #{invoice.id}</div>
+                      <div className={styles.primaryCell}>{invoice.number}</div>
                     </td>
 
-                    <td>{invoice.customer}</td>
+                    {/* The customer's name opens their record, which is the
+                        question somebody asking "is this the right John
+                        Smith" actually wants answered. Searched by e-mail
+                        rather than by name for the same reason: two people
+                        can share a name and nobody shares an address. */}
+                    <td>
+                      <Link
+                        className={styles.link}
+                        to={`/dashboard/customers?search=${encodeURIComponent(
+                          invoice.customer_email ?? invoice.customer,
+                        )}`}
+                      >
+                        {invoice.customer}
+                      </Link>
+                      <div className={styles.mutedCell}>
+                        Customer ID: {invoice.customer_id}
+                      </div>
+                    </td>
 
-                    <td className={styles.numberCell}>
-                      {formatMoney(invoice.value_eur)}
+                    <td>
+                      <Link
+                        className={styles.link}
+                        to={`/dashboard/packages?search=${encodeURIComponent(
+                          invoice.tracking_number,
+                        )}`}
+                      >
+                        {invoice.tracking_number}
+                      </Link>
+                      <div className={styles.mutedCell}>
+                        {invoice.shipment_status}
+                      </div>
                     </td>
 
                     <td className={styles.dateCell}>
-                      {formatDateTime(invoice.created_at)}
+                      {formatDate(invoice.dated_on)}
+                    </td>
+
+                    <td className={styles.numberCell}>
+                      {formatMoney(invoice.value_eur)}
                     </td>
 
                     <td>
@@ -322,10 +438,41 @@ export default function Invoices() {
                           Waiting for a document — upload one to send it.
                         </div>
                       )}
+                      {/* Approved *with* a document is a state somebody did
+                          choose, on the Add invoice form. Named so it does not
+                          read as the stuck one above. */}
+                      {invoice.status === 'approved' && invoice.pdf_url && (
+                        <div className={styles.mutedCell}>
+                          Ready to send. The customer cannot see it yet.
+                        </div>
+                      )}
+                    </td>
+
+                    <td className={styles.dateCell}>
+                      {formatDateTime(invoice.created_at)}
+                      <div className={styles.mutedCell}>
+                        {/* Null on an automatically raised invoice, and that
+                            null is information: nobody raised it, a shipment
+                            being marked paid did. */}
+                        {invoice.created_by_name ?? 'Raised automatically'}
+                      </div>
                     </td>
 
                     <td>
                       <div className={styles.rowActions}>
+                        <button
+                          type="button"
+                          className={styles.rowButton}
+                          onClick={() => {
+                            setAdding(false);
+                            setViewingId(
+                              viewingId === invoice.id ? null : invoice.id,
+                            );
+                          }}
+                        >
+                          {viewingId === invoice.id ? 'Hide' : 'View'}
+                        </button>
+
                         {invoice.status === 'pending_review' ? (
                           <>
                             <button
@@ -357,6 +504,23 @@ export default function Invoices() {
                           </>
                         ) : null}
 
+                        {invoice.status === 'approved' && invoice.pdf_url && (
+                          <button
+                            type="button"
+                            className={styles.rowButton}
+                            disabled={busyId === invoice.id}
+                            onClick={() =>
+                              run(
+                                invoice,
+                                () => sendInvoice(invoice.id),
+                                `Invoice ${invoice.number} sent. It is on ${invoice.customer}'s profile page now.`,
+                              )
+                            }
+                          >
+                            {busyId === invoice.id ? 'Sending…' : 'Send to customer'}
+                          </button>
+                        )}
+
                         {ACCEPTS_DOCUMENT.includes(invoice.status) ? (
                           <UploadButton
                             invoice={invoice}
@@ -387,7 +551,7 @@ export default function Invoices() {
                             target="_blank"
                             rel="noreferrer"
                           >
-                            PDF
+                            Download
                           </a>
                         )}
                       </div>

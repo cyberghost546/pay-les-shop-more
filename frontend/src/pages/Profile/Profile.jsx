@@ -6,12 +6,12 @@ import {
   changePassword,
   deleteAccount,
   getProfile,
-  saveDefaultAddress,
   updateNotifications,
   updateProfile,
 } from '../../api/profile';
 import { listInvoices } from '../../api/invoices';
 import Receipts from './Receipts';
+import Shipments from './Shipments';
 import { AUTH_ERRORS } from '../../api/auth';
 import { useAuth } from '../../auth/useAuth';
 import Loading from '../../components/Loading/Loading';
@@ -96,6 +96,13 @@ function SectionIcon({ name }) {
         <circle cx="12" cy="9.5" r="2.6" />
       </>
     ),
+    shipments: (
+      <>
+        <path d="M3 8.5 12 4l9 4.5v7L12 20l-9-4.5Z" />
+        <path d="M3 8.5 12 13l9-4.5" />
+        <path d="M12 13v7" />
+      </>
+    ),
     invoices: (
       <>
         <path d="M6 3h9l3.5 3.5V21H6Z" />
@@ -151,7 +158,7 @@ function SectionIcon({ name }) {
 // The order they appear in, for the side navigation.
 const SECTIONS = [
   { id: 'details', labelKey: 'profile.sections.details' },
-  { id: 'address', labelKey: 'profile.sections.address' },
+  { id: 'shipments', labelKey: 'profile.sections.shipments' },
   { id: 'invoices', labelKey: 'profile.sections.invoices' },
   { id: 'receipts', labelKey: 'profile.sections.receipts' },
   { id: 'password', labelKey: 'profile.sections.password' },
@@ -578,6 +585,19 @@ export default function Profile() {
 
           {/* Invoices. Read-only: an invoice is a record of what was
               charged, so there is nothing here to edit. */}
+          {/* Every shipment on its own, in the order they happened. A
+              customer whose first shipment has already gone has a second one
+              for what they bought afterwards, and telling which things are on
+              which boat is only possible if the two are never merged. */}
+          <section className={styles.card} id="shipments">
+            <h2 className={styles.cardTitle}>
+              <SectionIcon name="shipments" />
+              {t('profile.sections.shipments')}
+            </h2>
+
+            <Shipments />
+          </section>
+
           <section className={styles.card} id="invoices">
             <h2 className={styles.cardTitle}>
               <SectionIcon name="invoices" />
@@ -612,10 +632,16 @@ export default function Profile() {
                     <div className={styles.invoiceText}>
                       <p className={styles.invoiceNumber}>{invoice.number}</p>
                       <p className={styles.invoiceMeta}>
-                        {invoice.sentAt
-                          ? invoiceDate.format(new Date(invoice.sentAt))
+                        {/* The date on the document rather than the moment
+                            it was e-mailed. Those are usually the same day
+                            and occasionally are not, and the one the customer
+                            can check against the PDF is this one. */}
+                        {invoice.datedOn || invoice.sentAt
+                          ? invoiceDate.format(
+                              new Date(invoice.datedOn ?? invoice.sentAt),
+                            )
                           : ''}
-                        {invoice.sentAt && ' · '}
+                        {(invoice.datedOn || invoice.sentAt) && ' · '}
                         {t('profile.invoices.tracking')} {invoice.trackingNumber}
                       </p>
                       {invoice.description && (

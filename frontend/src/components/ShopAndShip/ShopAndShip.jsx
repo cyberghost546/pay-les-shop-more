@@ -1,6 +1,6 @@
 // src/components/ShopAndShip/ShopAndShip.jsx
 import { Link } from 'react-router-dom';
-import containerShip from '../../images/container-ship.webp';
+import { containerShip } from '../../images/optimized/photos';
 import { useLanguage } from '../../i18n/useLanguage';
 import styles from './ShopAndShip.module.css';
 
@@ -62,10 +62,17 @@ export default function ShopAndShip() {
 
               {card.image ? (
                 <img
-                  src={card.image}
+                  src={card.image.src}
+                  srcSet={card.image.srcSet}
+                  // A strip across one card in a row of them, never the full
+                  // window.
+                  sizes="(max-width: 900px) 100vw, 33vw"
+                  width={card.image.width}
+                  height={card.image.height}
                   alt={card.imageAlt}
                   className={styles.strip}
                   loading="lazy"
+                  decoding="async"
                 />
               ) : (
                 // Swap for an <img> once the artwork is in src/images/

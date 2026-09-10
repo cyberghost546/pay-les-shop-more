@@ -1,0 +1,8 @@
+# Vercel builds the React site and nothing else. The API is deployed
+# separately — see VERCEL_DEPLOYMENT.md — so none of this needs uploading,
+# and some of it must not be.
+backend/
+.github/
+node_modules/
+*.md
+!VERCEL_DEPLOYMENT.md

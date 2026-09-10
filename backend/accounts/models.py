@@ -185,6 +185,66 @@ class Address(models.Model):
         super().save(*args, **kwargs)
 
 
+class PackageQuerySet(models.QuerySet):
+    """A queryset that will not quietly step around the lock.
+
+    Package.save() is where the rule is enforced, and a bulk update() does not
+    call it — `Package.objects.filter(...).update(status="paid")` would move a
+    delivered shipment back with no exception and no history. That is exactly
+    the bypass the feature exists to close, so update() refuses when the rows
+    it would touch include locked ones and the columns it would write include
+    protected ones.
+
+    Deliberately not a blanket refusal: staff still set estimated_arrival in
+    bulk, and the notification worker still stamps rows that are in transit.
+    Only the frozen columns and the status are held.
+
+    The escape hatch is force_update(), for a data migration that genuinely
+    has to rewrite history and says so in its own name.
+    """
+
+    #: What a bulk update may not touch on a locked row.
+    PROTECTED = ("status", "user", "user_id", "delivery_address",
+                 "delivery_address_id", "delivery_address_text", "description",
+                 "weight_kg", "value_eur")
+
+    def update(self, **fields):
+        if set(fields) & set(self.PROTECTED):
+            locked = self.filter(status__in=Package.LOCKED_STATUSES)
+            # exists(), not count(): the number is not wanted, only whether
+            # this update would land on anything it must not.
+            if locked.exists():
+                raise ShipmentLocked(
+                    "This update would change a shipment that has already "
+                    "left. Shipments that are in transit, arrived, delivered "
+                    "or cancelled cannot be altered."
+                )
+        return super().update(**fields)
+
+    def force_update(self, **fields):
+        """update() with the lock lifted. For migrations and repairs only."""
+        return super().update(**fields)
+
+
+class ShipmentLocked(Exception):
+    """A change to an order that has gone too far to be changed.
+
+    Raised by Package.check_can_change() and by the model's own save(), and
+    turned into a 409 by staff/views.py: the request was well formed and the
+    caller was allowed to make it, the order simply is not something anybody
+    can still alter.
+    """
+
+
+class InvalidShipmentTransition(Exception):
+    """A status move the state machine does not allow.
+
+    Separate from ShipmentLocked because the two mean different things to a
+    reader: this one is "an order cannot go from delivered back to paid", not
+    "this order is finished". Both become a 409.
+    """
+
+
 class Package(models.Model):
     """A shipment belonging to a customer."""
 
@@ -192,6 +252,13 @@ class Package(models.Model):
         QUOTED = "quoted", "Quote sent"
         PAID = "paid", "Paid"
         PURCHASED = "purchased", "Products purchased"
+        # Packed and waiting for the boat or the plane. The stage the paper
+        # process always had and the database did not: between "we have bought
+        # your things" and "they have left", there is a window where the office
+        # can still add a late parcel to the crate and the customer can not.
+        # Without it, that window had no name and so no rule could be hung on
+        # it — see the lock tiers below, where it is the only staff-only stage.
+        READY_FOR_SHIPPING = "ready_for_shipping", "Ready for shipping"
         IN_TRANSIT = "in_transit", "In transit"
         ARRIVED = "arrived", "Arrived at destination"
         DELIVERED = "delivered", "Delivered"
@@ -200,8 +267,8 @@ class Package(models.Model):
     # Which statuses mean the money has come in, kept here with the data
     # rather than in whichever view happens to be adding up totals.
     #
-    # The flow is quoted -> paid -> purchased -> in transit -> arrived ->
-    # delivered, so everything from PAID onwards is a shipment that has been
+    # The flow is quoted -> paid -> purchased -> ready for shipping -> in
+    # transit -> arrived -> delivered, so everything from PAID onwards is a shipment that has been
     # settled; a package cannot reach those states unpaid. QUOTED is the
     # customer holding a quote they have not acted on yet, which is the only
     # state that is money genuinely outstanding.
@@ -212,11 +279,79 @@ class Package(models.Model):
     PAID_STATUSES = (
         Status.PAID,
         Status.PURCHASED,
+        Status.READY_FOR_SHIPPING,
         Status.IN_TRANSIT,
         Status.ARRIVED,
         Status.DELIVERED,
     )
     AWAITING_PAYMENT_STATUSES = (Status.QUOTED,)
+
+    # ---- what may still be changed, and by whom -------------------------
+    #
+    # A shipment is not a document that stays editable for ever. Once the
+    # crate is closed, once it is on the water, once it has been handed over,
+    # changing what the row says about it stops being a correction and starts
+    # being a lie about a thing that already happened. So the stages are
+    # sorted into three tiers, once, here — not re-decided by whichever view
+    # happens to be handling the request.
+    #
+    #   OPEN            the customer may still add to this shipment.
+    #   STAFF_ONLY      closed to the customer; the office may still act.
+    #   LOCKED          closed to everybody. The shipment is a record now.
+    #
+    # Read them through can_change() and check_can_change() rather than
+    # testing membership by hand, so that a stage added later is handled in
+    # one place instead of in every caller that forgot about it.
+    OPEN_STATUSES = (Status.QUOTED, Status.PAID, Status.PURCHASED)
+    STAFF_ONLY_STATUSES = (Status.READY_FOR_SHIPPING,)
+    LOCKED_STATUSES = (
+        Status.IN_TRANSIT,
+        Status.ARRIVED,
+        Status.DELIVERED,
+        Status.CANCELLED,
+    )
+
+    # Where the journey stops. Distinct from LOCKED_STATUSES, and the
+    # difference is the whole reason both exist: a shipment in transit is
+    # locked, in that nobody may change what is in it or where it is going,
+    # and it is emphatically not finished - it still has to arrive and be
+    # delivered. What is frozen is the description of the shipment; what
+    # carries on is the shipment.
+    TERMINAL_STATUSES = (Status.DELIVERED, Status.CANCELLED)
+
+    # What "locked" actually protects. Not every column: staff still record
+    # the arrival date of a shipment already at sea, and the invoice flow
+    # still writes delivered_at. These are the facts that describe *what was
+    # sent and where it went*, and those cannot change after it went.
+    FROZEN_FIELDS = (
+        "user",
+        "delivery_address",
+        "delivery_address_text",
+        "description",
+        "weight_kg",
+        "value_eur",
+    )
+
+    # The stages in the order they happen, which is what makes "forwards" and
+    # "backwards" mean something. Cancelled is not in it: calling a shipment
+    # off is not progress along the journey, it is leaving the journey.
+    #
+    # Forward-only rather than a table of permitted pairs, because the office
+    # legitimately skips stages — a parcel already at the counter is packed
+    # and gone the same afternoon, and nobody should have to click through
+    # `ready_for_shipping` to say so. What is refused is going back, which is
+    # the move that would quietly rewrite what happened.
+    STAGE_ORDER = (
+        Status.QUOTED,
+        Status.PAID,
+        Status.PURCHASED,
+        Status.READY_FOR_SHIPPING,
+        Status.IN_TRANSIT,
+        Status.ARRIVED,
+        Status.DELIVERED,
+    )
+
+    objects = PackageQuerySet.as_manager()
 
     user = models.ForeignKey(
         "accounts.User",
@@ -304,6 +439,7 @@ class Package(models.Model):
             self.Status.QUOTED: 5,
             self.Status.PAID: 20,
             self.Status.PURCHASED: 35,
+            self.Status.READY_FOR_SHIPPING: 45,
             self.Status.IN_TRANSIT: 60,
             self.Status.ARRIVED: 80,
             self.Status.DELIVERED: 100,
@@ -328,8 +464,156 @@ class Package(models.Model):
         lines = [line for line in self.delivery_address_text.splitlines() if line.strip()]
         return lines[-1].strip() if lines else ""
 
-    def save(self, *args, **kwargs):
-        """Freeze the delivery address the first time the package is saved."""
+    # ---- the lock -------------------------------------------------------
+
+    @property
+    def locked(self):
+        """True once the shipment has gone beyond anybody's power to change.
+
+        In transit, arrived, delivered or cancelled. The crate is on the water
+        or the parcel is in somebody's hands; the row describes a thing that
+        has already happened, and a record of what happened is not a form.
+        """
+        return self.status in self.LOCKED_STATUSES
+
+    @property
+    def locked_for_customer(self):
+        """True once the customer may no longer add to this shipment.
+
+        Wider than `locked` by one stage: a shipment that is packed and
+        waiting is closed to the customer while the office can still open the
+        crate for a late parcel. That is the "unless an administrator allows
+        it" case, and this is the property the customer-facing API reads.
+        """
+        return self.locked or self.status in self.STAFF_ONLY_STATUSES
+
+    @property
+    def lock_reason(self):
+        """Why it cannot be changed, in the customer's terms, or "" if it can.
+
+        Lives on the model rather than in a serializer so that the API, the
+        admin and any channel added later all give the same answer to the same
+        question. The React app has its own translated copy for the screen;
+        this is what a caller reading the API is told.
+        """
+        if self.status in self.LOCKED_STATUSES:
+            if self.status == self.Status.CANCELLED:
+                return "This shipment was cancelled and can no longer be changed."
+            return (
+                "This shipment has already been sent and can no longer be "
+                "changed. Anything bought now will travel as a separate "
+                "shipment with its own tracking number."
+            )
+        if self.status in self.STAFF_ONLY_STATUSES:
+            return (
+                "This shipment is packed and ready to leave, so it can no "
+                "longer be added to online. Ask the office if something has "
+                "to go with it."
+            )
+        return ""
+
+    def can_change(self, *, by_staff=False):
+        """Whether this shipment may still be altered by that kind of caller.
+
+        The one question every write path asks, answered in one place. Staff
+        get the extra stage; nobody gets a shipment that has already left.
+        """
+        if self.locked:
+            return False
+        return True if by_staff else not self.locked_for_customer
+
+    def check_can_change(self, *, by_staff=False):
+        """can_change(), raising instead of returning.
+
+        For the call sites that would otherwise each write their own
+        `if not ...: raise`. ShipmentLocked becomes a 409 in both views.py.
+        """
+        if not self.can_change(by_staff=by_staff):
+            raise ShipmentLocked(self.lock_reason)
+
+    def check_transition(self, to_status):
+        """Whether this shipment may move from where it is to `to_status`.
+
+        Forwards along STAGE_ORDER, or off it to cancelled from a stage that
+        has not left yet. Two things are refused: going backwards, which would
+        rewrite what happened, and moving at all out of a terminal stage,
+        which is what makes "delivered" and "cancelled" permanent rather than
+        merely discouraged.
+
+        A locked shipment still moves. In transit is locked and unfinished at
+        the same time - nobody may change what is in the crate, and the crate
+        still has to arrive.
+        """
+        current = self.status
+        if to_status == current:
+            return
+
+        if current in self.TERMINAL_STATUSES:
+            raise InvalidShipmentTransition(
+                f"This shipment is {self.get_status_display().lower()} and "
+                "cannot be moved to another status."
+            )
+
+        if to_status == self.Status.CANCELLED:
+            # Only before it leaves. After that there is a crate on a boat
+            # somewhere that cancelling a database row does not bring back.
+            if current in self.LOCKED_STATUSES:
+                raise InvalidShipmentTransition(
+                    "This shipment has already left and cannot be cancelled. "
+                    "Handle it as a return once it arrives."
+                )
+            return
+
+        order = self.STAGE_ORDER
+        if to_status not in order or current not in order:
+            raise InvalidShipmentTransition(
+                f"{to_status} is not a stage a shipment can move to."
+            )
+        if order.index(to_status) < order.index(current):
+            raise InvalidShipmentTransition(
+                "A shipment cannot go back a stage. Correct the record in the "
+                "admin if it was moved on by mistake."
+            )
+
+    @classmethod
+    def from_db(cls, db, field_names, values):
+        """Remember what the row said when it was read.
+
+        save() has to know whether a protected column is *changing*, and the
+        only honest source for the old value is the row that was loaded.
+        Re-fetching would cost a query per save; this costs a dict.
+        """
+        instance = super().from_db(db, field_names, values)
+        instance._loaded = dict(zip(field_names, values))
+        return instance
+
+    def changed_fields(self):
+        """Which columns differ from what was loaded, as a set of names.
+
+        Empty for a row that was never loaded from the database - a new one,
+        where every column is being written for the first time and so nothing
+        is being changed.
+        """
+        loaded = getattr(self, "_loaded", None)
+        if loaded is None:
+            return set()
+        return {
+            name for name, was in loaded.items() if getattr(self, name, None) != was
+        }
+
+    def save(self, *args, force_unlock=False, **kwargs):
+        """Freeze the delivery address, then refuse a change that is too late.
+
+        The check is here, on the model, and not only in the serializers,
+        because a serializer guards one door. The admin, a management command,
+        the shell and whatever view gets written next year all come through
+        save(), and the point of the rule is that it cannot be stepped around
+        by sending the request somewhere else. The matching guard for a bulk
+        update() is on PackageQuerySet above.
+
+        `force_unlock=True` is the deliberate exception, for a data repair
+        that means to rewrite a record and says so at the call site.
+        """
         if not self.delivery_address_text and self.delivery_address_id:
             address = self.delivery_address
             self.delivery_address_text = (
@@ -338,7 +622,35 @@ class Package(models.Model):
                 f"{address.get_country_display()}"
             ).strip()
 
+        # Only a stored row can be locked. Creating a shipment that is already
+        # delivered is an import, not a modification; refusing it would break
+        # every fixture and backfill and protect nothing.
+        if not force_unlock and not self._state.adding and hasattr(self, "_loaded"):
+            changed = self.changed_fields()
+            stored_status = self._loaded.get("status")
+
+            if "status" in changed:
+                # Asked of the stored status, not of self.status - which is
+                # already the new one by the time save() runs.
+                self.__class__(status=stored_status).check_transition(self.status)
+
+            frozen = set(self.FROZEN_FIELDS) | {f"{f}_id" for f in self.FROZEN_FIELDS}
+            if stored_status in self.LOCKED_STATUSES and (changed & frozen):
+                raise ShipmentLocked(self.lock_reason)
+
         super().save(*args, **kwargs)
+
+        # The row is its own baseline again, so a second save() in the same
+        # request does not re-report the first one's changes as new ones.
+        # Deferred columns are skipped rather than read: this runs on every
+        # save, and reading one would fire a query to fetch a value only in
+        # order to record that it has not changed.
+        deferred = self.get_deferred_fields()
+        self._loaded = {
+            field.attname: getattr(self, field.attname)
+            for field in self._meta.concrete_fields
+            if field.attname not in deferred
+        }
 
 
 def package_document_path(instance, filename):
