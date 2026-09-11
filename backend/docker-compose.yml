@@ -1,0 +1,55 @@
+# Local development services. Not used by any deployment: production gets its
+# Postgres and Redis from the platform, and the API image is built from
+# Dockerfile. This file exists so that development runs on the same database
+# engine as production — SQLite accepts things Postgres rejects, and finding
+# that out from a failed deploy is the expensive way.
+#
+#   docker compose up -d
+#
+# Then point Django at it, in .env:
+#
+#   DATABASE_URL=postgres://plsm:plsm@127.0.0.1:5433/plsm
+#
+# Stopping the containers keeps the data; `docker compose down -v` deletes it.
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: plsm
+      POSTGRES_USER: plsm
+      # Local only, on a port published to this machine alone. Never reuse a
+      # development password on anything reachable from outside.
+      POSTGRES_PASSWORD: plsm
+    ports:
+      # 5433 on the host, so this cannot collide with a Postgres already
+      # installed natively on the default port.
+      - "127.0.0.1:5433:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      # Django's migrations run as soon as the port answers, which is earlier
+      # than Postgres is ready to serve. pg_isready is the difference between
+      # a clean start and a connection refused on first boot.
+      test: ["CMD-SHELL", "pg_isready -U plsm -d plsm"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:6380:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  postgres-data:
+  redis-data:

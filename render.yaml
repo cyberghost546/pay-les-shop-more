@@ -1,0 +1,74 @@
+# Render blueprint for the API. Deploy with Render's "New > Blueprint" against
+# this repository; everything below is created in one go.
+#
+# Deliberately minimal: one web service and one Postgres database. Celery and
+# Redis are left out because config/settings.py runs tasks inline when
+# CELERY_BROKER_URL is unset (CELERY_TASK_ALWAYS_EAGER), so invoices and mail
+# still work. Adding a worker later is a change to this file, not to the code.
+#
+# After the first deploy, put the service's hostname into the /api rewrite in
+# vercel.json — that rewrite is what keeps the browser on one origin, which is
+# what keeps the session cookie first-party and working in Safari.
+
+services:
+  - type: web
+    name: plsm-api
+    runtime: docker
+    # Frankfurt rather than Oregon: the customers are in the Netherlands and
+    # the Caribbean, and the data stays in the EU.
+    region: frankfurt
+    plan: starter
+    dockerfilePath: ./backend/Dockerfile
+    # The Dockerfile copies from its own directory and expects to be built
+    # with backend/ as the root, exactly as on Railway.
+    dockerContext: ./backend
+    healthCheckPath: /api/health/
+    envVars:
+      # Off, and it must stay off. With DEBUG on, Django serves tracebacks
+      # containing settings and source to anyone who triggers an error.
+      - key: DJANGO_DEBUG
+        value: "0"
+
+      # Generated once by Render and then held. Regenerating it signs out
+      # every user and invalidates every outstanding password-reset link.
+      - key: DJANGO_SECRET_KEY
+        generateValue: true
+
+      # The hostname Render assigns, filled in automatically. Without the
+      # right value here Django answers every request with 400 Bad Request.
+      - key: DJANGO_ALLOWED_HOSTS
+        fromService:
+          type: web
+          name: plsm-api
+          property: host
+
+      # The origin the site is served from. settings.py adds this to both
+      # CORS_ALLOWED_ORIGINS and CSRF_TRUSTED_ORIGINS on its own, which is
+      # what lets a POST from the Vercel origin pass Django's CSRF check.
+      # Change this to https://paylesshopmore.com once the domain moves.
+      - key: DJANGO_FRONTEND_URL
+        value: https://pay-les-shop-more.vercel.app
+
+      - key: DATABASE_URL
+        fromDatabase:
+          name: plsm-db
+          property: connectionString
+
+      # Short on purpose for the first deploy. HSTS is cached by the browser
+      # and cannot be withdrawn early, so a wrong year-long value is a year
+      # of a domain that refuses plain HTTP. Raise it once HTTPS is settled.
+      - key: DJANGO_HSTS_SECONDS
+        value: "300"
+
+      # Do not set CELERY_BROKER_URL until a worker exists to consume the
+      # queue: with a broker set and no worker, tasks are queued and never
+      # run, and the invoice mail silently never arrives.
+
+      # Do not set PORT. Render injects it and the Dockerfile reads it.
+
+databases:
+  - name: plsm-db
+    databaseName: plsm
+    user: plsm
+    region: frankfurt
+    plan: basic-256mb
