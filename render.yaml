@@ -1,10 +1,17 @@
-# Render blueprint for the API. Deploy with Render's "New > Blueprint" against
-# this repository; everything below is created in one go.
+# Render blueprint for the API, on the free tier.
 #
-# Deliberately minimal: one web service and one Postgres database. Celery and
-# Redis are left out because config/settings.py runs tasks inline when
-# CELERY_BROKER_URL is unset (CELERY_TASK_ALWAYS_EAGER), so invoices and mail
-# still work. Adding a worker later is a change to this file, not to the code.
+# Deploy with Render's "New > Blueprint" against this repository.
+#
+# The database is deliberately NOT declared here. Render's free Postgres is
+# deleted after 30 days, which is a data loss with a timer on it. Neon's free
+# tier has no such expiry, so the database lives there and this service is
+# given its URL. Neon speaks TLS, which config/settings.py requires whenever
+# DJANGO_DEBUG is off — so DJANGO_DB_SSL_REQUIRE stays at its default.
+#
+# What "free" costs: the web service sleeps after 15 minutes with no traffic,
+# and the next visitor waits roughly 50 seconds for it to wake. Fine while
+# testing, poor for customers. Changing `plan: free` to `plan: starter` below
+# removes the sleeping, and is the only edit needed.
 #
 # After the first deploy, put the service's hostname into the /api rewrite in
 # vercel.json — that rewrite is what keeps the browser on one origin, which is
@@ -15,12 +22,13 @@ services:
     name: plsm-api
     runtime: docker
     # Frankfurt rather than Oregon: the customers are in the Netherlands and
-    # the Caribbean, and the data stays in the EU.
+    # the Caribbean, and the data stays in the EU. Pick Neon's EU region too,
+    # so every query is not a round trip across the Atlantic.
     region: frankfurt
-    plan: starter
+    plan: free
     dockerfilePath: ./backend/Dockerfile
     # The Dockerfile copies from its own directory and expects to be built
-    # with backend/ as the root, exactly as on Railway.
+    # with backend/ as the root.
     dockerContext: ./backend
     healthCheckPath: /api/health/
     envVars:
@@ -49,10 +57,11 @@ services:
       - key: DJANGO_FRONTEND_URL
         value: https://pay-les-shop-more.vercel.app
 
+      # Paste Neon's connection string into the Render dashboard. sync: false
+      # means the blueprint asks for it rather than carrying it in git, which
+      # is right: it contains the database password.
       - key: DATABASE_URL
-        fromDatabase:
-          name: plsm-db
-          property: connectionString
+        sync: false
 
       # Short on purpose for the first deploy. HSTS is cached by the browser
       # and cannot be withdrawn early, so a wrong year-long value is a year
@@ -62,13 +71,8 @@ services:
 
       # Do not set CELERY_BROKER_URL until a worker exists to consume the
       # queue: with a broker set and no worker, tasks are queued and never
-      # run, and the invoice mail silently never arrives.
+      # run, and the invoice mail silently never arrives. Unset, settings.py
+      # runs them inline (CELERY_TASK_ALWAYS_EAGER), which is what the free
+      # tier wants anyway.
 
       # Do not set PORT. Render injects it and the Dockerfile reads it.
-
-databases:
-  - name: plsm-db
-    databaseName: plsm
-    user: plsm
-    region: frankfurt
-    plan: basic-256mb

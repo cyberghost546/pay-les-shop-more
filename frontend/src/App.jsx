@@ -35,6 +35,8 @@ const Overview = lazy(() => import('./pages/Dashboard/Overview'));
 const Quotes = lazy(() => import('./pages/Dashboard/Quotes'));
 const Messages = lazy(() => import('./pages/Dashboard/Messages'));
 const Packages = lazy(() => import('./pages/Dashboard/Packages'));
+const Intake = lazy(() => import('./pages/Dashboard/Intake'));
+const Scan = lazy(() => import('./pages/Dashboard/Scan'));
 const Customers = lazy(() => import('./pages/Dashboard/Customers'));
 const Bookings = lazy(() => import('./pages/Dashboard/Bookings'));
 const Invoices = lazy(() => import('./pages/Dashboard/Invoices'));
@@ -97,6 +99,8 @@ export default function App() {
               <Route path="quotes" element={<Quotes />} />
               <Route path="messages" element={<Messages />} />
               <Route path="packages" element={<Packages />} />
+              <Route path="intake" element={<Intake />} />
+              <Route path="scan" element={<Scan />} />
               <Route path="bookings" element={<Bookings />} />
               <Route path="invoices" element={<Invoices />} />
               <Route path="documents" element={<Documents />} />

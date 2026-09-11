@@ -94,6 +94,7 @@ INSTALLED_APPS = [
     'invoicing',
     'notifications',
     'staff',
+    'warehouse',
 ]
 
 # Must be set before the first migration is applied: Django cannot swap the

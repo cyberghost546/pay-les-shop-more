@@ -30,14 +30,26 @@ function toProfile(data) {
     country: address.country ?? 'CW',
     addressId: address.id ?? null,
     memberSince: data.date_joined,
-    // Decides whether the header shows a link to the dashboard. Not a
-    // permission: the staff API checks the flag itself on every request.
+    // Which of the three roles this account holds. Not permissions: the API
+    // checks both flags itself on every request, and these only decide which
+    // navigation gets drawn.
+    //
+    //   isStaff      the office. The whole dashboard.
+    //   isWarehouse  the floor. The scanner and intake sheets only.
+    //
+    // Neither implies the other, so read them together wherever "can this
+    // person open the dashboard at all" is the question.
     isStaff: Boolean(data.is_staff),
+    isWarehouse: Boolean(data.is_warehouse),
     addresses: data.addresses ?? [],
     notifications: {
       shipping: data.notify_shipping ?? true,
       offers: data.notify_offers ?? false,
       newsletter: data.notify_newsletter ?? false,
+      // Staff only: whether released warehouse intake sheets are e-mailed to
+      // this person. Read on the dashboard, never shown on the profile page,
+      // which is a customer's page and has nothing to say about it.
+      warehouse: data.notify_warehouse ?? true,
     },
   };
 }
@@ -151,6 +163,25 @@ export async function updateNotifications({ notifications }) {
         notify_offers: notifications.offers,
         notify_newsletter: notifications.newsletter,
       },
+    }),
+  );
+}
+
+/**
+ * Turns the warehouse handover e-mail on or off for the signed-in account.
+ *
+ * Its own call rather than a fourth flag on updateNotifications, which sends
+ * all three of a customer's marketing preferences at once: this is set from
+ * the dashboard, beside the button it is about, and a staff member ticking it
+ * there must not silently rewrite what they agreed to be sent about.
+ *
+ * @param {boolean} enabled
+ */
+export async function setWarehouseEmails(enabled) {
+  return toProfile(
+    await request('/profile/', {
+      method: 'PATCH',
+      body: { notify_warehouse: enabled },
     }),
   );
 }

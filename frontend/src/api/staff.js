@@ -123,6 +123,24 @@ export async function updateCustomer(id, changes) {
 }
 
 /**
+ * Opens an account for somebody, from the back office.
+ *
+ * No password is sent, and there is nowhere to put one. The account is
+ * created unusable and its owner is e-mailed a link to choose their own, so
+ * nobody in the office ever knows it. That is the whole point of the feature
+ * rather than a detail of it.
+ *
+ * Answers with the full customer row, so the table can show the new account
+ * without refetching the page.
+ *
+ * @param {{ first_name: string, last_name: string, email: string,
+ *           phone_number: string, role?: 'admin'|'warehouse'|'customer' }} details
+ */
+export async function createCustomer(details) {
+  return request('/staff/customers/', { method: 'POST', body: details });
+}
+
+/**
  * Saves one of a customer's delivery addresses: with an `id` it corrects that
  * address, without one it adds it. Answers with the whole customer row.
  *
@@ -152,8 +170,13 @@ export const ADDRESS_COUNTRIES = [
 ];
 
 /**
- * Makes an account an admin, or puts it back to a plain customer. Answers with
- * the whole customer row, so the table can swap it in without a refetch.
+ * Moves an account between the three roles. Answers with the whole customer
+ * row, so the table can swap it in without a refetch.
+ *
+ *   customer   no dashboard at all
+ *   warehouse  the scanner and intake sheets, on a phone. Not the rest of the
+ *              back office, and not Django's own /admin/
+ *   admin      the whole back office
  *
  * The server refuses your own account, a superuser and an erased one - each
  * row carries `can_change_role` saying so up front, which is what the select
@@ -161,7 +184,7 @@ export const ADDRESS_COUNTRIES = [
  * the server, and holds whatever the browser sends.
  *
  * @param {number} id
- * @param {'admin' | 'customer'} role
+ * @param {'admin' | 'warehouse' | 'customer'} role
  */
 export async function setCustomerRole(id, role) {
   return request(`/staff/customers/${id}/role/`, {
@@ -170,10 +193,18 @@ export async function setCustomerRole(id, role) {
   });
 }
 
+// Widest first, which is the order somebody reads them in when deciding how
+// much to give an account.
 export const CUSTOMER_ROLES = [
   { value: 'admin', label: 'Admin' },
+  { value: 'warehouse', label: 'Warehouse' },
   { value: 'customer', label: 'Customer' },
 ];
+
+/** The word for a role value, for a row whose role cannot be changed. */
+export function roleLabel(role) {
+  return CUSTOMER_ROLES.find((option) => option.value === role)?.label ?? 'Customer';
+}
 
 export async function updatePackage(id, changes) {
   return request(`/staff/packages/${id}/`, { method: 'PATCH', body: changes });
@@ -403,4 +434,133 @@ export const INVOICE_STATUSES = [
   { value: 'sent', label: 'Sent' },
   { value: 'rejected', label: 'Rejected' },
   { value: 'draft', label: 'Draft' },
+];
+
+// ---------------------------------------------------------------------------
+// Warehouse intake sheets
+//
+// The paper form filled in on the floor when goods arrive, and the handover
+// that follows it. Nothing here has a customer-facing counterpart: a sheet
+// records what staff saw - bad packing, damage, a driver's name - and lives
+// entirely behind /api/staff/.
+// ---------------------------------------------------------------------------
+
+/** @param {{ search?: string, status?: string, freight?: string, ordering?: string, page?: number }} filters */
+export async function listIntakeSheets(filters) {
+  return toPage(await request(`/staff/intake/${query(filters)}`));
+}
+
+/**
+ * Starts a sheet. Everything is optional - a sheet begins the moment somebody
+ * has a delivery in front of them, which is before they know most of it.
+ *
+ * @param {object} [fields]
+ */
+export async function createIntakeSheet(fields = {}) {
+  return request('/staff/intake/', { method: 'POST', body: fields });
+}
+
+/**
+ * Saves changes to a draft. Refused with a 409 once the sheet has been
+ * released - at that point it is the record of a handover rather than a form.
+ *
+ * @param {number} id
+ * @param {object} changes
+ */
+export async function updateIntakeSheet(id, changes) {
+  return request(`/staff/intake/${id}/`, { method: 'PATCH', body: changes });
+}
+
+/**
+ * Hands the sheet to the rest of the staff and mails it to them.
+ *
+ * Two refusals worth telling apart, both of which the page already guards
+ * against and neither of which it can rule out - somebody else may have the
+ * same sheet open:
+ *
+ *   400 with `fields.missing`  something is still unanswered, by name
+ *   409                        it has already been released
+ *
+ * @param {number} id
+ */
+export async function releaseIntakeSheet(id) {
+  return request(`/staff/intake/${id}/release/`, { method: 'POST' });
+}
+
+/**
+ * Looks up a code read off a package.
+ *
+ * Writes nothing, which is the point: a mis-scan should cost a second scan
+ * and not a junk sheet somebody has to find and explain. Starting the sheet
+ * is a separate, deliberate call to createIntakeSheet.
+ *
+ * The answer names what was found in `match`:
+ *
+ *   'sheet'    a sheet already exists - `sheet` carries it, open it
+ *   'package'  a shipment on file with no sheet yet - `package` carries it
+ *   'booking'  a booking form on file with no sheet yet - `booking` has it
+ *   'none'     nothing recognised the code, which is a normal answer for
+ *              goods that arrived with only a supplier's own barcode on them
+ *
+ * @param {string} code
+ * @returns {Promise<{ code: string, match: string, sheet: object|null,
+ *   package: object|null, booking: object|null }>}
+ */
+export async function scanCode(code) {
+  return request(`/staff/intake/scan/${query({ code })}`);
+}
+
+/**
+ * Puts a released sheet back into draft so a mistake can be corrected.
+ *
+ * Sends nothing. What tells everybody is the next release, which says in its
+ * subject line that it is a correction and which version it is.
+ *
+ * Refused with a 409 when the sheet is already a draft - somebody else got
+ * there first, and there is nothing to do.
+ *
+ * @param {number} id
+ */
+export async function reopenIntakeSheet(id) {
+  return request(`/staff/intake/${id}/reopen/`, { method: 'POST' });
+}
+
+/**
+ * Who a release would be mailed to right now.
+ *
+ * Asked for so the page can say so above the button. The quiet failure this
+ * exists to prevent is a staff account with no work address on it: the sheet
+ * releases, the dashboard says it did, and no inbox ever hears about it.
+ *
+ * @returns {Promise<{ count: number, addresses: string[] }>}
+ */
+export async function getIntakeRecipients() {
+  return request('/staff/intake/recipients/');
+}
+
+export const INTAKE_STATUSES = [
+  { value: 'draft', label: 'Draft' },
+  { value: 'released', label: 'Released' },
+];
+
+export const INTAKE_FREIGHT = [
+  { value: 'sea', label: 'Zeevracht' },
+  { value: 'air', label: 'Luchtvracht' },
+];
+
+// The Dutch words the paper form prints, in the order it prints them.
+export const INTAKE_PACKAGING = [
+  { value: 'pallet', label: 'Pallet' },
+  { value: 'doos', label: 'Doos' },
+  { value: 'colli', label: 'Colli' },
+  { value: 'kist', label: 'Kist' },
+  { value: 'other', label: 'Anders…' },
+];
+
+// The Ja / Nee boxes. Blank first and blank by default: a sheet starts with
+// nobody having looked, and that is not the same answer as "Nee".
+export const INTAKE_CHECKS = [
+  { value: '', label: 'Niet gecontroleerd' },
+  { value: 'yes', label: 'Ja' },
+  { value: 'no', label: 'Nee' },
 ];

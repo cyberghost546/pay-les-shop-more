@@ -26,6 +26,7 @@ from rest_framework.exceptions import APIException, PermissionDenied, Validation
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from accounts.emails import send_account_invite
 from accounts.events import record_event
 from accounts.views import ShipmentChangeRefused
 from accounts.models import (
@@ -54,6 +55,7 @@ from .permissions import IsStaff
 from .serializers import (
     StaffAddressWriteSerializer,
     StaffContactMessageSerializer,
+    StaffCustomerCreateSerializer,
     StaffCustomerSerializer,
     StaffPackageSerializer,
     StaffQuoteRequestSerializer,
@@ -888,6 +890,7 @@ class InvoiceViewSet(
 
 
 class CustomerViewSet(
+    mixins.CreateModelMixin,
     mixins.ListModelMixin,
     mixins.RetrieveModelMixin,
     mixins.UpdateModelMixin,
@@ -901,6 +904,13 @@ class CustomerViewSet(
     they open their profile, and a change they make there is what the next
     load of this table shows. Nothing has to be kept in step, because there is
     only ever one row.
+
+    Create is the one exception to the rule that the back office never makes
+    a row on a customer's behalf, and it is a narrow one: this opens an
+    account for somebody who is standing in the office, or for a colleague who
+    needs to sign in tomorrow morning. It sets no password - see
+    StaffCustomerCreateSerializer - so an account made here is unusable until
+    its owner has followed the link and chosen one. There is still no delete.
 
     What staff may change is the contact details: name, e-mail, phone, and the
     delivery address through the `address` action below. Those are the fields
@@ -916,6 +926,52 @@ class CustomerViewSet(
 
     serializer_class = StaffCustomerSerializer
     permission_classes = [IsStaff]
+
+    def get_serializer_class(self):
+        """A different shape going in from the one coming out.
+
+        What a new account needs is four details and a role; what the table
+        wants back is a row with package counts, totals and addresses on it.
+        Forcing one serializer to be both would mean a create form carrying
+        fields nobody fills in.
+        """
+        if self.action == "create":
+            return StaffCustomerCreateSerializer
+        return StaffCustomerSerializer
+
+    def create(self, request, *args, **kwargs):
+        """Open the account, then answer with the row the table shows.
+
+        The create serializer's own output would be the four fields that went
+        in, which is not a row this table can render. Re-serialising through
+        the list queryset is what lets the page insert the new customer
+        without refetching the whole page.
+        """
+        writer = self.get_serializer(data=request.data)
+        writer.is_valid(raise_exception=True)
+        self.perform_create(writer)
+
+        row = self.get_queryset().get(pk=writer.instance.pk)
+        return Response(
+            StaffCustomerSerializer(row, context=self.get_serializer_context()).data,
+            status=http_status.HTTP_201_CREATED,
+        )
+
+    def perform_create(self, serializer):
+        """Create the account, and invite its owner into it once it is real.
+
+        on_commit, so the e-mail cannot go out for an account that a later
+        failure in this request rolls back - somebody clicking a link to an
+        account that does not exist is a worse morning than a slightly later
+        e-mail.
+
+        The invitation itself is fail_silently on the other side: the account
+        has been created either way, and a mail server having a bad afternoon
+        must not report a created account as a 500.
+        """
+        user = serializer.save()
+
+        transaction.on_commit(lambda: send_account_invite(user))
 
     @staticmethod
     def _package_total(statuses):
@@ -1083,12 +1139,13 @@ class CustomerViewSet(
 
     @action(detail=True, methods=["post"])
     def role(self, request, pk=None):
-        """Make an account an admin, or put it back to a plain customer.
+        """Move an account between customer, warehouse and admin.
 
-        POST {"role": "admin"} or {"role": "customer"}. `is_staff` is the flag
-        being set: the same one IsStaff checks on every request here and the
-        same one that opens Django's own /admin/, so there is one grant rather
-        than two that drift apart.
+        POST {"role": "admin"}, {"role": "warehouse"} or {"role": "customer"}.
+        Two flags are set together, and always both, so that the three roles
+        stay three rather than drifting into four: `is_staff` is the office and
+        the same flag that opens Django's own /admin/, `is_warehouse` is the
+        floor and opens the scanner and nothing else.
 
         Three accounts this refuses to touch, and the reasons are different:
 
@@ -1118,11 +1175,19 @@ class CustomerViewSet(
         body = StaffRoleSerializer(data=request.data)
         body.is_valid(raise_exception=True)
 
-        # Only ever this one column, and only when it actually moves: a repeated
-        # press should not rewrite the row or count as a change.
-        if target.is_staff != body.grants_staff:
+        # Only these two columns, and only when the pair actually moves: a
+        # repeated press should not rewrite the row or count as a change.
+        # Written together because a role is the pair - setting one and
+        # leaving the other is how an account ends up being both, or neither.
+        if (
+            target.is_staff != body.grants_staff
+            or target.is_warehouse != body.grants_warehouse
+        ):
             target.is_staff = body.grants_staff
-            target.save(update_fields=["is_staff", "updated_at"])
+            target.is_warehouse = body.grants_warehouse
+            target.save(
+                update_fields=["is_staff", "is_warehouse", "updated_at"]
+            )
 
         # Back through the list queryset, so the row the table swaps in carries
         # the same package_count and addresses the rest of them do.

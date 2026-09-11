@@ -18,6 +18,7 @@ import Loading from '../../components/Loading/Loading';
 import ConnectionError from '../../components/ConnectionError/ConnectionError';
 import { useLanguage } from '../../i18n/useLanguage';
 import styles from './Profile.module.css';
+import { sanitizePhone } from '../../utils/phone';
 
 // Destinations we ship to. Values are ISO codes so the server never has to
 // parse a display name.
@@ -278,7 +279,12 @@ export default function Profile() {
 
   function handleDetailChange(event) {
     const { name, value } = event.target;
-    setDetails((current) => ({ ...current, [name]: value }));
+
+    // Same rule as the signup form: the phone field refuses letters as they
+    // are typed, rather than letting them through to the server.
+    const sanitized = name === 'phone' ? sanitizePhone(value) : value;
+
+    setDetails((current) => ({ ...current, [name]: sanitized }));
     setDetailErrors((current) => {
       if (!current[name]) return current;
       const next = { ...current };

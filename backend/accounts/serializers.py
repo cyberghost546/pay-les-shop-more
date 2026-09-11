@@ -55,14 +55,26 @@ class UserSerializer(serializers.ModelSerializer):
             "notify_shipping",
             "notify_offers",
             "notify_newsletter",
+            # Only ever read by a staff account - nobody else is sent a
+            # released intake sheet - but writable by anyone, because a
+            # customer setting a flag that changes nothing for them is
+            # harmless and a read_only_fields exception for one role is not.
+            "notify_warehouse",
             "date_joined",
             # Read-only, and only ever a hint to the frontend about which
-            # navigation to draw. The staff API checks the flag itself on
+            # navigation to draw. The staff API checks the flags themselves on
             # every request.
             "is_staff",
+            "is_warehouse",
         ]
-        # Username, join date and the staff flag are not editable here.
-        read_only_fields = ["id", "username", "date_joined", "is_staff"]
+        # Username, join date and the two role flags are not editable here.
+        read_only_fields = [
+            "id",
+            "username",
+            "date_joined",
+            "is_staff",
+            "is_warehouse",
+        ]
 
 
 class SignupSerializer(serializers.ModelSerializer):

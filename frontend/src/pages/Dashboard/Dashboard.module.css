@@ -2097,3 +2097,401 @@
   border-radius: 10px;
   background: #f8fafc;
 }
+
+/* --------------------------------------------------------- intake sheets */
+
+/* The intake form is the one page in the dashboard that is a form first and a
+   table second, so it gets its own set of rules rather than bending the
+   .office* ones the booking drawer uses. Those describe four boxes tucked
+   inside a read-only record; this is a whole sheet of paper, filled in
+   standing up, often on a tablet in a warehouse - which is why the boxes here
+   are bigger and the tap targets are not the 0.88rem the tables use. */
+
+.newButton {
+  margin-left: auto;
+  padding: 0.6rem 1.1rem;
+  border: 0;
+  border-radius: 10px;
+  background: var(--navy);
+  color: #ffffff;
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.newButton:hover:not(:disabled) {
+  background: var(--navy-soft);
+}
+
+.newButton:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.intakeHead {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+/* The whole form is one fieldset, so that a released sheet is made read-only
+   by the browser in one place rather than by a `disabled` on thirty inputs. */
+.intakeForm {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+/* Greyed rather than hidden: a released sheet is still the thing people came
+   to read, and an unreadable record is worse than an uneditable one. */
+.intakeForm:disabled {
+  opacity: 0.75;
+}
+
+.intakeSection {
+  margin-bottom: 1.5rem;
+  padding: 1.2rem 1.35rem;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: #ffffff;
+}
+
+/* The same eyebrow as .officeHead, so the two forms read as one system. */
+.intakeSectionHead {
+  margin: 0 0 1rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--cyan);
+}
+
+.intakeGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.intakeField,
+.intakeFieldWide {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+/* For the boxes people write sentences in: remarks, dimensions. */
+.intakeFieldWide {
+  grid-column: 1 / -1;
+}
+
+.intakeLabel {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--navy);
+}
+
+.intakeInput {
+  width: 100%;
+  padding: 0.6rem 0.7rem;
+  box-sizing: border-box;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #ffffff;
+  font: inherit;
+  font-size: 0.95rem;
+  color: var(--ink);
+}
+
+.intakeInput:focus {
+  outline: 2px solid var(--cyan);
+  outline-offset: 1px;
+  border-color: var(--cyan);
+}
+
+.intakeTextarea {
+  composes: intakeInput;
+  min-height: 3.5rem;
+  resize: vertical;
+  line-height: 1.5;
+}
+
+.intakeToggles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+  margin-bottom: 1rem;
+}
+
+.intakeToggle,
+.intakeRadio {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.9rem;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+/* Big enough to hit with a thumb. The default 13px checkbox is a fine target
+   for a mouse and a poor one for somebody wearing gloves. */
+.intakeToggle input,
+.intakeRadio input {
+  width: 1.1rem;
+  height: 1.1rem;
+  accent-color: var(--cyan);
+}
+
+/* The three Ja / Nee / not-checked groups. A fieldset so the question is a
+   <legend> and a screen reader reads it with each option. */
+.intakeCheck {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0.8rem 0.9rem;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--ground);
+}
+
+.intakeCheck legend {
+  padding: 0;
+  margin-bottom: 0.3rem;
+}
+
+.intakeActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  padding-top: 0.5rem;
+}
+
+/* The one irreversible button on the page, and it looks like it. Everything
+   else in the dashboard can be done again; this sends mail to the whole
+   staff and closes the sheet. */
+.intakeRelease {
+  padding: 0.7rem 1.3rem;
+  border: 0;
+  border-radius: 10px;
+  background: var(--cyan);
+  color: #04263b;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.intakeRelease:hover:not(:disabled) {
+  background: var(--cyan-bright);
+}
+
+.intakeRelease:disabled {
+  background: #cbd5e1;
+  color: #64748b;
+  cursor: default;
+}
+
+/* What is still missing, or who the mail would go to. Takes the whole width
+   under the buttons rather than sitting beside them: it is a sentence, and a
+   sentence squeezed into a gap gets skipped. */
+.intakeHint {
+  flex-basis: 100%;
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+/* Damage, in the goods column of the table. Loud on purpose - it is the one
+   thing on a sheet that changes what the office does before they open it. */
+.intakeDamage {
+  margin-top: 0.25rem;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #991b1b;
+}
+
+/* The standing "send these to me as well" preference, above the list. Quiet
+   on purpose: it is a setting somebody changes once, and it must not compete
+   with the sheets themselves for attention. */
+.intakeOptOut {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  font-size: 0.85rem;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.intakeOptOut input {
+  width: 1.1rem;
+  height: 1.1rem;
+  accent-color: var(--cyan);
+}
+
+/* Naam werknemer: the one thing on the form that is stated rather than asked.
+   Deliberately not styled as an input - a box that looks editable and is not
+   is worse than plain text, because somebody will type into it. */
+.intakeSignature {
+  margin: 0;
+  padding: 0.6rem 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--navy);
+}
+
+/* -------------------------------------------------------------- scanner */
+
+/* Sized for a phone held in one hand in a warehouse, which is not the same
+   thing as a page that merely fits on a phone. Every target here is well over
+   the 44px a thumb needs, and nothing depends on a precise tap. */
+
+.scanStage {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  margin-bottom: 1.25rem;
+}
+
+/* Black rather than transparent, so the box does not flash the page
+   background between the camera starting and the first frame arriving. */
+.scanVideo {
+  width: 100%;
+  max-height: 60vh;
+  border-radius: 14px;
+  background: #000000;
+  object-fit: cover;
+}
+
+.scanStart,
+.scanAction {
+  width: 100%;
+  padding: 1.1rem 1.25rem;
+  border: 0;
+  border-radius: 14px;
+  background: var(--navy);
+  color: #ffffff;
+  font: inherit;
+  font-size: 1.05rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.scanStart:hover:not(:disabled),
+.scanAction:hover:not(:disabled) {
+  background: var(--navy-soft);
+}
+
+.scanStart:disabled,
+.scanAction:disabled,
+.scanSecondary:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.scanSecondary {
+  width: 100%;
+  padding: 0.9rem 1.25rem;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #ffffff;
+  color: var(--navy);
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* The answer to a scan: one card, one button. Whatever was found, it is read
+   at arm's length while holding a box with the other hand. */
+.scanResult {
+  margin-bottom: 1.25rem;
+  padding: 1.35rem;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: #ffffff;
+  box-shadow: var(--shadow);
+}
+
+.scanResultHead {
+  margin: 0 0 0.4rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--cyan);
+}
+
+/* The code itself, big. It is what somebody checks against the label in their
+   hand before they tap anything, so it has to be readable without leaning in. */
+.scanCode {
+  margin: 0 0 0.5rem;
+  font-size: 1.4rem;
+  font-weight: 800;
+  line-height: 1.2;
+  color: var(--navy);
+  overflow-wrap: anywhere;
+}
+
+.scanBadges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 0.6rem;
+}
+
+.scanDetail {
+  margin: 0 0 1.1rem;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+.scanTypeIn {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  padding: 1.2rem 1.35rem;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--ground);
+}
+
+/* On anything wider than a phone the typed code and its button sit on one
+   line - there is room, and the form reads as one action rather than two. */
+@media (min-width: 560px) {
+  .scanTypeIn {
+    flex-direction: row;
+    align-items: flex-end;
+  }
+
+  /* Scoped to the form: the Stop button under the camera stays full width,
+     because it is the only thing to press while the camera is running. */
+  .scanTypeIn .scanSecondary {
+    width: auto;
+    flex: 0 0 auto;
+  }
+
+  .scanStart,
+  .scanAction {
+    width: auto;
+    min-width: 16rem;
+  }
+}
+
+/* A sentence inside an office box, explaining what pressing the button will
+   do. Not an error and not a label: it is the thing somebody needs to have
+   read once, before they create their first account. */
+.officeNote {
+  margin: 0 0 1rem;
+  font-size: 0.82rem;
+  line-height: 1.55;
+  color: #075985;
+}

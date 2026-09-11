@@ -144,12 +144,23 @@
     text-align: left;
   }
 
-  /* The rail becomes vertical, running down the left edge past the markers. */
+  /* The rail becomes vertical, running down the left edge past the markers.
+     0.875rem is half the marker, less half the rail's own width, so the two
+     share a centre line. */
   .step::before {
     top: 1.75rem;
-    left: 0.85rem;
+    left: calc(0.875rem - 1px);
     width: 2px;
     height: 100%;
+  }
+
+  /* Without this the marker keeps the centring it needs on a wide screen,
+     and every dot lands in the middle of its own row, on top of the label
+     it is supposed to sit beside. The row's 2.5rem of left padding is the
+     space it moves into. */
+  .marker {
+    left: 0;
+    transform: none;
   }
 
   .label {

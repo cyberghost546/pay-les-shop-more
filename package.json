@@ -4,5 +4,8 @@
   "description": "Repository root. The application lives in frontend/ (React) and backend/ (Django); this file exists only to pin the Node version the site is built with.",
   "engines": {
     "node": "22.x"
+  },
+  "dependencies": {
+    "@vercel/functions": "^3.9.7"
   }
 }

@@ -28,7 +28,11 @@
   padding: 0;
   border: 0;
   border-radius: 50%;
-  /* Lighter than the rail, so the circles read as buttons on it */
+  /* Clips the flag to the circle. Everything below assumes it. */
+  overflow: hidden;
+  /* Still here for the fallback: a language added later with no flag drawn
+     for it yet falls back to its two-letter code, and needs a ground to sit
+     on. Under a flag it is covered and never seen. */
   background: rgba(255, 255, 255, 0.18);
   color: #ffffff;
   font: inherit;
@@ -36,26 +40,38 @@
   font-weight: 800;
   letter-spacing: 0.02em;
   cursor: pointer;
+  /* Held back a little so the chosen one, at full strength, is the one the
+     eye lands on. Not greyed out: these are three equal choices, and a
+     disabled-looking flag reads as a language that is unavailable. */
+  opacity: 0.72;
   transition:
-    background 0.15s ease,
-    color 0.15s ease,
+    opacity 0.15s ease,
+    box-shadow 0.15s ease,
     transform 0.15s ease;
 }
 
+/* Fills the circle it is clipped by. The flag itself sets no size. */
+.circle svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
 .circle:hover {
-  background: rgba(255, 255, 255, 0.32);
+  opacity: 1;
   transform: scale(1.06);
 }
 
-/* Selected language: inverted, so it reads at a glance */
+/* Selected language: a white ring around the flag.
+   The old inverted background cannot work any more - a flag covers the
+   button end to end, so there is no ground left to invert. The ring is drawn
+   as an inset shadow rather than a border because a border would shrink the
+   circle and make the flag jump as it is chosen. */
 .active {
-  background: #ffffff;
-  color: #14387f;
-}
-
-.active:hover {
-  background: #ffffff;
-  color: #14387f;
+  opacity: 1;
+  box-shadow:
+    inset 0 0 0 3px #ffffff,
+    0 2px 8px rgba(5, 7, 10, 0.3);
 }
 
 .circle:focus-visible {

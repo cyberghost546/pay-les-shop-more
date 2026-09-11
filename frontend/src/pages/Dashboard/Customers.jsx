@@ -6,6 +6,8 @@ import ConnectionError from '../../components/ConnectionError/ConnectionError';
 import {
   ADDRESS_COUNTRIES,
   CUSTOMER_ROLES,
+  roleLabel,
+  createCustomer,
   listCustomers,
   saveCustomerAddress,
   setCustomerRole,
@@ -120,6 +122,97 @@ function Field({ label, name, value, onChange, errors, type = 'text', options })
       )}
       <FieldError errors={errors} name={name} />
     </label>
+  );
+}
+
+/** An empty new-account form. Written out so a reset is one assignment. */
+const BLANK_CUSTOMER = {
+  first_name: '',
+  last_name: '',
+  email: '',
+  phone_number: '',
+  role: 'customer',
+};
+
+/**
+ * Opening an account for somebody who is not here to open it themselves.
+ *
+ * There is no password field, and its absence is the feature rather than an
+ * omission: the account is created unusable and its owner is e-mailed a link
+ * to choose their own. Nobody in the office ever knows it, so nobody has to be
+ * trusted with it and nothing has to be read out over a phone.
+ */
+function NewCustomerFields({ onCreate, busy, errors }) {
+  const [draft, setDraft] = useState(BLANK_CUSTOMER);
+
+  function set(field, value) {
+    setDraft((current) => ({ ...current, [field]: value }));
+  }
+
+  return (
+    <form
+      className={styles.officeBox}
+      onSubmit={(event) => {
+        event.preventDefault();
+        // Cleared only on success, which is the caller's business: a failed
+        // save must not throw away what somebody just typed.
+        onCreate(draft, () => setDraft(BLANK_CUSTOMER));
+      }}
+    >
+      <p className={styles.officeHead}>New account</p>
+
+      <div className={styles.officeGrid}>
+        <Field
+          label="First name"
+          name="first_name"
+          value={draft.first_name}
+          onChange={(value) => set('first_name', value)}
+          errors={errors}
+        />
+        <Field
+          label="Last name"
+          name="last_name"
+          value={draft.last_name}
+          onChange={(value) => set('last_name', value)}
+          errors={errors}
+        />
+        <Field
+          label="E-mail"
+          name="email"
+          type="email"
+          value={draft.email}
+          onChange={(value) => set('email', value)}
+          errors={errors}
+        />
+        <Field
+          label="Phone"
+          name="phone_number"
+          type="tel"
+          value={draft.phone_number}
+          onChange={(value) => set('phone_number', value)}
+          errors={errors}
+        />
+        <Field
+          label="Role"
+          name="role"
+          value={draft.role}
+          onChange={(value) => set('role', value)}
+          options={CUSTOMER_ROLES}
+          errors={errors}
+        />
+      </div>
+
+      <p className={styles.officeNote}>
+        They sign in with this e-mail address. No password is set here — they
+        are e-mailed a link to choose their own. The link expires after a
+        while; if it has, they can use “Forgot password” on the sign-in page to
+        get another.
+      </p>
+
+      <button type="submit" className={styles.rowButton} disabled={busy}>
+        {busy ? 'Creating…' : 'Create account and send the invitation'}
+      </button>
+    </form>
   );
 }
 
@@ -319,6 +412,44 @@ export default function Customers() {
   const [openId, setOpenId] = useState(null);
   const [fieldErrors, setFieldErrors] = useState({});
 
+  // The new-account form: whether it is open, what the server said about it,
+  // and what it said when the account was made. Kept apart from the edit
+  // panel's own error state above, because the two forms can be on screen
+  // together and a complaint about one must not appear under the other.
+  const [creating, setCreating] = useState(false);
+  const [creatingBusy, setCreatingBusy] = useState(false);
+  const [createErrors, setCreateErrors] = useState({});
+  const [created, setCreated] = useState('');
+
+  async function addCustomer(draft, clear) {
+    setCreatingBusy(true);
+    setCreateErrors({});
+    setCreated('');
+    setError('');
+
+    try {
+      const row = await createCustomer(draft);
+
+      clear();
+      setCreating(false);
+      setCreated(
+        `${row.name || row.email} now has an account. An invitation to choose ` +
+          'a password has been sent to ' + row.email + '.',
+      );
+      // Refetched rather than spliced in: the list is sorted and paged by the
+      // server, and a row pushed onto the front of page three would sit
+      // somewhere it does not belong.
+      list.reload();
+    } catch (caught) {
+      // The server names the field it refused — a duplicate address, a phone
+      // number that is not one — and those go under the boxes themselves.
+      if (caught?.fields) setCreateErrors(caught.fields);
+      else setError('That account could not be created. Check the connection and try again.');
+    } finally {
+      setCreatingBusy(false);
+    }
+  }
+
   async function changeRole(customer, role) {
     setSavingId(customer.id);
     setError('');
@@ -414,9 +545,29 @@ export default function Customers() {
           options={[{ value: 'true', label: 'Staff only' }]}
           allLabel="Everyone"
         />
+        <button
+          type="button"
+          className={styles.newButton}
+          onClick={() => {
+            setCreating((open) => !open);
+            setCreateErrors({});
+            setCreated('');
+          }}
+        >
+          {creating ? 'Cancel' : 'New account'}
+        </button>
       </Toolbar>
 
       <Banner tone="error">{error}</Banner>
+      <Banner tone="success">{created}</Banner>
+
+      {creating && (
+        <NewCustomerFields
+          onCreate={addCustomer}
+          busy={creatingBusy}
+          errors={createErrors}
+        />
+      )}
 
       {list.state === 'loading' && <Loading inline />}
       {list.state === 'error' && <ConnectionError inline onRetry={list.reload} />}
@@ -429,6 +580,7 @@ export default function Customers() {
             <table className={styles.table}>
               <thead>
                 <tr>
+                  <th scope="col">ID</th>
                   <th scope="col">Customer</th>
                   <th scope="col">Username</th>
                   <th scope="col">E-mail</th>
@@ -444,6 +596,14 @@ export default function Customers() {
               <tbody>
                 {list.rows.map((customer) => (
                   <tr key={customer.id}>
+                    {/* The database id, which is what the Django admin, the API
+                        and a support conversation all refer to a customer by.
+                        Monospaced and tabular so a column of them lines up and
+                        reads back accurately over the phone. */}
+                    <td className={styles.numberCell}>
+                      <span className={styles.mono}>{customer.id}</span>
+                    </td>
+
                     <td>
                       <div className={styles.person}>
                         <span className={styles.personAvatar} aria-hidden="true">
@@ -454,6 +614,12 @@ export default function Customers() {
                           <div className={styles.tagRow}>
                             {customer.is_staff && (
                               <StatusBadge tone="progress">Staff</StatusBadge>
+                            )}
+                            {/* Said out loud in the table, because it is the
+                                one role that looks like a customer at a
+                                glance and is not one. */}
+                            {customer.is_warehouse && !customer.is_staff && (
+                              <StatusBadge tone="progress">Warehouse</StatusBadge>
                             )}
                             {/* An erased account is a row kept only so its
                                 shipment records still hold together. Saying so
@@ -555,14 +721,14 @@ export default function Customers() {
                       {customer.can_change_role ? (
                         <StatusSelect
                           label={`Role for ${customer.name}`}
-                          value={customer.is_staff ? 'admin' : 'customer'}
+                          value={customer.role}
                           options={CUSTOMER_ROLES}
                           busy={savingId === customer.id}
                           onChange={(value) => changeRole(customer, value)}
                         />
                       ) : (
                         <div className={styles.mutedCell}>
-                          <div>{customer.is_staff ? 'Admin' : 'Customer'}</div>
+                          <div>{roleLabel(customer.role)}</div>
                           <div className={styles.roleReason}>
                             {whyRoleIsFixed(customer, user?.id === customer.id)}
                           </div>

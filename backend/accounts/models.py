@@ -40,12 +40,45 @@ class User(AbstractUser):
         help_text="Used by the agent at the destination to arrange handover.",
     )
 
+    # The warehouse floor: somebody who does intake and nothing else.
+    #
+    # A second flag rather than a value in one `role` column, because it sits
+    # alongside `is_staff` which is Django's own and cannot be folded into
+    # something else. The two are read together and mean three things:
+    #
+    #   is_staff                 the back office. The whole dashboard, and
+    #                            Django's own /admin/.
+    #   is_warehouse             the floor. The scanner and intake sheets,
+    #                            and nothing else - deliberately not /admin/,
+    #                            which is why this is not `is_staff`.
+    #   both                     a supervisor who does both jobs.
+    #
+    # Neither flag is a permission on its own. staff/permissions.py is where
+    # each of them is turned into an answer, and the server checks on every
+    # request - a phone in a warehouse is the likeliest device in the company
+    # to be picked up by somebody else.
+    is_warehouse = models.BooleanField(
+        "warehouse staff",
+        default=False,
+        help_text="Can scan packages and write intake sheets.",
+    )
+
     # What this customer agreed to be contacted about. Shipping updates are on
     # by default because they are about an order the customer placed;
     # marketing is opt-in, which is what the GDPR requires.
     notify_shipping = models.BooleanField(default=True)
     notify_offers = models.BooleanField(default=False)
     notify_newsletter = models.BooleanField(default=False)
+
+    # Warehouse handovers, which are work rather than marketing: a released
+    # intake sheet is mailed to the staff who have to act on it. On by
+    # default, and meaningless on a customer account because only staff are
+    # ever mailed one - see warehouse/recipients.py, which reads this flag
+    # alongside is_staff.
+    #
+    # Kept beside the three above rather than on a table of its own: it is one
+    # boolean about one person, and a staff account is a User like any other.
+    notify_warehouse = models.BooleanField(default=True)
 
     # Set when the account has been erased. The row survives only to keep
     # shipment records intact; it holds no personal data after this point.
@@ -98,9 +131,11 @@ class User(AbstractUser):
         self.set_unusable_password()
 
         self.is_active = False
+        self.is_warehouse = False
         self.notify_shipping = False
         self.notify_offers = False
         self.notify_newsletter = False
+        self.notify_warehouse = False
         self.anonymised_at = timezone.now()
 
         self.save()

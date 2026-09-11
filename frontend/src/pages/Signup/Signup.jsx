@@ -4,6 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { AUTH_ERRORS } from '../../api/auth';
 import { useAuth } from '../../auth/useAuth';
 import { useLanguage } from '../../i18n/useLanguage';
+import { PHONE_PATTERN, sanitizePhone } from '../../utils/phone';
 import styles from './Signup.module.css';
 
 const EMPTY_FORM = {
@@ -18,12 +19,6 @@ const EMPTY_FORM = {
 
 // Deliberately loose: catches typos, not every RFC-legal address.
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
-
-// Digits, spaces, dashes, brackets and one optional leading +. Numbers are
-// written a dozen different ways across the islands and the Netherlands, so
-// this only checks the shape is plausible — the count of digits is the part
-// worth enforcing.
-const PHONE_PATTERN = /^\+?[\d\s()-]{7,}$/;
 
 // Length is what actually makes a password hard to guess, so that is the only
 // hard rule. Composition rules ("one capital, one symbol") mostly push people
@@ -144,9 +139,16 @@ export default function Signup() {
 
   function handleChange(event) {
     const { name, type, value, checked } = event.target;
+
+    // The phone field takes digits and the punctuation people write numbers
+    // with, and silently ignores everything else. Note this moves the caret
+    // to the end when a rejected character is typed mid-number, which only
+    // happens on a keystroke that was not going to be kept anyway.
+    const sanitized = name === 'phone' ? sanitizePhone(value) : value;
+
     setForm((current) => ({
       ...current,
-      [name]: type === 'checkbox' ? checked : value,
+      [name]: type === 'checkbox' ? checked : sanitized,
     }));
 
     // Clear a field's error as soon as the visitor edits it again.

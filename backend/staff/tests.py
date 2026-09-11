@@ -6,6 +6,7 @@ dashboard is convenience; that boundary is the feature.
 """
 
 from django.contrib.auth import get_user_model
+from django.core import mail
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
@@ -602,6 +603,136 @@ class CustomerMoneyTests(StaffApiTestCase):
         self.assertEqual(response.json()["paid_eur"], "150.50")
 
 
+class CustomerCreateTests(StaffApiTestCase):
+    """Opening an account for somebody else.
+
+    The thing worth being strict about is the password: there must not be one.
+    An account created by the office and handed over with a password somebody
+    typed is an account two people can sign into, and the second of them is
+    not its owner.
+    """
+
+    def setUp(self):
+        super().setUp()
+        self.url = reverse("staff-customer-list")
+        self.client.force_authenticate(self.staff)
+
+    def body(self, **overrides):
+        return {
+            "first_name": "Nieuwe",
+            "last_name": "Klant",
+            "email": "nieuw@example.com",
+            "phone_number": "+599 9 555 1234",
+            **overrides,
+        }
+
+    def create(self, **overrides):
+        """Create, and run the invitation the creation queued.
+
+        In a TestCase every test runs inside a transaction that is rolled back
+        rather than committed, so the on_commit hook never fires on its own.
+        """
+        with self.captureOnCommitCallbacks(execute=True):
+            return self.client.post(self.url, self.body(**overrides), format="json")
+
+    def test_an_account_is_created_with_no_usable_password(self):
+        response = self.create()
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        created = User.objects.get(email="nieuw@example.com")
+        self.assertFalse(created.has_usable_password())
+        # Nothing can sign in as them until they have chosen one.
+        self.assertFalse(self.client.login(username="nieuw@example.com", password=""))
+
+    def test_the_username_is_the_e_mail_address(self):
+        self.create()
+
+        created = User.objects.get(email="nieuw@example.com")
+        self.assertEqual(created.username, "nieuw@example.com")
+
+    def test_the_address_is_folded_to_lower_case(self):
+        self.create(email="Nieuw@Example.COM")
+
+        self.assertTrue(User.objects.filter(email="nieuw@example.com").exists())
+
+    def test_the_owner_is_invited_by_e_mail(self):
+        self.create()
+
+        self.assertEqual(len(mail.outbox), 1)
+        sent = mail.outbox[0]
+
+        self.assertEqual(sent.to, ["nieuw@example.com"])
+        # An invitation, not a reset: the recipient asked for nothing.
+        self.assertNotIn("reset", sent.subject.lower())
+        # The link they follow to choose a password.
+        self.assertIn("/reset-password/", sent.body)
+
+    def test_a_duplicate_address_is_a_field_error_rather_than_a_crash(self):
+        response = self.create(email="klant@example.com")
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("email", response.data)
+        self.assertEqual(mail.outbox, [])
+
+    def test_a_duplicate_is_caught_whatever_case_it_arrives_in(self):
+        response = self.create(email="KLANT@example.com")
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("email", response.data)
+
+    def test_the_role_can_be_set_at_creation(self):
+        for role, staff, warehouse in (
+            ("admin", True, False),
+            ("warehouse", False, True),
+            ("customer", False, False),
+        ):
+            with self.subTest(role=role):
+                User.objects.filter(email="nieuw@example.com").delete()
+                mail.outbox.clear()
+
+                response = self.create(role=role)
+
+                self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+                created = User.objects.get(email="nieuw@example.com")
+                self.assertIs(created.is_staff, staff)
+                self.assertIs(created.is_warehouse, warehouse)
+
+    def test_without_a_role_it_is_a_plain_customer(self):
+        self.create()
+
+        created = User.objects.get(email="nieuw@example.com")
+        self.assertFalse(created.is_staff)
+        self.assertFalse(created.is_warehouse)
+
+    def test_the_answer_is_a_row_the_table_can_render(self):
+        row = self.create().json()
+
+        self.assertEqual(row["package_count"], 0)
+        self.assertEqual(row["role"], "customer")
+        self.assertIn("addresses", row)
+        self.assertIn("outstanding_eur", row)
+
+    def test_the_contact_details_are_required(self):
+        for field in ("first_name", "last_name", "email", "phone_number"):
+            with self.subTest(field=field):
+                response = self.client.post(
+                    self.url, self.body(**{field: ""}), format="json"
+                )
+
+                self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+                self.assertIn(field, response.data)
+
+    def test_a_customer_cannot_open_accounts(self):
+        """Including, pointedly, an admin one."""
+        self.client.force_authenticate(self.customer)
+
+        response = self.client.post(self.url, self.body(role="admin"), format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertFalse(User.objects.filter(email="nieuw@example.com").exists())
+
+
 class CustomerEditTests(StaffApiTestCase):
     """Editing a customer from the dashboard.
 
@@ -861,6 +992,36 @@ class RoleTests(StaffApiTestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.customer.refresh_from_db()
         self.assertFalse(self.customer.is_staff)
+
+    def test_an_account_can_be_made_warehouse_staff(self):
+        """The floor: the scanner and intake, and deliberately not /admin/."""
+        response = self.client.post(
+            self.url(self.customer), {"role": "warehouse"}, format="json"
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["role"], "warehouse")
+
+        self.customer.refresh_from_db()
+        self.assertTrue(self.customer.is_warehouse)
+        # The line that matters: is_staff is what opens Django's own admin,
+        # and a warehouse phone must not carry it.
+        self.assertFalse(self.customer.is_staff)
+
+    def test_moving_between_roles_clears_the_flag_it_left(self):
+        """A role is the pair of flags, so nobody ends up holding both."""
+        self.client.post(self.url(self.customer), {"role": "warehouse"}, format="json")
+        self.client.post(self.url(self.customer), {"role": "admin"}, format="json")
+
+        self.customer.refresh_from_db()
+        self.assertTrue(self.customer.is_staff)
+        self.assertFalse(self.customer.is_warehouse)
+
+        self.client.post(self.url(self.customer), {"role": "customer"}, format="json")
+
+        self.customer.refresh_from_db()
+        self.assertFalse(self.customer.is_staff)
+        self.assertFalse(self.customer.is_warehouse)
 
     def test_an_unknown_role_is_refused(self):
         response = self.client.post(

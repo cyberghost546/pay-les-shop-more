@@ -130,6 +130,10 @@ class StaffCustomerSerializer(serializers.ModelSerializer):
     )
     # Set when the account has been erased; the row survives only to keep the
     # shipment records intact.
+    # Which of the three roles this account holds, as one word, so the table
+    # shows a role rather than leaving somebody to read two checkboxes.
+    role = serializers.SerializerMethodField()
+
     is_erased = serializers.SerializerMethodField()
     # Whether the caller may switch this row between admin and customer. The
     # server decides it -- see CustomerViewSet.role, which refuses the same
@@ -152,6 +156,10 @@ class StaffCustomerSerializer(serializers.ModelSerializer):
             "paid_eur",
             "outstanding_eur",
             "is_staff",
+            "is_warehouse",
+            # One word for the pair of flags above, which is what the table
+            # shows and what the role dropdown is set from.
+            "role",
             # Shown so the table can say why a superuser's role is fixed here:
             # that account is granted more than this screen manages.
             "is_superuser",
@@ -173,6 +181,8 @@ class StaffCustomerSerializer(serializers.ModelSerializer):
             "paid_eur",
             "outstanding_eur",
             "is_staff",
+            "is_warehouse",
+            "role",
             "is_superuser",
             "is_active",
             "is_erased",
@@ -208,6 +218,15 @@ class StaffCustomerSerializer(serializers.ModelSerializer):
         # left to show.
         return str(obj)
 
+    def get_role(self, obj):
+        # Office first: an account holding both flags is an admin, because
+        # that is the larger of the two and the one worth seeing at a glance.
+        if obj.is_staff:
+            return StaffRoleSerializer.ADMIN
+        if obj.is_warehouse:
+            return StaffRoleSerializer.WAREHOUSE
+        return StaffRoleSerializer.CUSTOMER
+
     def get_is_erased(self, obj):
         return obj.anonymised_at is not None
 
@@ -224,21 +243,132 @@ class StaffCustomerSerializer(serializers.ModelSerializer):
 
 
 class StaffRoleSerializer(serializers.Serializer):
-    """The body of a role change: which of the two roles the account gets.
+    """The body of a role change: which of the roles the account gets.
 
-    A named role rather than a raw `is_staff` boolean, because that is what
-    the screen offers and what the person pressing it means. The mapping onto
-    the flag lives here, in one place.
+    A named role rather than raw booleans, because that is what the screen
+    offers and what the person pressing it means. The mapping onto the flags
+    lives here, in one place.
+
+    Three roles over two flags, and the pairing is the whole definition:
+
+        customer    neither. No dashboard at all.
+        warehouse   is_warehouse only. The scanner and intake sheets. Not
+                    Django's /admin/, which is exactly why the floor does not
+                    get is_staff.
+        admin       is_staff only. The whole back office.
+
+    A supervisor who does both jobs is the one arrangement this screen cannot
+    make. That is deliberate rather than missing: it is rare, it is the most
+    powerful account in the building, and the Django admin is a better place
+    to grant it than a dropdown in a table.
     """
 
     ADMIN = "admin"
+    WAREHOUSE = "warehouse"
     CUSTOMER = "customer"
 
-    role = serializers.ChoiceField(choices=[ADMIN, CUSTOMER])
+    role = serializers.ChoiceField(choices=[ADMIN, WAREHOUSE, CUSTOMER])
 
     @property
     def grants_staff(self):
         return self.validated_data["role"] == self.ADMIN
+
+    @property
+    def grants_warehouse(self):
+        return self.validated_data["role"] == self.WAREHOUSE
+
+
+class StaffCustomerCreateSerializer(serializers.ModelSerializer):
+    """A new account, opened by the office on somebody's behalf.
+
+    The one place an account is created by a person who is not its owner. Two
+    things follow from that, and they are the whole design:
+
+    * No password field. Not a hidden one, not a generated one read out over
+      the phone - none. The account is created with an unusable password and
+      the owner chooses the first one from the link e-mailed to them, so the
+      office never knows it and never has to be trusted not to. See
+      CustomerViewSet.perform_create, which sends that e-mail.
+    * The role is set here rather than through the separate /role/ action.
+      That action exists to guard *changes* to an existing account - your own,
+      a superuser's, an erased one - and none of those apply to an account
+      that did not exist a moment ago.
+
+    `username` is not asked for. It is the e-mail address, because that is
+    what everybody types at the sign-in form anyway, and a second identifier
+    invented by whoever filled this in is one more thing for the account's
+    owner not to know.
+    """
+
+    role = serializers.ChoiceField(
+        choices=[
+            StaffRoleSerializer.ADMIN,
+            StaffRoleSerializer.WAREHOUSE,
+            StaffRoleSerializer.CUSTOMER,
+        ],
+        default=StaffRoleSerializer.CUSTOMER,
+    )
+
+    class Meta:
+        model = User
+        fields = [
+            "first_name",
+            "last_name",
+            "email",
+            "phone_number",
+            "role",
+        ]
+        extra_kwargs = {
+            "first_name": {"required": True, "allow_blank": False},
+            "last_name": {"required": True, "allow_blank": False},
+            "email": {"required": True, "allow_blank": False},
+            # Required for the same reason the customer's own signup requires
+            # it: an agent at the destination arranges a handover by phone.
+            "phone_number": {"required": True, "allow_blank": False},
+        }
+
+    def validate_email(self, value):
+        """Lowercased, and checked for a clash in the same breath.
+
+        The column is unique and addresses are stored lowercased, so the check
+        has to happen after the fold - otherwise "Jan@example.com" passes here
+        and fails on the INSERT as a 500 instead of a field error.
+        """
+        email = value.strip().lower()
+
+        if User.objects.filter(email=email).exists():
+            raise serializers.ValidationError(
+                "An account with this e-mail address already exists."
+            )
+
+        # The username is the address, so a collision there is the same
+        # collision seen from the other side - an account created before
+        # addresses were folded, say.
+        if User.objects.filter(username=email).exists():
+            raise serializers.ValidationError(
+                "An account with this e-mail address already exists."
+            )
+
+        return email
+
+    def create(self, validated_data):
+        role = validated_data.pop("role")
+        email = validated_data["email"]
+
+        user = User.objects.create_user(
+            username=email,
+            is_staff=role == StaffRoleSerializer.ADMIN,
+            is_warehouse=role == StaffRoleSerializer.WAREHOUSE,
+            **validated_data,
+        )
+
+        # No password at all, rather than a random one nobody keeps. Nothing
+        # hashes to this, so the account cannot be signed into until its owner
+        # follows the link and sets one.
+        user.set_unusable_password()
+        user.save(update_fields=["password"])
+
+        return user
 
 
 class StaffPackageSerializer(_StaffPackageInvoiceMixin, serializers.ModelSerializer):
