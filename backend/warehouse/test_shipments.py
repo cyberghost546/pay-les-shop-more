@@ -130,6 +130,75 @@ class StageTests(ShipmentTestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
 
+class FollowStatusTests(ShipmentTestCase):
+    """The office's status change moves the warehouse stage when goods leave."""
+
+    def setUp(self):
+        super().setUp()
+        self.office = User.objects.create_user(
+            username="kantoor@example.com",
+            email="kantoor@example.com",
+            password="a-long-enough-password",
+            is_staff=True,
+        )
+        self.client.force_authenticate(self.office)
+        self.package.warehouse_stage = Package.WarehouseStage.PACKED
+        self.package.save()
+
+    def patch_status(self, value):
+        return self.client.patch(
+            reverse("staff-package-detail", args=[self.package.pk]),
+            {"status": value},
+            format="json",
+        )
+
+    def test_in_transit_marks_it_shipped(self):
+        response = self.patch_status("in_transit")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        self.package.refresh_from_db()
+        self.assertEqual(self.package.warehouse_stage, "shipped")
+        event = self.package.events.get(kind=PackageEvent.Kind.WAREHOUSE_STAGE_CHANGED)
+        self.assertEqual(event.context["to_stage"], "shipped")
+        self.assertEqual(event.actor, self.office)
+
+    def test_an_earlier_status_leaves_the_stage_alone(self):
+        self.patch_status("purchased")
+        self.package.refresh_from_db()
+        self.assertEqual(self.package.warehouse_stage, "packed")
+
+
+class FreightTests(ShipmentTestCase):
+    def test_an_intake_sheet_fills_in_a_blank_freight(self):
+        response = self.client.post(
+            reverse("staff-intake-list"),
+            {"package": self.package.pk, "freight": "air"},
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        self.package.refresh_from_db()
+        self.assertEqual(self.package.freight, "air")
+
+    def test_it_does_not_overrule_the_office(self):
+        self.package.freight = Package.Freight.SEA
+        self.package.save()
+        sheet = IntakeSheet.objects.create(package=self.package)
+
+        self.client.patch(
+            reverse("staff-intake-detail", args=[sheet.pk]), {"freight": "air"}, format="json"
+        )
+
+        self.package.refresh_from_db()
+        self.assertEqual(self.package.freight, "sea")
+
+    def test_the_scan_card_shows_it(self):
+        self.package.freight = Package.Freight.AIR
+        self.package.save()
+        response = self.client.get(self.url("detail", self.package.pk))
+        self.assertEqual(response.data["freight_display"], "Air freight")
+
+
 class ProblemTests(ShipmentTestCase):
     def test_report_and_resolve(self):
         response = self.client.post(

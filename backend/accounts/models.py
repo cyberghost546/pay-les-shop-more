@@ -469,6 +469,14 @@ class Package(models.Model):
     tracking_number = models.CharField(max_length=50, unique=True)
     description = models.TextField(blank=True)
 
+    class Freight(models.TextChoices):
+        SEA = "sea", "Sea freight"
+        AIR = "air", "Air freight"
+
+    # How it travels. Blank until somebody decides: set by the office, or
+    # copied from the first intake sheet that names one.
+    freight = models.CharField(max_length=10, choices=Freight.choices, blank=True)
+
     status = models.CharField(
         max_length=20,
         choices=Status.choices,

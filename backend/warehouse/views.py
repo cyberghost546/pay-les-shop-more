@@ -134,6 +134,7 @@ class IntakeSheetViewSet(mixins.CreateModelMixin, StaffViewSet):
         )
 
         self._prefill_from_link(sheet)
+        self._share_freight(sheet)
 
     def _prefill_from_link(self, sheet):
         """Copy across what the office already knows, when there is a link.
@@ -168,6 +169,7 @@ class IntakeSheetViewSet(mixins.CreateModelMixin, StaffViewSet):
             fields = {
                 "destination": package.destination_label,
                 "recipient": package.user.get_full_name() if package.user else "",
+                "freight": package.freight,
             }
 
         filled = {
@@ -192,7 +194,18 @@ class IntakeSheetViewSet(mixins.CreateModelMixin, StaffViewSet):
         if serializer.instance.released:
             raise SheetLocked()
 
-        serializer.save()
+        self._share_freight(serializer.save())
+
+    def _share_freight(self, sheet):
+        """Give the linked shipment the sheet's freight, if it has none yet.
+
+        Only into a blank: when the office has already decided how a shipment
+        travels, a worker picking the other box on a form does not overrule it.
+        """
+        package = sheet.package
+        if package is not None and sheet.freight and not package.freight:
+            package.freight = sheet.freight
+            package.save(update_fields=["freight", "updated_at"])
 
     @action(detail=True, methods=["post"])
     def release(self, request, pk=None):

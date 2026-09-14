@@ -891,9 +891,27 @@ a.boardCard:focus-visible {
     height: 22px;
   }
 
+  /* Four tabs across a phone: "Intake sheets" wraps at the default padding. */
+  .bottomTabs .tab {
+    padding: 0.4rem 0.2rem;
+  }
+
+  .bottomTabs .tab span {
+    font-size: 0.7rem;
+    white-space: nowrap;
+  }
+
   .bottomTabs .tabActive {
     background: none;
     color: var(--cyan);
+  }
+}
+
+@media (max-width: 480px) {
+  /* Brand, Office and Sign out do not fit side by side on a phone. The way to
+     the office stays one tap away on the Me tab. */
+  .officeLink {
+    display: none;
   }
 }
 

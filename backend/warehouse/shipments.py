@@ -22,6 +22,7 @@ from rest_framework.response import Response
 
 from accounts.events import record_event
 from accounts.models import Package, PackageEvent
+from accounts.warehouse import move_warehouse_stage
 from invoicing.pdf import invoice_number
 from staff.permissions import IsWarehouseOrStaff
 
@@ -136,6 +137,7 @@ class ShipmentDetailSerializer(ShipmentRowSerializer):
     """Everything a worker needs after a scan, on one card."""
 
     status_display = serializers.CharField(source="get_status_display", read_only=True)
+    freight_display = serializers.CharField(source="get_freight_display", read_only=True)
     customer_phone = serializers.SerializerMethodField()
     problem_reported_by = serializers.SerializerMethodField()
     invoice = serializers.SerializerMethodField()
@@ -143,6 +145,8 @@ class ShipmentDetailSerializer(ShipmentRowSerializer):
 
     class Meta(ShipmentRowSerializer.Meta):
         fields = ShipmentRowSerializer.Meta.fields + [
+            "freight",
+            "freight_display",
             "status",
             "status_display",
             "customer_phone",
@@ -281,30 +285,8 @@ class ShipmentViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets
         if package.status == Package.Status.CANCELLED:
             raise ValidationError({"stage": ["This shipment was cancelled."]})
 
-        from_stage = package.warehouse_stage
-        if to_stage == from_stage:
-            return self._detail(package)
-
-        now = timezone.now()
-        package.warehouse_stage = to_stage
-        package.warehouse_stage_at = now
-        fields = ["warehouse_stage", "warehouse_stage_at", "updated_at"]
-
-        # Stamped the first time it is received in any form - a box that goes
-        # straight to "packed" from the counter was still received today.
-        if to_stage != Stage.AWAITING_PICKUP and package.received_at is None:
-            package.received_at = now
-            fields.append("received_at")
-
         with transaction.atomic():
-            package.save(update_fields=fields)
-            record_event(
-                package,
-                PackageEvent.Kind.WAREHOUSE_STAGE_CHANGED,
-                actor=request.user,
-                from_stage=from_stage,
-                to_stage=to_stage,
-            )
+            move_warehouse_stage(package, to_stage, actor=request.user)
 
         return self._detail(package)
 

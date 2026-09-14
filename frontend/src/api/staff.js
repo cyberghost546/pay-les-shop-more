@@ -601,6 +601,12 @@ export async function resolveShipmentProblem(id) {
   return request(`/staff/warehouse/shipments/${id}/resolve/`, { method: 'POST' });
 }
 
+// How a shipment travels. Blank until the office decides or an intake sheet says.
+export const PACKAGE_FREIGHT = [
+  { value: 'sea', label: 'Sea freight' },
+  { value: 'air', label: 'Air freight' },
+];
+
 // In the order the floor works through them.
 export const WAREHOUSE_STAGES = [
   { value: 'awaiting_pickup', label: 'Waiting for pickup' },

@@ -415,6 +415,8 @@ class StaffPackageSerializer(_StaffPackageInvoiceMixin, serializers.ModelSeriali
             "weight_kg",
             "value_eur",
             "delivery_address_text",
+            # Editable: how it travels is the office's decision.
+            "freight",
             "documents",
             "invoice",
             "shipped_at",

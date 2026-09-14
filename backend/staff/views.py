@@ -28,6 +28,7 @@ from rest_framework.views import APIView
 
 from accounts.emails import send_account_invite
 from accounts.events import record_event
+from accounts.warehouse import follow_status
 from accounts.views import ShipmentChangeRefused
 from accounts.models import (
     InvalidShipmentTransition,
@@ -391,6 +392,9 @@ class PackageViewSet(StaffViewSet):
                         from_status=previous_status,
                         to_status=status,
                     )
+                    # Gone from the building: the warehouse board follows, or
+                    # it would show the shipment as packed and soon overdue.
+                    follow_status(package, actor=self.request.user)
 
                 # Entering PAID is the event, not being in it. Without the
                 # before-and-after comparison, every later edit to a paid package —

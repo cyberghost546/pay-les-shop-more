@@ -4,6 +4,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import Loading from '../../components/Loading/Loading';
 import ConnectionError from '../../components/ConnectionError/ConnectionError';
 import {
+  PACKAGE_FREIGHT,
   PACKAGE_STATUSES,
   listPackages,
   raiseInvoice,
@@ -91,6 +92,19 @@ export default function Packages() {
         failure.fields?.detail ??
           'That invoice could not be raised. Check the connection and try again.',
       );
+    } finally {
+      setSavingId(null);
+    }
+  }
+
+  async function changeFreight(pkg, freight) {
+    setSavingId(pkg.id);
+    setError('');
+
+    try {
+      list.replaceRow(await updatePackage(pkg.id, { freight }));
+    } catch {
+      setError('The shipping method could not be saved. Check the connection and try again.');
     } finally {
       setSavingId(null);
     }
@@ -260,6 +274,20 @@ export default function Packages() {
                     <td className={styles.numberCell}>
                       <div>{formatWeight(pkg.weight_kg)}</div>
                       <div className={styles.mutedCell}>{formatMoney(pkg.value_eur)}</div>
+                      <select
+                        className={styles.rowSelect}
+                        aria-label={`Shipping method for ${pkg.tracking_number}`}
+                        value={pkg.freight ?? ''}
+                        disabled={savingId === pkg.id}
+                        onChange={(event) => changeFreight(pkg, event.target.value)}
+                      >
+                        <option value="">Method not set</option>
+                        {PACKAGE_FREIGHT.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
                     </td>
 
                     <td className={styles.dateCell}>

@@ -139,7 +139,9 @@ export default function ShipmentCard({ shipment, onChange }) {
             <span className={styles.detailSub}>{shipment.delivery_address_text}</span>
           )}
         </Detail>
-        <Detail label="Shipping method">{intake?.freight_display}</Detail>
+        <Detail label="Shipping method">
+          {shipment.freight_display || intake?.freight_display}
+        </Detail>
         <Detail label="Quantity">{intake?.colli ? `${intake.colli} colli` : ''}</Detail>
         <Detail label="Weight">
           {intake?.weight_kg ? formatWeight(intake.weight_kg) : formatWeight(shipment.weight_kg)}

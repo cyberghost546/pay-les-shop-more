@@ -87,10 +87,10 @@ export default function ShipmentLabel() {
             <dt>Destination</dt>
             <dd className={styles.labelBig}>{shipment.destination || '—'}</dd>
           </div>
-          {shipment.intake?.freight_display && (
+          {(shipment.freight_display || shipment.intake?.freight_display) && (
             <div>
               <dt>Method</dt>
-              <dd>{shipment.intake.freight_display}</dd>
+              <dd>{shipment.freight_display || shipment.intake.freight_display}</dd>
             </div>
           )}
           {colli ? (
