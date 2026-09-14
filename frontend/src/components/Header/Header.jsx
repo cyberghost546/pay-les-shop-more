@@ -167,7 +167,13 @@ export default function Header() {
                     guard and the API both check the flag again. Untranslated
                     on purpose: the back office is English throughout. */}
                 {(user?.isStaff || user?.isWarehouse) && (
-                  <Link to="/dashboard" className={styles.dashboard} onClick={close}>
+                  <Link
+                    // The office's dashboard for anyone who has it; the
+                    // floor's own for a warehouse account.
+                    to={user?.isStaff ? '/dashboard' : '/warehouse'}
+                    className={styles.dashboard}
+                    onClick={close}
+                  >
                     <svg
                       className={styles.dashboardIcon}
                       viewBox="0 0 24 24"

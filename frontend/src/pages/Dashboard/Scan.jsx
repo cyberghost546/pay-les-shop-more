@@ -256,7 +256,7 @@ export default function Scan() {
   /** Open the sheet a scan found, or start the one it says is missing. */
   async function act() {
     if (result.match === 'sheet') {
-      navigate(`/dashboard/intake?sheet=${result.sheet.id}`);
+      navigate(`/warehouse/intake?sheet=${result.sheet.id}`);
       return;
     }
 
@@ -273,7 +273,7 @@ export default function Scan() {
         booking: result.booking?.id ?? null,
       });
 
-      navigate(`/dashboard/intake?sheet=${sheet.id}`);
+      navigate(`/warehouse/intake?sheet=${sheet.id}`);
     } catch {
       setError('The sheet could not be started. Check the connection and try again.');
       setBusy(false);

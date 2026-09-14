@@ -16,6 +16,7 @@ answered in one file rather than invented here.
 """
 
 from django.db import transaction
+from django.utils import timezone
 from rest_framework import mixins, status as http_status
 from rest_framework.decorators import action
 from rest_framework.exceptions import APIException, ValidationError
@@ -74,7 +75,7 @@ class IntakeSheetViewSet(mixins.CreateModelMixin, StaffViewSet):
 
     queryset = IntakeSheet.objects.select_related(
         "created_by", "released_by", "booking", "package"
-    )
+    ).prefetch_related("measurements")
 
     search_fields = (
         "reference",
@@ -88,6 +89,20 @@ class IntakeSheetViewSet(mixins.CreateModelMixin, StaffViewSet):
     )
     filter_fields = ("status", "freight")
     ordering_fields = ("created_at", "received_on", "released_at", "status")
+
+    def filter_queryset(self, queryset):
+        queryset = super().filter_queryset(queryset)
+
+        # `?measured=true` for the office's Measurements page: only sheets
+        # with at least one line on them. A boolean, so not a filter_field -
+        # Django would read the string "false" as True.
+        measured = self.request.query_params.get("measured")
+        if measured in {"true", "false"}:
+            queryset = queryset.filter(
+                measurements__isnull=measured == "false"
+            ).distinct()
+
+        return queryset
 
     def perform_create(self, serializer):
         """Stamp the sheet with whoever is filling it in, and sign it as them.
@@ -268,6 +283,34 @@ class IntakeSheetViewSet(mixins.CreateModelMixin, StaffViewSet):
                     if found["booking"] is not None
                     else None
                 ),
+            }
+        )
+
+    @action(detail=False, methods=["get"])
+    def summary(self, request):
+        """The warehouse home screen: a handful of counts and the latest sheets.
+
+        Its own route rather than the office overview, which is IsStaff and
+        says nothing a warehouse account is allowed to know. Everything here
+        is about intake sheets, so it sits behind the same permission as they
+        do.
+
+        "Today" is the server's local date, the same one received_on defaults
+        to, so a sheet started just after midnight counts towards the new day.
+        """
+        today = timezone.localdate()
+        sheets = IntakeSheet.objects.all()
+        drafts = sheets.filter(status=IntakeSheet.Status.DRAFT)
+
+        recent = self.get_queryset().order_by("-updated_at")[:5]
+
+        return Response(
+            {
+                "drafts": drafts.count(),
+                "my_drafts": drafts.filter(created_by=request.user).count(),
+                "started_today": sheets.filter(created_at__date=today).count(),
+                "released_today": sheets.filter(released_at__date=today).count(),
+                "recent": self.get_serializer(recent, many=True).data,
             }
         )
 

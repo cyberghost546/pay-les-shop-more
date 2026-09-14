@@ -1,10 +1,11 @@
 import { Suspense, lazy } from 'react';
-import { Routes, Route, useLocation } from 'react-router-dom';
+import { Navigate, Routes, Route, useLocation } from 'react-router-dom';
 import Header from './components/Header/Header';
 import Loading from './components/Loading/Loading';
 import ErrorBoundary from './components/ErrorBoundary/ErrorBoundary';
 import RequireAuth from './components/RequireAuth/RequireAuth';
 import RequireStaff from './components/RequireStaff/RequireStaff';
+import RequireWarehouse from './components/RequireWarehouse/RequireWarehouse';
 import LanguageSwitcher from './components/LanguageSwitcher/LanguageSwitcher';
 import Footer from './components/Footer/Footer';
 
@@ -41,6 +42,21 @@ const Customers = lazy(() => import('./pages/Dashboard/Customers'));
 const Bookings = lazy(() => import('./pages/Dashboard/Bookings'));
 const Invoices = lazy(() => import('./pages/Dashboard/Invoices'));
 const Documents = lazy(() => import('./pages/Dashboard/Documents'));
+const MeasurementsList = lazy(() => import('./pages/Dashboard/MeasurementsList'));
+
+// The warehouse floor's dashboard. Scan and Intake above are shared with it.
+const WarehouseLayout = lazy(() => import('./pages/Warehouse/WarehouseLayout'));
+const WarehouseHome = lazy(() => import('./pages/Warehouse/WarehouseHome'));
+
+/**
+ * The old office addresses of the two warehouse pages, sent on to their new
+ * home with the query string intact - /dashboard/intake?sheet=41 is the link
+ * in every handover e-mail sent before the move.
+ */
+function MovedToWarehouse({ page }) {
+  const { search } = useLocation();
+  return <Navigate to={`/warehouse/${page}${search}`} replace />;
+}
 
 export default function App() {
   const { pathname } = useLocation();
@@ -50,7 +66,10 @@ export default function App() {
   // the window. Leaving the site's header above it would mean two navigation
   // bars stacked on top of each other, and the marketing footer under a table
   // of shipments reads as a mistake.
-  const isDashboard = pathname === '/dashboard' || pathname.startsWith('/dashboard/');
+  // The same goes for the warehouse's.
+  const isDashboard = ['/dashboard', '/warehouse'].some(
+    (root) => pathname === root || pathname.startsWith(`${root}/`),
+  );
 
   return (
     <>
@@ -84,6 +103,11 @@ export default function App() {
                 </RequireAuth>
               }
             />
+            {/* Outside the office guard below, which would otherwise send a
+                warehouse account to /warehouse and drop the sheet it was
+                linked to. RequireWarehouse at the destination checks them. */}
+            <Route path="/dashboard/intake" element={<MovedToWarehouse page="intake" />} />
+            <Route path="/dashboard/scan" element={<MovedToWarehouse page="scan" />} />
             {/* The back office. One guard on the parent covers every child
                 route, and the layout supplies the shell they all sit in.
                 Kept off /admin, which belongs to Django's own admin site. */}
@@ -99,12 +123,26 @@ export default function App() {
               <Route path="quotes" element={<Quotes />} />
               <Route path="messages" element={<Messages />} />
               <Route path="packages" element={<Packages />} />
-              <Route path="intake" element={<Intake />} />
-              <Route path="scan" element={<Scan />} />
               <Route path="bookings" element={<Bookings />} />
               <Route path="invoices" element={<Invoices />} />
               <Route path="documents" element={<Documents />} />
+              <Route path="measurements" element={<MeasurementsList />} />
               <Route path="customers" element={<Customers />} />
+            </Route>
+
+            {/* The warehouse floor. Office staff are let in as well; the
+                intake API answers both. */}
+            <Route
+              path="/warehouse"
+              element={
+                <RequireWarehouse>
+                  <WarehouseLayout />
+                </RequireWarehouse>
+              }
+            >
+              <Route index element={<WarehouseHome />} />
+              <Route path="scan" element={<Scan />} />
+              <Route path="intake" element={<Intake />} />
             </Route>
 
             <Route path="/destinations" element={<Destinations />} />

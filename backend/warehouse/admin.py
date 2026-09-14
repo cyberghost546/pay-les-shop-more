@@ -11,11 +11,36 @@ rather than a form does not stop applying because the URL changed.
 
 from django.contrib import admin
 
-from .models import IntakeSheet
+from .models import IntakeSheet, Measurement
+
+
+class MeasurementInline(admin.TabularInline):
+    model = Measurement
+    extra = 0
+    fields = (
+        "quantity",
+        "packaging",
+        "length_cm",
+        "width_cm",
+        "height_cm",
+        "weight_kg",
+        "note",
+    )
+
+    # Locked with the sheet they belong to, for the same reason.
+    def has_change_permission(self, request, obj=None):
+        if obj is not None and obj.released:
+            return False
+        return super().has_change_permission(request, obj)
+
+    has_add_permission = has_change_permission
+    has_delete_permission = has_change_permission
 
 
 @admin.register(IntakeSheet)
 class IntakeSheetAdmin(admin.ModelAdmin):
+    inlines = [MeasurementInline]
+
     list_display = (
         "label",
         "status",

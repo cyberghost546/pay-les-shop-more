@@ -32,6 +32,8 @@ import {
 } from '../../api/staff';
 import { useAuth } from '../../auth/useAuth';
 import { setWarehouseEmails } from '../../api/profile';
+import Measurements from './Measurements';
+import { isComplete, toLine, toLinePayload, totalsFor } from './measure';
 import { useCollection } from './useCollection';
 import { formatDate, formatDateTime } from './format';
 import {
@@ -89,6 +91,8 @@ function toDraft(sheet) {
     draft[field] = typeof value === 'boolean' ? value : (value ?? '');
   }
 
+  draft.measurements = (sheet.measurements ?? []).map(toLine);
+
   return draft;
 }
 
@@ -102,6 +106,7 @@ function toPayload(draft) {
     volume_m3: draft.volume_m3 === '' ? null : draft.volume_m3,
     colli_count: draft.colli_count === '' ? null : draft.colli_count,
     received_on: draft.received_on === '' ? null : draft.received_on,
+    measurements: draft.measurements.map(toLinePayload),
   };
 }
 
@@ -127,7 +132,11 @@ const REQUIRED = [
 /** @returns {string[]} the labels of everything still blank, or an empty list. */
 function missingFor(draft) {
   const missing = REQUIRED.filter(
-    ([field]) => String(draft[field] ?? '').trim() === '',
+    ([field]) =>
+      String(draft[field] ?? '').trim() === '' &&
+      // Answered by the lines once there are any; the server fills it in
+      // from them on the save that Release does first.
+      !(field === 'colli_count' && draft.measurements.length > 0),
   ).map(([, label]) => label);
 
   // Verpakking counts as answered either by a choice or, for "anders", by the
@@ -136,6 +145,8 @@ function missingFor(draft) {
   else if (draft.packaging === 'other' && !draft.packaging_other.trim()) {
     missing.push('Verpakking (anders)');
   }
+
+  if (!draft.measurements.some(isComplete)) missing.push('Afmetingen & gewicht');
 
   return missing;
 }
@@ -219,9 +230,15 @@ function SheetForm({ sheet, recipients, onSaved, onReleased, onClose }) {
   // answer to.
   const missing = missingFor(draft);
 
-  const dirty = Object.keys(EMPTY).some(
-    (field) => String(draft[field]) !== String(toDraft(sheet)[field]),
-  );
+  const saved = toDraft(sheet);
+  const dirty =
+    Object.keys(EMPTY).some((field) => String(draft[field]) !== String(saved[field])) ||
+    JSON.stringify(draft.measurements) !== JSON.stringify(saved.measurements);
+
+  // Once anything is measured, colli and cubic metres are the lines' totals,
+  // worked out here as they are typed and again on the server when saved.
+  const measured = draft.measurements.length > 0;
+  const totals = totalsFor(draft.measurements);
 
   function set(field, value) {
     setDraft((current) => ({ ...current, [field]: value }));
@@ -432,13 +449,20 @@ function SheetForm({ sheet, recipients, onSaved, onReleased, onClose }) {
           </div>
 
           <div className={styles.intakeGrid}>
-            <Field label="Aantal kuub (m³)">
+            <Field label={measured ? 'Aantal kuub (m³), from the measurements' : 'Aantal kuub (m³)'}>
               <input
                 type="number"
                 step="0.001"
                 min="0"
                 className={styles.intakeInput}
-                value={draft.volume_m3}
+                value={
+                  measured
+                    ? totals.volume === null
+                      ? ''
+                      : totals.volume.toFixed(3)
+                    : draft.volume_m3
+                }
+                readOnly={measured}
                 onChange={(event) => set('volume_m3', event.target.value)}
               />
             </Field>
@@ -525,12 +549,13 @@ function SheetForm({ sheet, recipients, onSaved, onReleased, onClose }) {
         <div className={styles.intakeSection}>
           <p className={styles.intakeSectionHead}>Goederen</p>
           <div className={styles.intakeGrid}>
-            <Field label="Aantal colli">
+            <Field label={measured ? 'Aantal colli, from the measurements' : 'Aantal colli'}>
               <input
                 type="number"
                 min="0"
                 className={styles.intakeInput}
-                value={draft.colli_count}
+                value={measured ? totals.colli : draft.colli_count}
+                readOnly={measured}
                 onChange={(event) => set('colli_count', event.target.value)}
               />
             </Field>
@@ -574,16 +599,32 @@ function SheetForm({ sheet, recipients, onSaved, onReleased, onClose }) {
                 ))}
               </select>
             </Field>
-            <Field label="Afmetingen & gewicht" wide>
+            {/* The old free-text box, kept for what does not fit a line -
+                and for the sheets written before there were lines. */}
+            <Field label="Afmetingen & gewicht, extra notes" wide>
               <textarea
                 className={styles.intakeTextarea}
-                rows={3}
+                rows={2}
                 value={draft.dimensions_weight}
                 onChange={(event) => set('dimensions_weight', event.target.value)}
-                placeholder="2 pallets 120x80x150, 340 kg totaal"
+                placeholder="Anything the lines below do not say"
               />
             </Field>
           </div>
+        </div>
+
+        <div className={styles.intakeSection}>
+          <p className={styles.intakeSectionHead}>Afmetingen & gewicht</p>
+          <Measurements
+            lines={draft.measurements}
+            onChange={(lines) => {
+              setDraft((current) => ({ ...current, measurements: lines }));
+              setNote('');
+            }}
+            freight={draft.freight}
+            declaredWeight={sheet.declared_weight_kg}
+            disabled={locked}
+          />
         </div>
       </fieldset>
 
@@ -654,7 +695,7 @@ export default function Intake() {
   );
 
   // Which sheet is open, in the URL. That is what makes the link at the
-  // bottom of the handover e-mail work: /dashboard/intake?sheet=41 opens the
+  // bottom of the handover e-mail work: /warehouse/intake?sheet=41 opens the
   // sheet somebody was just told about.
   const openId = Number(params.get('sheet')) || null;
 

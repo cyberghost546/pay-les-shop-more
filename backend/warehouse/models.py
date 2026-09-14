@@ -27,6 +27,8 @@ staff wrote about a delivery - damage, bad packing, a name off the van - and
 that is an internal record, not a shipment update.
 """
 
+from decimal import Decimal
+
 from django.conf import settings
 from django.core.validators import MinValueValidator
 from django.db import models
@@ -375,3 +377,119 @@ class IntakeSheet(models.Model):
             .first()
         )
         return self
+
+
+# Airlines charge on whichever is greater, what a box weighs or what it would
+# weigh at a standard density: its volume in cm3 divided by this. 6000 is the
+# IATA figure most carriers use.
+VOLUMETRIC_DIVISOR = 6000
+
+
+class Measurement(models.Model):
+    """One line of what was measured on a sheet: so many items of one size.
+
+    A line rather than a box, because goods arrive as "ten identical cartons"
+    far more often than as ten different ones, and nobody should type the same
+    three numbers ten times. Two pallets and a loose crate is two lines.
+
+    Weight is per item, as it comes off the scale. The totals multiply it out,
+    so a worker weighs one carton of the ten and writes down what they read.
+
+    Every number may be blank while the sheet is a draft - somebody measures
+    the length before they find the tape for the height. A line only counts as
+    complete once all four are filled in, and a sheet needs at least one
+    complete line before it can be released.
+    """
+
+    sheet = models.ForeignKey(
+        IntakeSheet, on_delete=models.CASCADE, related_name="measurements"
+    )
+    position = models.PositiveIntegerField(default=0)
+
+    quantity = models.PositiveIntegerField(default=1, validators=[MinValueValidator(1)])
+    packaging = models.CharField(
+        max_length=10, choices=IntakeSheet.Packaging.choices, blank=True
+    )
+    length_cm = models.DecimalField(
+        max_digits=7, decimal_places=1, null=True, blank=True,
+        validators=[MinValueValidator(0)],
+    )
+    width_cm = models.DecimalField(
+        max_digits=7, decimal_places=1, null=True, blank=True,
+        validators=[MinValueValidator(0)],
+    )
+    height_cm = models.DecimalField(
+        max_digits=7, decimal_places=1, null=True, blank=True,
+        validators=[MinValueValidator(0)],
+    )
+    weight_kg = models.DecimalField(
+        "weight per item (kg)",
+        max_digits=8, decimal_places=2, null=True, blank=True,
+        validators=[MinValueValidator(0)],
+    )
+    note = models.CharField(max_length=255, blank=True)
+
+    class Meta:
+        ordering = ["position", "id"]
+
+    def __str__(self):
+        return f"{self.quantity} × {self.length_cm}×{self.width_cm}×{self.height_cm} cm"
+
+    @property
+    def complete(self):
+        return None not in (self.length_cm, self.width_cm, self.height_cm, self.weight_kg)
+
+    @property
+    def volume_m3(self):
+        """Total cubic metres for the line, or None until it is measured."""
+        if None in (self.length_cm, self.width_cm, self.height_cm):
+            return None
+        return self.quantity * self.length_cm * self.width_cm * self.height_cm / 1_000_000
+
+    @property
+    def total_weight_kg(self):
+        if self.weight_kg is None:
+            return None
+        return self.quantity * self.weight_kg
+
+    @property
+    def volumetric_weight_kg(self):
+        if None in (self.length_cm, self.width_cm, self.height_cm):
+            return None
+        return (
+            self.quantity * self.length_cm * self.width_cm * self.height_cm
+            / VOLUMETRIC_DIVISOR
+        )
+
+
+def measurement_totals(measurements):
+    """What a sheet's lines add up to, from the complete lines only.
+
+    A half-measured line is left out of every total rather than counted as
+    zero: a volume that silently ignores a missing height is a smaller volume
+    than the goods, and a price quoted from it is a loss.
+
+    Returns plain Decimals (or None when nothing is measured yet), rounded to
+    what the form shows.
+    """
+    lines = [line for line in measurements if line.complete]
+    if not lines:
+        return {
+            "colli": sum(line.quantity for line in measurements) or None,
+            "volume_m3": None,
+            "weight_kg": None,
+            "volumetric_weight_kg": None,
+            "chargeable_weight_kg": None,
+        }
+
+    volume = sum((line.volume_m3 for line in lines), Decimal(0))
+    weight = sum((line.total_weight_kg for line in lines), Decimal(0))
+    volumetric = sum((line.volumetric_weight_kg for line in lines), Decimal(0))
+
+    return {
+        "colli": sum(line.quantity for line in measurements),
+        "volume_m3": volume.quantize(Decimal("0.001")),
+        "weight_kg": weight.quantize(Decimal("0.01")),
+        "volumetric_weight_kg": volumetric.quantize(Decimal("0.01")),
+        "chargeable_weight_kg": max(weight, volumetric).quantize(Decimal("0.01")),
+    }

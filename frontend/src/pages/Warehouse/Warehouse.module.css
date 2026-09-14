@@ -1,0 +1,321 @@
+/* src/pages/Warehouse/Warehouse.module.css
+ *
+ * The warehouse shell and its home screen. Colours, cards and the page banner
+ * come from Dashboard.module.css, whose .app sits on the same element as
+ * .shell and defines the palette variables used here.
+ *
+ * Built for a phone first: the navigation drops to a bottom tab bar under
+ * 720px, where a thumb reaches it without shifting the box in the other hand.
+ */
+
+.shell {
+  --topbar-height: 56px;
+  --tabbar-height: 64px;
+}
+
+/* ------------------------------------------------------------------ topbar */
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  height: var(--topbar-height);
+  padding: 0 1.25rem;
+  background: #ffffff;
+  border-bottom: 1px solid var(--line);
+  box-shadow: 0 1px 2px rgba(11, 37, 69, 0.04);
+}
+
+.brand {
+  display: flex;
+  align-items: baseline;
+  flex-shrink: 0;
+  color: var(--navy);
+  font-size: 1rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.brandDot {
+  color: var(--cyan);
+  font-weight: 500;
+}
+
+.brandTag {
+  margin-left: 0.6rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  background: var(--navy);
+  color: #ffffff;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.topTabs {
+  display: flex;
+  gap: 0.25rem;
+  margin: 0 auto;
+}
+
+.topRight {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-left: auto;
+}
+
+.who {
+  color: var(--ink);
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+.officeLink,
+.signOut {
+  padding: 0.35rem 0.9rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: none;
+  color: #475569;
+  font: inherit;
+  font-size: 0.86rem;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.officeLink:hover,
+.signOut:hover {
+  border-color: var(--cyan);
+  color: var(--navy);
+}
+
+/* -------------------------------------------------------------------- tabs */
+
+.tab {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.5rem 0.85rem;
+  border-radius: 10px;
+  color: #475569;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.tab svg {
+  width: 18px;
+  height: 18px;
+}
+
+.tab:hover {
+  background: var(--ground);
+  color: var(--navy);
+}
+
+.tab:focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: 2px;
+}
+
+.tabActive,
+.tabActive:hover {
+  background: rgba(14, 165, 233, 0.12);
+  color: var(--navy);
+}
+
+.bottomTabs {
+  display: none;
+}
+
+/* ----------------------------------------------------------------- content */
+
+.main {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 1.5rem 2rem 4rem;
+}
+
+/* ------------------------------------------------------------- home screen */
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+  margin-bottom: 1.5rem;
+}
+
+/* The scanner's button styles, borrowed for a link. */
+.actions > a {
+  display: block;
+  box-sizing: border-box;
+  text-align: center;
+  text-decoration: none;
+}
+
+.actions > * {
+  flex: 1 1 16rem;
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  gap: 0.8rem;
+  margin-bottom: 1.5rem;
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 1.1rem 1.2rem;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: #ffffff;
+  box-shadow: var(--shadow);
+  color: inherit;
+  text-decoration: none;
+}
+
+a.stat:hover {
+  border-color: var(--cyan);
+}
+
+.statValue {
+  color: var(--navy);
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.statLabel {
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.sectionHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.sectionTitle {
+  margin: 0;
+  color: var(--ink);
+  font-size: 1.05rem;
+  font-weight: 800;
+}
+
+.recent {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.recent li + li {
+  border-top: 1px solid var(--line);
+}
+
+/* A whole row to tap, not a word in it. */
+.recentRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  min-height: 3.5rem;
+  padding: 0.6rem 0.25rem;
+  color: inherit;
+  text-decoration: none;
+}
+
+.recentRow:hover .recentLabel {
+  color: var(--cyan);
+}
+
+.recentMain {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.recentLabel {
+  color: var(--navy);
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.recentDetail {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+/* ------------------------------------------------------------------ phones */
+
+@media (max-width: 720px) {
+  .topTabs,
+  .who {
+    display: none;
+  }
+
+  .topbar {
+    padding: 0 1rem;
+  }
+
+  .main {
+    padding: 1.25rem 1rem calc(var(--tabbar-height) + 2rem + env(safe-area-inset-bottom));
+  }
+
+  .bottomTabs {
+    position: fixed;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 30;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    height: var(--tabbar-height);
+    padding-bottom: env(safe-area-inset-bottom);
+    background: #ffffff;
+    border-top: 1px solid var(--line);
+    box-shadow: 0 -4px 16px rgba(11, 37, 69, 0.06);
+  }
+
+  .bottomTabs .tab {
+    flex-direction: column;
+    justify-content: center;
+    gap: 0.2rem;
+    border-radius: 0;
+    font-size: 0.75rem;
+  }
+
+  .bottomTabs .tab svg {
+    width: 22px;
+    height: 22px;
+  }
+
+  .bottomTabs .tabActive {
+    background: none;
+    color: var(--cyan);
+  }
+}
+
+@media (max-width: 380px) {
+  .brandDot {
+    display: none;
+  }
+}

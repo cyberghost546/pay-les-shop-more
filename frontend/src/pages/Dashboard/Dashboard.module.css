@@ -2495,3 +2495,97 @@
   line-height: 1.55;
   color: #075985;
 }
+
+/* ------------------------------------------------------------ measurements */
+
+/* One card per measured line. Four number boxes across on anything wider
+   than a phone, two by two on one - a thumb needs the room more than the eye
+   needs them in a row. */
+
+.measureBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.measureLine {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  padding: 0.9rem;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--ground);
+}
+
+.measureTop {
+  display: grid;
+  grid-template-columns: 6rem 1fr;
+  gap: 0.7rem;
+}
+
+.measureQty,
+.measureKind,
+.measureSize {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  min-width: 0;
+}
+
+.measureSizes {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.7rem;
+}
+
+/* Bigger than the rest of the form: these are typed with a tape in the other
+   hand, and a mis-tap here is a wrong price later. */
+.measureSizes .intakeInput,
+.measureQty .intakeInput {
+  padding: 0.75rem 0.7rem;
+  font-size: 1.05rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.measureWarning {
+  margin: 0;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #92400e;
+}
+
+.measureButtons {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.measureTotals {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 1.25rem;
+  padding: 0.85rem 1rem;
+  border-radius: 12px;
+  background: var(--navy);
+  color: #ffffff;
+  font-size: 0.92rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.measureTotals strong {
+  font-size: 1.1rem;
+}
+
+.measureDeclared {
+  flex-basis: 100%;
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 0.85rem;
+}
+
+@media (max-width: 560px) {
+  .measureSizes {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

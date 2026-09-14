@@ -538,6 +538,17 @@ export async function getIntakeRecipients() {
   return request('/staff/intake/recipients/');
 }
 
+/**
+ * The warehouse home screen's numbers. Open to the floor as well as the
+ * office, unlike getOverview, which a warehouse account is refused.
+ *
+ * @returns {Promise<{ drafts: number, my_drafts: number, started_today: number,
+ *   released_today: number, recent: object[] }>}
+ */
+export async function getWarehouseSummary() {
+  return request('/staff/intake/summary/');
+}
+
 export const INTAKE_STATUSES = [
   { value: 'draft', label: 'Draft' },
   { value: 'released', label: 'Released' },

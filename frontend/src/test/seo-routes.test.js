@@ -70,7 +70,7 @@ describe('the SEO route table', () => {
   it('lists nothing that sits behind a login', () => {
     // Mirrors robots.txt. A sitemap entry for a page that redirects to the
     // login form is a crawl budget spent on nothing.
-    const private_ = ['/dashboard', '/profile', '/login', '/signup', '/forgot-password'];
+    const private_ = ['/dashboard', '/warehouse', '/profile', '/login', '/signup', '/forgot-password'];
 
     for (const route of PUBLIC_ROUTES) {
       expect(private_).not.toContain(route.path);

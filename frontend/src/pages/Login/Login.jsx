@@ -82,15 +82,18 @@ export default function Login() {
 
     setBusy(true);
     try {
-      await signIn({
+      const profile = await signIn({
         email: form.email.trim(),
         password: form.password,
         remember: form.remember,
       });
 
-      // Back to the page they were trying to reach, or to their account.
+      // Back to the page they were trying to reach, or to their account. A
+      // warehouse account has no use for the profile page on a shift, so it
+      // goes straight to the floor's dashboard instead.
       // replace: the login page should not sit in history behind them.
-      navigate(location.state?.from ?? '/profile', { replace: true });
+      const home = profile?.isWarehouse && !profile?.isStaff ? '/warehouse' : '/profile';
+      navigate(location.state?.from ?? home, { replace: true });
     } catch (error) {
       setFailureKey(FAILURE_KEYS[error.code] ?? 'login.errors.offline');
       // Never keep the password around after a failed attempt.

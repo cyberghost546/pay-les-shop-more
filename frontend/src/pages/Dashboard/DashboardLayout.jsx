@@ -3,7 +3,6 @@ import { useCallback, useEffect, useState } from 'react';
 import {
   Link,
   NavLink,
-  Navigate,
   Outlet,
   useLocation,
   useNavigate,
@@ -71,15 +70,13 @@ const GROUPS = [
   },
   {
     heading: 'Warehouse',
-    // The floor's whole dashboard, and the only group a warehouse account
-    // sees. Kept as one group rather than scattered through the others so
-    // that hiding the rest is a filter on this list and not an exception
-    // written into six places.
-    warehouse: true,
+    // Links out to the warehouse dashboard, which has its own shell. Office
+    // staff are let in there; the floor never sees this sidebar at all.
     links: [
-      { to: '/dashboard/scan', label: 'Scan a package', icon: BoxIcon },
+      { to: '/warehouse', label: 'Warehouse home', icon: HouseIcon, end: true },
+      { to: '/warehouse/scan', label: 'Scan a package', icon: BoxIcon },
       {
-        to: '/dashboard/intake',
+        to: '/warehouse/intake',
         label: 'Intake sheets',
         icon: BoxIcon,
         // No pill. The number that would belong here is "drafts open in the
@@ -87,6 +84,7 @@ const GROUPS = [
         // a queue anybody else should be nagged about - the badge would sit
         // at three all day and mean nothing.
       },
+      { to: '/dashboard/measurements', label: 'Measurements', icon: BoxIcon },
     ],
   },
   {
@@ -129,13 +127,7 @@ const QUICK_VIEWS = [
   { to: '/dashboard/quotes?status=new', label: 'New quote requests' },
   { to: '/dashboard/messages?handled=false', label: 'Unhandled messages' },
   { to: '/dashboard/packages?status=in_transit', label: 'In transit' },
-  // The one a warehouse account keeps, because it is the only one pointing
-  // at a page they can open.
-  {
-    to: '/dashboard/intake?status=draft',
-    label: 'Unreleased intake sheets',
-    warehouse: true,
-  },
+  { to: '/warehouse/intake?status=draft', label: 'Unreleased intake sheets' },
   { to: '/dashboard/invoices', label: 'Invoices to review' },
   { to: '/dashboard/documents?unattached=true', label: 'Unfiled documents' },
   { to: '/dashboard/packages?status=quoted', label: 'Awaiting payment' },
@@ -150,15 +142,9 @@ const SEARCHABLE = [
   '/dashboard/packages',
   '/dashboard/customers',
   '/dashboard/bookings',
-  '/dashboard/intake',
+  '/dashboard/measurements',
 ];
 const DEFAULT_SEARCH_TARGET = '/dashboard/packages';
-
-// Where a warehouse account lands, and where its searches go. Packages is an
-// office page, so neither default above can stand for somebody who cannot
-// open it.
-const WAREHOUSE_HOME = '/dashboard/scan';
-const WAREHOUSE_SEARCH_TARGET = '/dashboard/intake';
 
 /** One sidebar link: icon, label, and the count pill when it has one. */
 function NavItem({ link, overview, onNavigate }) {
@@ -196,21 +182,6 @@ export default function DashboardLayout() {
   const { pathname, search } = useLocation();
   const navigate = useNavigate();
 
-  // Which dashboard this is. An account can hold both roles, and the office
-  // one wins: it is the larger, and it includes the warehouse pages anyway.
-  //
-  // Presentation only. Every route behind these links is checked on the
-  // server, and a warehouse account that edits its own JavaScript to draw the
-  // invoice link still gets a 403 when it presses it.
-  const isOffice = Boolean(user?.isStaff);
-  const floorOnly = !isOffice && Boolean(user?.isWarehouse);
-
-  const sections = floorOnly ? [] : SECTIONS;
-  const groups = floorOnly ? GROUPS.filter((group) => group.warehouse) : GROUPS;
-  const quickViews = floorOnly
-    ? QUICK_VIEWS.filter((view) => view.warehouse)
-    : QUICK_VIEWS;
-
   const [attempt, setAttempt] = useState(0);
   const [query, setQuery] = useState('');
   // How far back the overview's chart reaches. Owned here because the request
@@ -225,21 +196,11 @@ export default function DashboardLayout() {
 
   // Which request this is, so the render below can tell a fresh answer from a
   // stale one without the effect having to set a loading flag itself.
-  const key = `${pathname}#${days}#${attempt}#${isOffice}`;
+  const key = `${pathname}#${days}#${attempt}`;
   const [answer, setAnswer] = useState({ key: null, status: 'loading', data: null });
 
   useEffect(() => {
     let cancelled = false;
-
-    // Not asked for at all on the floor. The overview is office-only on the
-    // server, so a warehouse account would refetch a 403 on every page change
-    // - and each one would send the auth context off to re-read the profile
-    // to find out whether the session had ended. It had not; the question was
-    // simply not theirs to ask.
-    //
-    // The answer for that case is derived below rather than stored, which is
-    // what keeps this effect free of a setState it would run on every render.
-    if (!isOffice) return undefined;
 
     getOverview(days)
       .then((data) => {
@@ -257,13 +218,10 @@ export default function DashboardLayout() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key]);
 
-  // 'ready' with nothing in it on the floor: there are no badges to fill and
-  // no chart to draw, so a page waiting on numbers that will never come would
-  // be a spinner that never stops.
-  const state = isOffice ? (answer.key === key ? answer.status : 'loading') : 'ready';
+  const state = answer.key === key ? answer.status : 'loading';
   // The previous numbers are kept while a refetch is in flight, so the
   // sidebar badges hold steady instead of blinking out on every page change.
-  const overview = isOffice ? answer.data : null;
+  const overview = answer.data;
 
   const reload = useCallback(() => setAttempt((n) => n + 1), []);
 
@@ -271,18 +229,12 @@ export default function DashboardLayout() {
   // the page it just moved to.
   const closeNav = () => setNavOpen(false);
 
-  // "Home" for whoever is looking. The overview is office-only, so for the
-  // floor the scanner is the front page - it is also the first thing they
-  // want, which is the point of the role existing.
-  const home = floorOnly ? WAREHOUSE_HOME : '/dashboard';
-
   function handleSearch(event) {
     event.preventDefault();
     const term = query.trim();
     if (!term) return;
 
-    const fallback = floorOnly ? WAREHOUSE_SEARCH_TARGET : DEFAULT_SEARCH_TARGET;
-    const target = SEARCHABLE.includes(pathname) ? pathname : fallback;
+    const target = SEARCHABLE.includes(pathname) ? pathname : DEFAULT_SEARCH_TARGET;
     navigate(`${target}?search=${encodeURIComponent(term)}`);
     closeNav();
   }
@@ -304,7 +256,7 @@ export default function DashboardLayout() {
       style={{ '--sidebar-user-width': `${sidebarWidth}px` }}
     >
       <header className={styles.topbar}>
-        <Link to={home} className={styles.brand} onClick={closeNav}>
+        <Link to="/dashboard" className={styles.brand} onClick={closeNav}>
           PayLesShopMore<span className={styles.brandDot}>.com</span>
         </Link>
 
@@ -348,14 +300,14 @@ export default function DashboardLayout() {
           aria-label="Dashboard sections"
         >
           <ul className={styles.navList}>
-            {sections.map((link) => (
+            {SECTIONS.map((link) => (
               <li key={link.to}>
                 <NavItem link={link} overview={overview} onNavigate={closeNav} />
               </li>
             ))}
           </ul>
 
-          {groups.map((group) => (
+          {GROUPS.map((group) => (
             <div key={group.heading}>
               <p className={styles.navHeading}>{group.heading}</p>
               <ul className={styles.navList}>
@@ -370,7 +322,7 @@ export default function DashboardLayout() {
 
           <p className={styles.navHeading}>Quick views</p>
           <ul className={styles.navList}>
-            {quickViews.map(({ to, label }) => (
+            {QUICK_VIEWS.map(({ to, label }) => (
               <li key={to}>
                 <NavLink
                   to={to}
@@ -394,19 +346,15 @@ export default function DashboardLayout() {
 
           <div className={styles.navFoot}>
             {/* Everything the dashboard does not cover — editing a customer,
-                creating a package — still lives in Django's own admin. Not
-                offered to the floor, whose accounts are deliberately not
-                `is_staff` and would only be bounced by its login. */}
-            {isOffice && (
-              <a
-                className={styles.navFootLink}
-                href="/admin/"
-                target="_blank"
-                rel="noreferrer"
-              >
-                Django admin ↗
-              </a>
-            )}
+                creating a package — still lives in Django's own admin. */}
+            <a
+              className={styles.navFootLink}
+              href="/admin/"
+              target="_blank"
+              rel="noreferrer"
+            >
+              Django admin ↗
+            </a>
             <Link className={styles.navFootLink} to="/" onClick={closeNav}>
               Back to the site
             </Link>
@@ -432,14 +380,7 @@ export default function DashboardLayout() {
         )}
 
         <main className={styles.main}>
-          {/* /dashboard itself is the overview, which is office-only. Sending
-              the floor on to the scanner is better than letting them land on
-              a page that can only answer 403. */}
-          {floorOnly && pathname === '/dashboard' ? (
-            <Navigate to={WAREHOUSE_HOME} replace />
-          ) : (
-            <Outlet context={{ overview, state, reload, days, setDays }} />
-          )}
+          <Outlet context={{ overview, state, reload, days, setDays }} />
         </main>
       </div>
     </div>

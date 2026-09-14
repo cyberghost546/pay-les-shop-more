@@ -4,9 +4,10 @@ Two jobs live here. The serializer is the ordinary one; `missing_for_release`
 is the interesting one, and it is the reason a sheet has a draft state at all.
 """
 
+from django.db import transaction
 from rest_framework import serializers
 
-from .models import IntakeSheet
+from .models import IntakeSheet, Measurement, measurement_totals
 
 # What has to be filled in before a sheet may be handed over.
 #
@@ -57,6 +58,12 @@ def missing_for_release(sheet):
     elif sheet.packaging == IntakeSheet.Packaging.OTHER and not sheet.packaging_other:
         missing.append("Verpakking (anders)")
 
+    # At least one line with all four numbers on it. The office prices a
+    # shipment from these, and a sheet that says "4 colli" and nothing about
+    # their size is a phone call back to the warehouse.
+    if not any(line.complete for line in sheet.measurements.all()):
+        missing.append("Afmetingen & gewicht")
+
     return missing
 
 
@@ -88,6 +95,35 @@ class ScannedBookingSerializer(serializers.Serializer):
     recipient = serializers.CharField(source="recipient_name", read_only=True)
 
 
+class MeasurementSerializer(serializers.ModelSerializer):
+    """One measured line, with what it works out to."""
+
+    volume_m3 = serializers.DecimalField(
+        max_digits=10, decimal_places=3, read_only=True
+    )
+    total_weight_kg = serializers.DecimalField(
+        max_digits=10, decimal_places=2, read_only=True
+    )
+    complete = serializers.BooleanField(read_only=True)
+
+    class Meta:
+        model = Measurement
+        fields = [
+            "id",
+            "quantity",
+            "packaging",
+            "length_cm",
+            "width_cm",
+            "height_cm",
+            "weight_kg",
+            "note",
+            "complete",
+            "volume_m3",
+            "total_weight_kg",
+        ]
+        read_only_fields = ["id"]
+
+
 class IntakeSheetSerializer(serializers.ModelSerializer):
     """One sheet, as the dashboard reads and writes it.
 
@@ -116,6 +152,23 @@ class IntakeSheetSerializer(serializers.ModelSerializer):
     # the server so the browser and the server cannot disagree about whether a
     # sheet is finished.
     missing = serializers.SerializerMethodField()
+
+    # The measured lines, written as a whole list: what is sent replaces what
+    # was there. A sheet has a handful of lines at most, and a list the form
+    # sends back complete cannot drift out of step with the one on screen the
+    # way a row-by-row API can when a save fails halfway.
+    measurements = MeasurementSerializer(many=True, required=False)
+    totals = serializers.SerializerMethodField()
+    # What the linked shipment says it weighs, for the office to hold against
+    # what the scale said. Shown side by side and never overwritten - which
+    # one to bill is somebody's decision, not this serializer's.
+    declared_weight_kg = serializers.DecimalField(
+        source="package.weight_kg",
+        max_digits=8,
+        decimal_places=3,
+        read_only=True,
+        default=None,
+    )
 
     class Meta:
         model = IntakeSheet
@@ -154,6 +207,9 @@ class IntakeSheetSerializer(serializers.ModelSerializer):
             "packaging_display",
             "packaging_other",
             "dimensions_weight",
+            "measurements",
+            "totals",
+            "declared_weight_kg",
             "freight",
             "freight_display",
             "employee_name",
@@ -186,6 +242,67 @@ class IntakeSheetSerializer(serializers.ModelSerializer):
 
     def get_missing(self, obj):
         return missing_for_release(obj)
+
+    def get_totals(self, obj):
+        totals = measurement_totals(list(obj.measurements.all()))
+        # Strings, like every other decimal DRF sends, so the browser never
+        # sees 2.3100000000000001.
+        return {
+            key: (str(value) if value is not None and key != "colli" else value)
+            for key, value in totals.items()
+        }
+
+    def create(self, validated_data):
+        lines = validated_data.pop("measurements", None)
+
+        with transaction.atomic():
+            sheet = super().create(validated_data)
+            if lines is not None:
+                self._replace_measurements(sheet, lines)
+
+        return sheet
+
+    def update(self, instance, validated_data):
+        lines = validated_data.pop("measurements", None)
+
+        with transaction.atomic():
+            sheet = super().update(instance, validated_data)
+            if lines is not None:
+                self._replace_measurements(sheet, lines)
+
+        return sheet
+
+    def _replace_measurements(self, sheet, lines):
+        """Swap the sheet's lines for these, and carry the totals across.
+
+        Once there are lines, Aantal colli and Aantal kuub are worked out from
+        them rather than typed. Both fields stay on the sheet - the e-mail, the
+        list and the release check all read them - but a number that can be
+        calculated is a number that should not be able to disagree with the
+        lines it came from.
+        """
+        sheet.measurements.all().delete()
+        Measurement.objects.bulk_create(
+            Measurement(sheet=sheet, position=index, **line)
+            for index, line in enumerate(lines)
+        )
+
+        # Dropped so the next read sees the rows just written rather than a
+        # prefetch taken before them.
+        getattr(sheet, "_prefetched_objects_cache", {}).pop("measurements", None)
+
+        if not lines:
+            return
+
+        totals = measurement_totals(list(sheet.measurements.all()))
+        sheet.colli_count = totals["colli"]
+        update = ["colli_count", "updated_at"]
+
+        if totals["volume_m3"] is not None:
+            sheet.volume_m3 = totals["volume_m3"]
+            update.append("volume_m3")
+
+        sheet.save(update_fields=update)
 
     def _name(self, user):
         if user is None:

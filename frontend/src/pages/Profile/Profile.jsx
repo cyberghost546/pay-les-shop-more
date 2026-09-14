@@ -484,10 +484,16 @@ export default function Profile() {
                 permission — the dashboard has its own guard and the staff API
                 checks the flag again on every request. Untranslated, because
                 the back office is English throughout. */}
-            {profile.isStaff && (
+            {profile.isStaff ? (
               <Link to="/dashboard" className={styles.dashboardLink}>
                 Dashboard
               </Link>
+            ) : (
+              profile.isWarehouse && (
+                <Link to="/warehouse" className={styles.dashboardLink}>
+                  Warehouse
+                </Link>
+              )
             )}
             <button
               type="button"

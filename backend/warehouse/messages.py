@@ -18,7 +18,7 @@ outbox, and apart from models.py so that a wording change is not a migration.
 
 from django.conf import settings
 
-from .models import IntakeSheet
+from .models import IntakeSheet, measurement_totals
 
 # What a Ja / Nee box reads as when nobody ticked it. Said out loud rather
 # than left blank: a silent gap in a damage report looks like "no damage".
@@ -55,6 +55,45 @@ def _packaging(sheet):
         return _blank(sheet.packaging_other)
 
     return sheet.get_packaging_display() if sheet.packaging else "-"
+
+
+def _measurement_lines(sheet):
+    """The measured lines and their totals, or nothing when there are none.
+
+    Sheets released before measuring existed have no lines, and a heading
+    over an empty table would read as measurements that got lost.
+    """
+    measured = list(sheet.measurements.all())
+    if not measured:
+        return []
+
+    lines = ["Measurements"]
+
+    for line in measured:
+        size = " x ".join(
+            _blank(value) for value in (line.length_cm, line.width_cm, line.height_cm)
+        )
+        kind = (
+            f" {line.get_packaging_display().lower()}" if line.packaging else ""
+        )
+        text = f"  {line.quantity}{kind} - {size} cm - {_blank(line.weight_kg)} kg each"
+        if line.note:
+            text += f" ({line.note})"
+        lines.append(text)
+
+    totals = measurement_totals(measured)
+    lines += [
+        f"  Total: {_blank(totals['colli'])} colli, "
+        f"{_blank(totals['volume_m3'])} m3, {_blank(totals['weight_kg'])} kg",
+        f"  Volumetric weight (air): {_blank(totals['volumetric_weight_kg'])} kg",
+        f"  Chargeable weight (air): {_blank(totals['chargeable_weight_kg'])} kg",
+    ]
+
+    if sheet.package_id and sheet.package.weight_kg is not None:
+        lines.append(f"  Declared on the shipment: {sheet.package.weight_kg} kg")
+
+    lines.append("")
+    return lines
 
 
 def subject_for(sheet):
@@ -150,6 +189,7 @@ def body_for(sheet):
             f"{sheet.get_freight_display() if sheet.freight else '-'}"
         ),
         "",
+        *_measurement_lines(sheet),
         f"Naam werknemer: {_blank(signed)}",
     ]
 
@@ -161,7 +201,9 @@ def body_for(sheet):
     lines += [
         "",
         "Open it in the dashboard to work on it:",
-        f"{settings.FRONTEND_URL}/dashboard/intake?sheet={sheet.pk}",
+        # The warehouse address rather than /dashboard, because this mail goes
+        # to the floor as well as the office and only this one opens for both.
+        f"{settings.FRONTEND_URL}/warehouse/intake?sheet={sheet.pk}",
         "",
         "PayLesShopMore.com",
     ]

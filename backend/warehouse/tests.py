@@ -23,7 +23,8 @@ from rest_framework.test import APITestCase
 from accounts.models import Package
 from bookings.models import Booking
 
-from .models import IntakeSheet
+from .messages import body_for
+from .models import IntakeSheet, Measurement
 from .recipients import handover_recipients
 from .serializers import missing_for_release
 
@@ -79,6 +80,15 @@ class IntakeSheetTestCase(APITestCase):
             supplier="Leverancier BV",
             created_by=self.warehouse,
             **complete_sheet_fields(),
+        )
+        # One measured line, which a sheet needs before it can be released.
+        Measurement.objects.create(
+            sheet=self.sheet,
+            quantity=4,
+            length_cm=120,
+            width_cm=80,
+            height_cm=100,
+            weight_kg=50,
         )
 
         self.list_url = reverse("staff-intake-list")
@@ -341,6 +351,154 @@ class ScanTests(IntakeSheetTestCase):
         self.assertEqual(
             self.scan("CI-1001").status_code, status.HTTP_403_FORBIDDEN
         )
+
+
+class SummaryTests(IntakeSheetTestCase):
+    """The counts on the warehouse home screen."""
+
+    def setUp(self):
+        super().setUp()
+
+        self.summary_url = reverse("staff-intake-summary")
+        self.floor = User.objects.create_user(
+            username="vloer3@example.com",
+            email="vloer3@example.com",
+            password="a-long-enough-password",
+            is_warehouse=True,
+        )
+
+    def test_counts_drafts_and_the_days_work(self):
+        IntakeSheet.objects.create(reference="CI-3001", created_by=self.floor)
+        released = IntakeSheet.objects.create(reference="CI-3002")
+        released.release(by=self.office)
+
+        self.client.force_authenticate(self.floor)
+        response = self.client.get(self.summary_url)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        # The fixture's sheet and CI-3001 are drafts; one of them is theirs.
+        self.assertEqual(response.data["drafts"], 2)
+        self.assertEqual(response.data["my_drafts"], 1)
+        self.assertEqual(response.data["started_today"], 3)
+        self.assertEqual(response.data["released_today"], 1)
+        self.assertEqual(len(response.data["recent"]), 3)
+
+    def test_office_staff_can_read_it_too(self):
+        self.client.force_authenticate(self.office)
+
+        self.assertEqual(
+            self.client.get(self.summary_url).status_code, status.HTTP_200_OK
+        )
+
+    def test_a_customer_cannot(self):
+        self.client.force_authenticate(self.customer)
+
+        self.assertEqual(
+            self.client.get(self.summary_url).status_code,
+            status.HTTP_403_FORBIDDEN,
+        )
+
+
+class MeasurementTests(IntakeSheetTestCase):
+    """Measured lines, the totals worked out from them, and the release rule."""
+
+    def setUp(self):
+        super().setUp()
+        self.client.force_authenticate(self.warehouse)
+
+    def patch_lines(self, lines):
+        return self.client.patch(
+            self.detail_url, {"measurements": lines}, format="json"
+        )
+
+    def test_lines_replace_the_old_ones_and_fill_in_the_totals(self):
+        response = self.patch_lines(
+            [
+                # 2 pallets: 2 × 1.2 × 0.8 × 1.5 = 2.88 m3, 2 × 170 = 340 kg
+                {"quantity": 2, "packaging": "pallet", "length_cm": "120",
+                 "width_cm": "80", "height_cm": "150", "weight_kg": "170"},
+                # 1 crate: 0.5 × 0.4 × 0.3 = 0.06 m3, 12.5 kg
+                {"quantity": 1, "packaging": "kist", "length_cm": "50",
+                 "width_cm": "40", "height_cm": "30", "weight_kg": "12.5"},
+            ]
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data["measurements"]), 2)
+
+        totals = response.data["totals"]
+        self.assertEqual(totals["colli"], 3)
+        self.assertEqual(totals["volume_m3"], "2.940")
+        self.assertEqual(totals["weight_kg"], "352.50")
+        # 2 × 1,440,000 cm3 / 6000 = 480, plus 60,000 / 6000 = 10. More than
+        # the scale said, so for air freight the volume is what gets billed.
+        self.assertEqual(totals["volumetric_weight_kg"], "490.00")
+        self.assertEqual(totals["chargeable_weight_kg"], "490.00")
+
+        self.sheet.refresh_from_db()
+        self.assertEqual(self.sheet.measurements.count(), 2)
+        self.assertEqual(self.sheet.colli_count, 3)
+        self.assertEqual(str(self.sheet.volume_m3), "2.940")
+
+    def test_a_half_measured_line_is_left_out_of_the_totals(self):
+        response = self.patch_lines(
+            [{"quantity": 3, "length_cm": "100", "width_cm": "100"}]
+        )
+
+        self.assertEqual(response.data["totals"]["colli"], 3)
+        self.assertIsNone(response.data["totals"]["volume_m3"])
+        self.assertIn("Afmetingen & gewicht", response.data["missing"])
+
+    def test_a_sheet_with_no_complete_line_cannot_be_released(self):
+        self.patch_lines([])
+
+        with self.captureOnCommitCallbacks(execute=True):
+            response = self.client.post(self.release_url)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("Afmetingen & gewicht", response.data["missing"])
+
+    def test_negative_sizes_are_refused(self):
+        response = self.patch_lines([{"quantity": 1, "length_cm": "-5"}])
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_a_released_sheet_keeps_its_measurements(self):
+        with self.captureOnCommitCallbacks(execute=True):
+            self.client.post(self.release_url)
+
+        response = self.patch_lines([])
+
+        self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
+        self.assertEqual(self.sheet.measurements.count(), 1)
+
+    def test_the_list_can_be_narrowed_to_measured_sheets(self):
+        unmeasured = IntakeSheet.objects.create(created_by=self.warehouse)
+        # A second line on the measured sheet, which must not list it twice.
+        Measurement.objects.create(sheet=self.sheet, quantity=1)
+
+        measured = self.client.get(self.list_url, {"measured": "true"})
+        ids = [row["id"] for row in measured.data["results"]]
+        self.assertEqual(ids, [self.sheet.pk])
+
+        not_measured = self.client.get(self.list_url, {"measured": "false"})
+        ids = [row["id"] for row in not_measured.data["results"]]
+        self.assertEqual(ids, [unmeasured.pk])
+
+    def test_the_email_lists_the_lines_and_the_declared_weight(self):
+        owner = User.objects.create_user(
+            username="eigenaar@example.com", password="a-long-enough-password"
+        )
+        self.sheet.package = Package.objects.create(
+            user=owner, tracking_number="PLS-7001", weight_kg="180"
+        )
+        self.sheet.save()
+        self.sheet.refresh_from_db()
+
+        body = body_for(self.sheet)
+
+        self.assertIn("4 - 120.0 x 80.0 x 100.0 cm - 50.00 kg each", body)
+        self.assertIn("Total: 4 colli, 3.840 m3, 200.00 kg", body)
+        self.assertIn("Declared on the shipment: 180.000 kg", body)
 
 
 class PrefillTests(IntakeSheetTestCase):
