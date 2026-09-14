@@ -133,7 +133,7 @@ the site does not work:
 | Variable | Value | Why |
 | --- | --- | --- |
 | `DJANGO_SECRET_KEY` | 50 random characters | Signs sessions and reset tokens. Django refuses to start without it. |
-| `DJANGO_ALLOWED_HOSTS` | `api.paylesshopmore.com` | The hostnames Django answers for. |
+| `DJANGO_ALLOWED_HOSTS` | `api.paylesshopmore.com` | The hostnames Django answers for. Railway's own probe and service hostnames are added automatically by `settings.py`; list only the public domain here. |
 | `DJANGO_FRONTEND_URL` | `https://paylesshopmore.com` | Builds password-reset links, and is trusted for CORS and CSRF automatically. |
 | `DATABASE_URL` | `postgres://...` | Without it, and with `DJANGO_DEBUG` off, startup fails rather than falling back to SQLite. |
 | `AWS_STORAGE_BUCKET_NAME` | your bucket | Where invoice PDFs live. Without it they go to local disk. |

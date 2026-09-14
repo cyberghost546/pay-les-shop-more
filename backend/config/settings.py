@@ -72,6 +72,29 @@ if not SECRET_KEY:
 
 ALLOWED_HOSTS = env_list("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1" if DEBUG else "")
 
+# The hostnames the platform itself uses to reach the container, added to
+# whatever DJANGO_ALLOWED_HOSTS lists.
+#
+# Railway's health check calls the container on its internal network with
+# `Host: healthcheck.railway.app`, not the public domain. Django validates the
+# Host header before any view runs, so with only `api.paylesshopmore.com`
+# allowed the probe is answered 400 DisallowedHost — the deploy then fails at
+# "Network > Healthcheck" while the process it is probing is working perfectly
+# well. The same applies to the private domain used for service-to-service
+# calls, and to the public domain Railway assigns before a custom domain is
+# attached.
+#
+# Guarded on a Railway-only variable so this is inert everywhere else: off
+# Railway nothing is added and ALLOWED_HOSTS is exactly what was configured.
+if os.environ.get("RAILWAY_ENVIRONMENT_NAME") or os.environ.get("RAILWAY_ENVIRONMENT"):
+    for _railway_host in (
+        "healthcheck.railway.app",
+        os.environ.get("RAILWAY_PUBLIC_DOMAIN"),
+        os.environ.get("RAILWAY_PRIVATE_DOMAIN"),
+    ):
+        if _railway_host and _railway_host not in ALLOWED_HOSTS:
+            ALLOWED_HOSTS.append(_railway_host)
+
 
 # Application definition
 
