@@ -190,7 +190,12 @@ export default function Header() {
 
                 {/* The account itself: initials and a name, which reads as a
                     person rather than as another destination in the nav. */}
-                <Link to="/profile" className={styles.identity} onClick={close}>
+                <Link
+                  // Staff have their own profile page; /profile is a customer's.
+                  to={user?.isStaff || user?.isWarehouse ? '/warehouse/profile' : '/profile'}
+                  className={styles.identity}
+                  onClick={close}
+                >
                   <span className={styles.avatar} aria-hidden="true">
                     {initialsOf(name || user?.email || '?')}
                   </span>

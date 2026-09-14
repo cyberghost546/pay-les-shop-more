@@ -8,6 +8,7 @@ import RequireStaff from './components/RequireStaff/RequireStaff';
 import RequireWarehouse from './components/RequireWarehouse/RequireWarehouse';
 import LanguageSwitcher from './components/LanguageSwitcher/LanguageSwitcher';
 import Footer from './components/Footer/Footer';
+import { useAuth } from './auth/useAuth';
 
 // Loaded on demand: each becomes its own chunk, so someone who only reads the
 // home page never downloads the profile forms. On a slow connection the
@@ -47,6 +48,10 @@ const MeasurementsList = lazy(() => import('./pages/Dashboard/MeasurementsList')
 // The warehouse floor's dashboard. Scan and Intake above are shared with it.
 const WarehouseLayout = lazy(() => import('./pages/Warehouse/WarehouseLayout'));
 const WarehouseHome = lazy(() => import('./pages/Warehouse/WarehouseHome'));
+const WarehouseProfile = lazy(() => import('./pages/Warehouse/WarehouseProfile'));
+const ShipmentList = lazy(() => import('./pages/Warehouse/ShipmentList'));
+const ShipmentPage = lazy(() => import('./pages/Warehouse/ShipmentPage'));
+const ShipmentLabel = lazy(() => import('./pages/Warehouse/ShipmentLabel'));
 
 /**
  * The old office addresses of the two warehouse pages, sent on to their new
@@ -56,6 +61,21 @@ const WarehouseHome = lazy(() => import('./pages/Warehouse/WarehouseHome'));
 function MovedToWarehouse({ page }) {
   const { search } = useLocation();
   return <Navigate to={`/warehouse/${page}${search}`} replace />;
+}
+
+/**
+ * /profile is the customer's page: addresses, shipments, invoices, receipts.
+ * Anyone who works here - office or floor - has their own profile in the
+ * warehouse shell instead, so they are sent there.
+ */
+function CustomerProfile() {
+  const { user } = useAuth();
+
+  if (user?.isStaff || user?.isWarehouse) {
+    return <Navigate to="/warehouse/profile" replace />;
+  }
+
+  return <Profile />;
 }
 
 export default function App() {
@@ -99,7 +119,7 @@ export default function App() {
               path="/profile"
               element={
                 <RequireAuth>
-                  <Profile />
+                  <CustomerProfile />
                 </RequireAuth>
               }
             />
@@ -143,7 +163,20 @@ export default function App() {
               <Route index element={<WarehouseHome />} />
               <Route path="scan" element={<Scan />} />
               <Route path="intake" element={<Intake />} />
+              <Route path="profile" element={<WarehouseProfile />} />
+              <Route path="shipments" element={<ShipmentList />} />
+              <Route path="shipments/:id" element={<ShipmentPage />} />
             </Route>
+
+            {/* The label prints without the warehouse shell around it. */}
+            <Route
+              path="/warehouse/shipments/:id/label"
+              element={
+                <RequireWarehouse>
+                  <ShipmentLabel />
+                </RequireWarehouse>
+              }
+            />
 
             <Route path="/destinations" element={<Destinations />} />
             <Route path="/destinations/:slug" element={<Destination />} />

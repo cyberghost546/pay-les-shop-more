@@ -90,9 +90,14 @@ export default function Login() {
 
       // Back to the page they were trying to reach, or to their account. A
       // warehouse account has no use for the profile page on a shift, so it
-      // goes straight to the floor's dashboard instead.
+      // goes straight to the floor's dashboard instead; the office lands on
+      // its own profile, not the customer one.
       // replace: the login page should not sit in history behind them.
-      const home = profile?.isWarehouse && !profile?.isStaff ? '/warehouse' : '/profile';
+      const home = profile?.isWarehouse && !profile?.isStaff
+        ? '/warehouse'
+        : profile?.isStaff
+          ? '/warehouse/profile'
+          : '/profile';
       navigate(location.state?.from ?? home, { replace: true });
     } catch (error) {
       setFailureKey(FAILURE_KEYS[error.code] ?? 'login.errors.offline');

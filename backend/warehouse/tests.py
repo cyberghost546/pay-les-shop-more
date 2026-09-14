@@ -383,6 +383,27 @@ class SummaryTests(IntakeSheetTestCase):
         self.assertEqual(response.data["released_today"], 1)
         self.assertEqual(len(response.data["recent"]), 3)
 
+    def test_counts_what_this_person_released(self):
+        mine = IntakeSheet.objects.create(reference="CI-3003")
+        mine.release(by=self.floor)
+        theirs = IntakeSheet.objects.create(reference="CI-3004")
+        theirs.release(by=self.office)
+
+        self.client.force_authenticate(self.floor)
+        response = self.client.get(self.summary_url)
+
+        self.assertEqual(response.data["my_released_today"], 1)
+        self.assertEqual(response.data["my_released_week"], 1)
+        self.assertEqual(response.data["my_released_total"], 1)
+
+    def test_the_list_can_be_narrowed_to_my_own_sheets(self):
+        mine = IntakeSheet.objects.create(reference="CI-3005", created_by=self.floor)
+
+        self.client.force_authenticate(self.floor)
+        response = self.client.get(self.list_url, {"mine": "true"})
+
+        self.assertEqual([row["id"] for row in response.data["results"]], [mine.pk])
+
     def test_office_staff_can_read_it_too(self):
         self.client.force_authenticate(self.office)
 

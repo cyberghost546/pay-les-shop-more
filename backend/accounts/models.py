@@ -5,6 +5,8 @@ AUTH_USER_MODEL cleanly before the first migration is applied; changing it
 later means dropping the database or a painful manual migration.
 """
 
+from datetime import timedelta
+
 from django.conf import settings
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import RegexValidator
@@ -386,12 +388,63 @@ class Package(models.Model):
         Status.DELIVERED,
     )
 
+    # ---- where it is on the warehouse floor ------------------------------
+    #
+    # Separate from `status`, which is the customer's journey and drives the
+    # lock, the invoice and the tracking page. These are the steps the floor
+    # works through, which the customer never sees and which may be moved in
+    # either direction - a box marked packed that turns out to be missing an
+    # item goes back to processing, and that is a correction, not a rewrite of
+    # anything the customer was told.
+    class WarehouseStage(models.TextChoices):
+        AWAITING_PICKUP = "awaiting_pickup", "Waiting for pickup"
+        RECEIVED = "received", "Received"
+        PROCESSING = "processing", "Being processed"
+        PACKED = "packed", "Packed"
+        READY = "ready", "Ready for shipment"
+        SHIPPED = "shipped", "Shipped"
+
+    # How long a shipment may sit in a stage before the board calls it
+    # waiting too long. Shipped is absent: it has left, nothing is waiting.
+    WAREHOUSE_STAGE_LIMITS = {
+        WarehouseStage.AWAITING_PICKUP: timedelta(days=3),
+        WarehouseStage.RECEIVED: timedelta(days=2),
+        WarehouseStage.PROCESSING: timedelta(days=2),
+        WarehouseStage.PACKED: timedelta(days=2),
+        WarehouseStage.READY: timedelta(days=5),
+    }
+
     objects = PackageQuerySet.as_manager()
 
     user = models.ForeignKey(
         "accounts.User",
         on_delete=models.CASCADE,
         related_name="packages",
+    )
+
+    warehouse_stage = models.CharField(
+        max_length=20,
+        choices=WarehouseStage.choices,
+        default=WarehouseStage.AWAITING_PICKUP,
+    )
+    # When it entered the stage it is in, which is what "waiting too long" is
+    # measured from.
+    warehouse_stage_at = models.DateTimeField(default=timezone.now)
+    # The first time it was received, kept when the stage moves on, so "today's
+    # packages" still counts a box that was received and packed the same day.
+    received_at = models.DateTimeField(null=True, blank=True)
+
+    # A problem is a flag beside the stage rather than a stage of its own: a
+    # damaged box is still packed, and clearing the problem must not have to
+    # guess where it was.
+    problem_note = models.CharField(max_length=500, blank=True)
+    problem_reported_at = models.DateTimeField(null=True, blank=True)
+    problem_reported_by = models.ForeignKey(
+        "accounts.User",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
     )
 
     # SET_NULL, not PROTECT: PROTECT would make deleting a customer impossible,
@@ -457,10 +510,24 @@ class Package(models.Model):
             # The two lookups the customer-facing pages will make.
             models.Index(fields=["user", "status"]),
             models.Index(fields=["tracking_number"]),
+            # The warehouse board: counts per stage, and what has sat too long.
+            models.Index(
+                fields=["warehouse_stage", "warehouse_stage_at"],
+                name="accounts_pa_wh_stage_idx",
+            ),
         ]
 
     def __str__(self):
         return f"{self.tracking_number} ({self.get_status_display()})"
+
+    @property
+    def overdue_since(self):
+        """When this shipment started waiting too long, or None if it is not."""
+        limit = self.WAREHOUSE_STAGE_LIMITS.get(self.warehouse_stage)
+        if limit is None or self.warehouse_stage_at is None:
+            return None
+        due = self.warehouse_stage_at + limit
+        return due if due <= timezone.now() else None
 
     @property
     def progress(self):
@@ -892,6 +959,12 @@ class PackageEvent(models.Model):
         # Written by staff.views.PackageViewSet.perform_update, the one place
         # a package's status changes.
         STATUS_CHANGED = "status_changed", "Shipment status changed"
+
+        # Written by the warehouse shipment API. Staff-only history: nothing
+        # customer-facing reads these rows.
+        WAREHOUSE_STAGE_CHANGED = "warehouse_stage_changed", "Warehouse stage changed"
+        PROBLEM_REPORTED = "problem_reported", "Problem reported"
+        PROBLEM_RESOLVED = "problem_resolved", "Problem resolved"
 
         # Written by invoicing. Kept as distinct kinds rather than one
         # "invoice_changed" with the status in context, because a timeline

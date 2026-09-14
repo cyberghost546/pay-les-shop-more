@@ -445,7 +445,13 @@ export const INVOICE_STATUSES = [
 // entirely behind /api/staff/.
 // ---------------------------------------------------------------------------
 
-/** @param {{ search?: string, status?: string, freight?: string, ordering?: string, page?: number }} filters */
+/**
+ * `measured: 'true'` keeps only sheets with measured lines; `mine: 'true'`
+ * only the sheets the signed-in person started.
+ *
+ * @param {{ search?: string, status?: string, freight?: string, measured?: string,
+ *   mine?: string, ordering?: string, page?: number }} filters
+ */
 export async function listIntakeSheets(filters) {
   return toPage(await request(`/staff/intake/${query(filters)}`));
 }
@@ -543,11 +549,67 @@ export async function getIntakeRecipients() {
  * office, unlike getOverview, which a warehouse account is refused.
  *
  * @returns {Promise<{ drafts: number, my_drafts: number, started_today: number,
- *   released_today: number, recent: object[] }>}
+ *   released_today: number, my_released_today: number, my_released_week: number,
+ *   my_released_total: number, recent: object[] }>}
  */
 export async function getWarehouseSummary() {
   return request('/staff/intake/summary/');
 }
+
+// ---------------------------------------------------------------------------
+// Warehouse shipments
+//
+// A shipment as the floor sees it: the warehouse stage, a problem flag, and
+// everything a scan should show. Open to warehouse accounts as well as the
+// office. The customer-facing status is not writable from here.
+// ---------------------------------------------------------------------------
+
+/** The warehouse board: a count per stage, today's intake, problems, overdue. */
+export async function getWarehouseBoard() {
+  return request('/staff/warehouse/shipments/board/');
+}
+
+/** @param {{ stage?: string, problem?: string, overdue?: string, search?: string, page?: number }} filters */
+export async function listWarehouseShipments(filters) {
+  return toPage(await request(`/staff/warehouse/shipments/${query(filters)}`));
+}
+
+export async function getWarehouseShipment(id) {
+  return request(`/staff/warehouse/shipments/${id}/`);
+}
+
+/** The shipment behind a scanned code. Rejects with a 404 ApiError when there is none. */
+export async function lookupWarehouseShipment(code) {
+  return request(`/staff/warehouse/shipments/lookup/${query({ code })}`);
+}
+
+export async function setWarehouseStage(id, stage) {
+  return request(`/staff/warehouse/shipments/${id}/stage/`, {
+    method: 'POST',
+    body: { stage },
+  });
+}
+
+export async function reportShipmentProblem(id, note) {
+  return request(`/staff/warehouse/shipments/${id}/problem/`, {
+    method: 'POST',
+    body: { note },
+  });
+}
+
+export async function resolveShipmentProblem(id) {
+  return request(`/staff/warehouse/shipments/${id}/resolve/`, { method: 'POST' });
+}
+
+// In the order the floor works through them.
+export const WAREHOUSE_STAGES = [
+  { value: 'awaiting_pickup', label: 'Waiting for pickup' },
+  { value: 'received', label: 'Received' },
+  { value: 'processing', label: 'Being processed' },
+  { value: 'packed', label: 'Packed' },
+  { value: 'ready', label: 'Ready for shipment' },
+  { value: 'shipped', label: 'Shipped' },
+];
 
 export const INTAKE_STATUSES = [
   { value: 'draft', label: 'Draft' },

@@ -180,6 +180,17 @@ export default function Packages() {
                   >
                     <td>
                       <div className={styles.primaryCell}>{pkg.tracking_number}</div>
+                      {/* The warehouse view: stage, problems and the printable
+                          QR label. Office staff are let into /warehouse. */}
+                      <div className={styles.mutedCell}>
+                        <Link className={styles.link} to={`/warehouse/shipments/${pkg.id}`}>
+                          Warehouse
+                        </Link>
+                        {' · '}
+                        <Link className={styles.link} to={`/warehouse/shipments/${pkg.id}/label`}>
+                          Label
+                        </Link>
+                      </div>
                       {pkg.description && (
                         <div className={`${styles.mutedCell} ${styles.excerpt}`}>
                           {pkg.description}

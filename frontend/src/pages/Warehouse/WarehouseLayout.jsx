@@ -11,7 +11,7 @@
 
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../auth/useAuth';
-import { BoxIcon, FileIcon, HouseIcon } from '../Dashboard/icons';
+import { BoxIcon, FileIcon, HouseIcon, UsersIcon } from '../Dashboard/icons';
 import dashboard from '../Dashboard/Dashboard.module.css';
 import styles from './Warehouse.module.css';
 
@@ -19,6 +19,7 @@ const TABS = [
   { to: '/warehouse', label: 'Home', icon: HouseIcon, end: true },
   { to: '/warehouse/scan', label: 'Scan', icon: BoxIcon },
   { to: '/warehouse/intake', label: 'Intake sheets', icon: FileIcon },
+  { to: '/warehouse/profile', label: 'Me', icon: UsersIcon },
 ];
 
 function Tabs({ className }) {
@@ -63,7 +64,9 @@ export default function WarehouseLayout() {
         <Tabs className={styles.topTabs} />
 
         <div className={styles.topRight}>
-          <span className={styles.who}>{user?.name?.trim() || user?.email}</span>
+          <Link to="/warehouse/profile" className={styles.who}>
+            {user?.name?.trim() || user?.email}
+          </Link>
           {/* The office can come and go between the two; the floor has
               nowhere on the other side to go. */}
           {user?.isStaff && (

@@ -74,7 +74,12 @@
 .who {
   color: var(--ink);
   font-size: 0.85rem;
+  text-decoration: none;
   white-space: nowrap;
+}
+
+a.who:hover {
+  color: var(--cyan);
 }
 
 .officeLink,
@@ -264,6 +269,584 @@ a.stat:hover {
   font-size: 0.85rem;
 }
 
+/* ---------------------------------------------------------------- profile */
+
+.profileHead {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.avatar {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 50%;
+  background: var(--navy);
+  color: #ffffff;
+  font-size: 1.4rem;
+  font-weight: 800;
+}
+
+.roles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.4rem;
+}
+
+.section {
+  margin-bottom: 1.5rem;
+}
+
+.profileColumns {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
+  gap: 0 1.5rem;
+}
+
+.profileForm {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.profileField {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.calcHead {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  max-width: 20rem;
+  margin-bottom: 0.8rem;
+}
+
+.calcHead .profileField {
+  flex: 1;
+}
+
+.checkRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  color: var(--ink);
+  font-size: 0.92rem;
+  cursor: pointer;
+}
+
+.checkRow input {
+  width: 1.15rem;
+  height: 1.15rem;
+  margin-top: 0.1rem;
+  accent-color: var(--cyan);
+}
+
+.profileFoot {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+
+/* ------------------------------------------------------------------ board */
+
+/* One colour per stage, used by the board card's top edge and the stage pill,
+   so a stage is recognisable before its word is read. */
+.stage_awaiting_pickup,
+.boardCard_awaiting_pickup { --stage: #64748b; --stage-soft: #f1f5f9; }
+.stage_received,
+.boardCard_received { --stage: #0284c7; --stage-soft: #e0f2fe; }
+.stage_processing,
+.boardCard_processing { --stage: #7c3aed; --stage-soft: #ede9fe; }
+.stage_packed,
+.boardCard_packed { --stage: #c2410c; --stage-soft: #ffedd5; }
+.stage_ready,
+.boardCard_ready { --stage: #0f766e; --stage-soft: #ccfbf1; }
+.stage_shipped,
+.boardCard_shipped { --stage: #15803d; --stage-soft: #dcfce7; }
+
+.alarms,
+.board {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10.5rem, 1fr));
+  gap: 0.8rem;
+  margin-bottom: 1.5rem;
+}
+
+.boardHeading {
+  margin: 0 0 0.75rem;
+  color: var(--ink);
+  font-size: 1.05rem;
+  font-weight: 800;
+}
+
+.boardCard {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  padding: 1.1rem 1.2rem;
+  border: 1px solid var(--line);
+  border-top: 5px solid var(--stage, var(--line));
+  border-radius: 14px;
+  background: #ffffff;
+  box-shadow: var(--shadow);
+  color: inherit;
+  text-decoration: none;
+}
+
+a.boardCard:hover {
+  border-color: var(--stage, var(--cyan));
+}
+
+a.boardCard:focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: 2px;
+}
+
+.boardCardDanger {
+  --stage: #dc2626;
+  background: #fef2f2;
+}
+
+.boardCardWarning {
+  --stage: #d97706;
+  background: #fffbeb;
+}
+
+.boardValue {
+  color: var(--navy);
+  font-size: 2.2rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.boardCardDanger .boardValue { color: #b91c1c; }
+.boardCardWarning .boardValue { color: #b45309; }
+
+.boardLabel {
+  color: var(--ink);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.boardSub {
+  min-height: 1.1em;
+  color: #b45309;
+  font-size: 0.78rem;
+  font-weight: 600;
+  white-space: pre;
+}
+
+.stagePill {
+  display: inline-block;
+  padding: 0.25rem 0.7rem;
+  border-radius: 999px;
+  background: var(--stage-soft, #f1f5f9);
+  color: var(--stage, #475569);
+  font-size: 0.78rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.rowBadges {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.3rem;
+}
+
+.rowProblem {
+  color: #b91c1c;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+/* --------------------------------------------------------------- shipment */
+
+.shipment {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+  margin-bottom: 1.5rem;
+  padding: 1.35rem;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: #ffffff;
+  box-shadow: var(--shadow);
+}
+
+.shipmentHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.shipmentKicker {
+  margin: 0;
+  color: var(--cyan);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.shipmentNumber {
+  margin: 0.2rem 0 0;
+  color: var(--navy);
+  font-size: 1.6rem;
+  font-weight: 800;
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+}
+
+.shipmentBadges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.shipmentSince {
+  margin: -0.6rem 0 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.problem {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.75rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid #fecaca;
+  border-left: 5px solid #dc2626;
+  border-radius: 12px;
+  background: #fef2f2;
+  color: #7f1d1d;
+}
+
+.problemMeta {
+  flex-basis: 100%;
+  color: #991b1b;
+  font-size: 0.8rem;
+}
+
+.problemResolve {
+  padding: 0.5rem 0.9rem;
+  border: 1px solid #16a34a;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #15803d;
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.details {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  gap: 0.9rem 1.25rem;
+  margin: 0;
+}
+
+.detail dt {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.detail dd {
+  margin: 0.2rem 0 0;
+  color: var(--ink);
+  font-size: 1rem;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.detailSub {
+  display: block;
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 500;
+  white-space: pre-line;
+}
+
+.products {
+  padding-top: 1rem;
+  border-top: 1px solid var(--line);
+}
+
+.productsTitle {
+  margin: 0 0 0.5rem;
+  color: var(--navy);
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.productsText {
+  margin: 0;
+  color: var(--ink);
+  white-space: pre-line;
+}
+
+.productsEmpty {
+  margin: 0;
+  color: var(--muted);
+}
+
+.lines {
+  margin: 0.6rem 0 0;
+  padding-left: 1.1rem;
+  color: var(--ink);
+  font-size: 0.92rem;
+}
+
+.lines li + li {
+  margin-top: 0.3rem;
+}
+
+/* Big enough to hit with a thumb while holding a box. */
+.stageButtons {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  gap: 0.5rem;
+}
+
+.stageButton {
+  min-height: 3.2rem;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #ffffff;
+  color: var(--navy);
+  font: inherit;
+  font-size: 0.92rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.stageButton:hover:not(:disabled) {
+  border-color: var(--cyan);
+  background: var(--ground);
+}
+
+.stageButton:disabled {
+  cursor: default;
+  opacity: 0.55;
+}
+
+.stageButtonCurrent,
+.stageButtonCurrent:disabled {
+  border-color: var(--navy);
+  background: var(--navy);
+  color: #ffffff;
+  opacity: 1;
+}
+
+.cardActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.cardActions > * {
+  flex: 1 1 11rem;
+}
+
+.dangerButton,
+.plainButton,
+.printButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  min-height: 3rem;
+  padding: 0.6rem 1rem;
+  border-radius: 12px;
+  font: inherit;
+  font-size: 0.92rem;
+  font-weight: 700;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.dangerButton {
+  border: 1px solid #fca5a5;
+  background: #ffffff;
+  color: #b91c1c;
+}
+
+.dangerButton:hover:not(:disabled) {
+  background: #fef2f2;
+}
+
+.plainButton {
+  border: 1px solid var(--line, #e2e8f0);
+  background: #ffffff;
+  color: var(--navy, #0b2545);
+}
+
+.plainButton:hover:not(:disabled) {
+  border-color: var(--cyan, #0ea5e9);
+}
+
+.dangerButton:disabled,
+.plainButton:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.problemForm {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.problemInput {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.7rem;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  font: inherit;
+  resize: vertical;
+}
+
+.problemInput:focus {
+  outline: 2px solid var(--cyan);
+  outline-offset: 1px;
+}
+
+/* ------------------------------------------------------------------ label */
+
+/* Outside the warehouse shell, so the palette is spelled out rather than
+   borrowed: this page must print the same whatever the screen theme is. */
+.labelPage {
+  min-height: 100vh;
+  padding: 1.5rem 1rem;
+  background: #f4f7fb;
+  color: #0f172a;
+}
+
+.labelToolbar {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  max-width: 100mm;
+  margin: 0 auto 1rem;
+}
+
+.printButton {
+  border: 0;
+  background: #0b2545;
+  color: #ffffff;
+}
+
+.label {
+  box-sizing: border-box;
+  width: 100mm;
+  max-width: 100%;
+  min-height: 150mm;
+  margin: 0 auto;
+  padding: 6mm;
+  border: 2px solid #0f172a;
+  background: #ffffff;
+  text-align: center;
+}
+
+.labelBrand {
+  margin: 0 0 3mm;
+  font-size: 11pt;
+  font-weight: 800;
+}
+
+.labelQr {
+  display: flex;
+  justify-content: center;
+}
+
+.labelQr svg {
+  width: 58mm;
+  max-width: 100%;
+  height: auto;
+}
+
+.labelCode {
+  margin: 2mm 0 5mm;
+  font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace;
+  font-size: 22pt;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  overflow-wrap: anywhere;
+}
+
+.labelFacts {
+  display: grid;
+  gap: 3mm;
+  margin: 0;
+  padding-top: 4mm;
+  border-top: 2px solid #0f172a;
+  text-align: left;
+}
+
+.labelFacts dt {
+  font-size: 8pt;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.labelFacts dd {
+  margin: 0.5mm 0 0;
+  font-size: 11pt;
+  white-space: pre-line;
+}
+
+.labelFacts .labelBig {
+  font-size: 18pt;
+  font-weight: 800;
+}
+
+@media print {
+  @page {
+    size: 100mm 150mm;
+    margin: 0;
+  }
+
+  .labelPage {
+    min-height: 0;
+    padding: 0;
+    background: #ffffff;
+  }
+
+  .labelToolbar {
+    display: none;
+  }
+
+  .label {
+    width: 100mm;
+    height: 150mm;
+    border: 0;
+  }
+}
+
 /* ------------------------------------------------------------------ phones */
 
 @media (max-width: 720px) {
@@ -287,7 +870,7 @@ a.stat:hover {
     left: 0;
     z-index: 30;
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(4, 1fr);
     height: var(--tabbar-height);
     padding-bottom: env(safe-area-inset-bottom);
     background: #ffffff;

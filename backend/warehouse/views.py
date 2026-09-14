@@ -15,6 +15,8 @@ it. Both classes still live in staff/permissions.py, so who may call what is
 answered in one file rather than invented here.
 """
 
+from datetime import timedelta
+
 from django.db import transaction
 from django.utils import timezone
 from rest_framework import mixins, status as http_status
@@ -25,7 +27,7 @@ from rest_framework.response import Response
 from staff.permissions import IsWarehouseOrStaff
 from staff.views import StaffViewSet
 
-from . import scanning
+from . import scanning, shipments
 from .models import AlreadyReleased, IntakeSheet, NotReleased
 from .recipients import handover_recipients
 from .serializers import (
@@ -88,7 +90,9 @@ class IntakeSheetViewSet(mixins.CreateModelMixin, StaffViewSet):
         "notes",
     )
     filter_fields = ("status", "freight")
-    ordering_fields = ("created_at", "received_on", "released_at", "status")
+    ordering_fields = (
+        "created_at", "updated_at", "received_on", "released_at", "status"
+    )
 
     def filter_queryset(self, queryset):
         queryset = super().filter_queryset(queryset)
@@ -101,6 +105,11 @@ class IntakeSheetViewSet(mixins.CreateModelMixin, StaffViewSet):
             queryset = queryset.filter(
                 measurements__isnull=measured == "false"
             ).distinct()
+
+        # `?mine=true` for the warehouse profile page: the sheets this person
+        # started. Only ever the caller's own, so there is no user id to pass.
+        if self.request.query_params.get("mine") == "true":
+            queryset = queryset.filter(created_by=self.request.user)
 
         return queryset
 
@@ -264,10 +273,25 @@ class IntakeSheetViewSet(mixins.CreateModelMixin, StaffViewSet):
         """
         found = scanning.find(request.query_params.get("code", ""))
 
+        # The shipment behind whatever matched - directly, or through the
+        # sheet already written for it - in full, so the scanner can show the
+        # customer, the stage and the invoice without a second lookup.
+        package = found["package"] or (found["sheet"].package if found["sheet"] else None)
+        if package is None:
+            package = shipments.find_shipment(found["code"])
+        shipment = (
+            shipments.ShipmentDetailSerializer(
+                shipments.detail_queryset().get(pk=package.pk)
+            ).data
+            if package is not None
+            else None
+        )
+
         return Response(
             {
                 "code": found["code"],
                 "match": found["match"],
+                "shipment": shipment,
                 "sheet": (
                     self.get_serializer(found["sheet"]).data
                     if found["sheet"] is not None
@@ -303,6 +327,7 @@ class IntakeSheetViewSet(mixins.CreateModelMixin, StaffViewSet):
         drafts = sheets.filter(status=IntakeSheet.Status.DRAFT)
 
         recent = self.get_queryset().order_by("-updated_at")[:5]
+        week_start = today - timedelta(days=today.weekday())
 
         return Response(
             {
@@ -310,6 +335,16 @@ class IntakeSheetViewSet(mixins.CreateModelMixin, StaffViewSet):
                 "my_drafts": drafts.filter(created_by=request.user).count(),
                 "started_today": sheets.filter(created_at__date=today).count(),
                 "released_today": sheets.filter(released_at__date=today).count(),
+                # The profile page's own numbers: what this person has handed
+                # over. Released rather than started, because a draft is not
+                # finished work yet.
+                "my_released_today": sheets.filter(
+                    released_by=request.user, released_at__date=today
+                ).count(),
+                "my_released_week": sheets.filter(
+                    released_by=request.user, released_at__date__gte=week_start
+                ).count(),
+                "my_released_total": sheets.filter(released_by=request.user).count(),
                 "recent": self.get_serializer(recent, many=True).data,
             }
         )

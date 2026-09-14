@@ -24,6 +24,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createIntakeSheet, scanCode } from '../../api/staff';
+import ShipmentCard from '../Warehouse/ShipmentCard';
 import { Banner, StatusBadge } from './ui';
 import styles from './Dashboard.module.css';
 
@@ -285,8 +286,9 @@ export default function Scan() {
       <header className={styles.head}>
         <h1 className={styles.title}>Scan a package</h1>
         <p className={styles.subtitle}>
-          Point the camera at the code on the box. If it has been written up
-          already you get that sheet; if not, you can start one here.
+          Point the camera at the barcode or QR code on the box. A known order
+          shows its customer, products, stage and invoice, with buttons to move
+          it along; anything else can be started as an intake sheet.
         </p>
       </header>
 
@@ -324,7 +326,18 @@ export default function Scan() {
         )}
       </div>
 
-      {result && <Result result={result} onStart={act} busy={busy} />}
+      {/* A code that belongs to a shipment gets the whole order - customer,
+          products, stage, invoice - and the buttons to move it along. The
+          card links to the intake sheet, or starts one, itself. Anything
+          else gets the intake answer as before. */}
+      {result?.shipment ? (
+        <ShipmentCard
+          shipment={result.shipment}
+          onChange={(shipment) => setResult((current) => ({ ...current, shipment }))}
+        />
+      ) : (
+        result && <Result result={result} onStart={act} busy={busy} />
+      )}
 
       {/* Not tucked behind a link. A torn label is an ordinary morning, and
           typing the number has to be as reachable as the camera. */}
