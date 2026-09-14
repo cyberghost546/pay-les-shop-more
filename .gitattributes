@@ -1,0 +1,9 @@
+# Shell scripts must reach the container with LF endings. A checkout on
+# Windows that converts them to CRLF produces a script whose interpreter line
+# ends in \r, and the container then fails with "no such file or directory"
+# naming a shell that is plainly installed. Dockerfiles have the same problem
+# for any line continuation.
+*.sh text eol=lf
+Dockerfile text eol=lf
+*.Dockerfile text eol=lf
+entrypoint.sh text eol=lf
