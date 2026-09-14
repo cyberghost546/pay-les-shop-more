@@ -915,7 +915,9 @@ a.boardCard:focus-visible {
   }
 }
 
-@media (max-width: 380px) {
+/* Brand, the Warehouse tag and Sign out come to about 420px together, so the
+   ".com" goes first on anything narrower than that plus the gutters. */
+@media (max-width: 440px) {
   .brandDot {
     display: none;
   }
