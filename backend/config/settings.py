@@ -200,6 +200,38 @@ CONN_MAX_AGE = int(os.environ.get("DJANGO_CONN_MAX_AGE", 60))
 # whether they enforce it, so it is asked for here rather than assumed.
 DB_SSL_REQUIRE = env_flag("DJANGO_DB_SSL_REQUIRE", default=not DEBUG)
 
+# How long to wait for the database to answer before giving up.
+#
+# Without this psycopg waits on the operating system, which on an address that
+# routes nowhere means minutes. Startup runs migrations before the web process
+# binds to the port, so an unreachable database does not produce an error --
+# it produces a container that hangs, and a platform health check reporting
+# "service unavailable" for its whole retry window with nothing in the log to
+# say why. Ten seconds is far longer than a healthy connection needs and short
+# enough that the real error is the first thing in the log.
+DB_CONNECT_TIMEOUT = int(os.environ.get("DJANGO_DB_CONNECT_TIMEOUT", 10))
+
+
+# Hosts that are not reached over the public internet, and so are not asked to
+# prove a TLS certificate.
+#
+# A platform's private network is the case that matters. Railway hands out
+# ${{Postgres.DATABASE_URL}} pointing at <service>.railway.internal, which is
+# an internal address its Postgres does not serve TLS on -- so requiring SSL
+# there fails the connection outright, migrations never finish, the web
+# process never starts, and the health check reports "service unavailable"
+# without ever mentioning the database.
+#
+# This is the same judgement the POSTGRES_* branch below already makes for
+# localhost, applied to the URL form as well.
+def is_private_host(host):
+    host = (host or "").lower()
+    return (
+        host in {"localhost", "127.0.0.1", "::1", ""}
+        or host.endswith(".railway.internal")
+        or host.endswith(".internal")
+    )
+
 
 def database_from_url(url):
     """Parse a postgres:// URL into Django's DATABASES shape.
@@ -230,8 +262,9 @@ def database_from_url(url):
         'CONN_MAX_AGE': CONN_MAX_AGE,
     }
 
-    if DB_SSL_REQUIRE:
-        config['OPTIONS'] = {'sslmode': 'require'}
+    config['OPTIONS'] = {'connect_timeout': DB_CONNECT_TIMEOUT}
+    if DB_SSL_REQUIRE and not is_private_host(config['HOST']):
+        config['OPTIONS']['sslmode'] = 'require'
 
     return config
 
@@ -249,12 +282,16 @@ elif os.environ.get("POSTGRES_DB"):
             'PORT': os.environ.get("POSTGRES_PORT", "5432"),
             # Reuse connections rather than opening one per request.
             'CONN_MAX_AGE': CONN_MAX_AGE,
-            **(
-                {'OPTIONS': {'sslmode': 'require'}}
-                if DB_SSL_REQUIRE and os.environ.get("POSTGRES_HOST", "localhost")
-                not in {"localhost", "127.0.0.1"}
-                else {}
-            ),
+            'OPTIONS': {
+                'connect_timeout': DB_CONNECT_TIMEOUT,
+                **(
+                    {'sslmode': 'require'}
+                    if DB_SSL_REQUIRE
+                    and os.environ.get("POSTGRES_HOST", "localhost")
+                    not in {"localhost", "127.0.0.1"}
+                    else {}
+                ),
+            },
         }
     }
 else:

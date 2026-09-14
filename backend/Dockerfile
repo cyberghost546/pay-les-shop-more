@@ -40,6 +40,11 @@ RUN DJANGO_DEBUG=0 \
     DATABASE_URL=postgres://build:build@127.0.0.1:5432/build \
     python manage.py collectstatic --noinput
 
+# COPY does not preserve an executable bit reliably from every checkout, and a
+# start script the container cannot execute fails identically to one that is
+# missing.
+RUN chmod +x /app/entrypoint.sh
+
 # Not root. A bug that gets as far as running code should not also get to
 # write to the image.
 RUN useradd --create-home --uid 10001 app && chown -R app /app
@@ -47,22 +52,18 @@ USER app
 
 EXPOSE 8000
 
-# Migrations run here rather than in a separate release step, because Railway
-# has no release phase that is guaranteed to finish before traffic arrives.
-# Django takes a lock in Postgres for the duration, so a second replica
-# starting at the same moment waits rather than applying the same migration
-# twice.
+# entrypoint.sh migrates, then execs gunicorn. Migrations run at start rather
+# than in a separate release step, because Railway has no release phase that
+# is guaranteed to finish before traffic arrives. Django takes a lock in
+# Postgres for the duration, so a second replica starting at the same moment
+# waits rather than applying the same migration twice.
+#
+# It is a script rather than a shell-form CMD so that a database that cannot
+# be reached is reported as such. The chain died before anything bound to the
+# port, and the platform could only say "service unavailable" for five
+# minutes -- which reads like a crashed application rather than a missing
+# variable.
 #
 # The worker service overrides this with:
 #   celery -A config worker --loglevel=info
-#
-# Logs to stdout, both access and error, because that is what the platform
-# collects. Shell form on purpose: ${PORT} has to be expanded at runtime, and
-# exec form would pass it to gunicorn as the literal string.
-CMD python manage.py migrate --noinput && \
-    exec gunicorn config.wsgi:application \
-      --bind "0.0.0.0:${PORT:-8000}" \
-      --workers "${WEB_CONCURRENCY:-3}" \
-      --timeout 60 \
-      --access-logfile - \
-      --error-logfile -
+CMD ["./entrypoint.sh"]
