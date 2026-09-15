@@ -7,13 +7,17 @@
 //
 // The names live in segments.js.
 
-import { useEffect, useId, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { normaliseSegments, segments as defaultSegments } from './segments';
 import styles from './SpinningWheel.module.css';
 
 // One full extra turn per move, so each change reads as a spin rather than a
 // small nudge. Set to 0 for a plain step to the next segment.
 const EXTRA_TURNS = 1;
+
+// Changes are announced to screen readers only when the wheel turns this
+// slowly or slower.
+const ANNOUNCE_MIN_MS = 10_000;
 
 const COLOURS = ['#0b2545', '#0ea5e9', '#123a63', '#38bdf8', '#1d4ed8', '#7dd3fc', '#071a30', '#60a5fa'];
 // Dark text on the light segments, white on the dark ones.
@@ -56,8 +60,34 @@ export default function SpinningWheel({ segments = defaultSegments, intervalMs =
   // spinning backwards.
   const [rotation, setRotation] = useState(0);
 
+  // Only spin while somebody can see it: not when scrolled off screen, and not
+  // in a background tab. Saves battery, and nobody comes back to a wheel that
+  // spun a hundred times while they were away.
+  const regionRef = useRef(null);
+  const [onScreen, setOnScreen] = useState(true);
+  const [pageVisible, setPageVisible] = useState(
+    () => typeof document === 'undefined' || document.visibilityState !== 'hidden',
+  );
+
   useEffect(() => {
-    if (count < 2) return undefined;
+    const element = regionRef.current;
+    if (!element || typeof IntersectionObserver === 'undefined') return undefined;
+
+    const observer = new IntersectionObserver(([entry]) => setOnScreen(entry.isIntersecting));
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    const update = () => setPageVisible(document.visibilityState !== 'hidden');
+    document.addEventListener('visibilitychange', update);
+    return () => document.removeEventListener('visibilitychange', update);
+  }, []);
+
+  const running = count >= 2 && onScreen && pageVisible;
+
+  useEffect(() => {
+    if (!running) return undefined;
 
     const timer = setInterval(() => {
       setCurrentIndex((index) => (index + 1) % count);
@@ -67,14 +97,23 @@ export default function SpinningWheel({ segments = defaultSegments, intervalMs =
     }, intervalMs);
 
     return () => clearInterval(timer);
-  }, [count, step, intervalMs]);
+  }, [running, count, step, intervalMs]);
 
   if (count === 0) return null;
 
   const current = items[currentIndex];
 
+  // Reading out a new name every few seconds would talk over whatever else a
+  // screen reader user is listening to. So the change is only announced when
+  // the wheel is slow; a fast wheel gives the whole list once instead.
+  const announce = intervalMs >= ANNOUNCE_MIN_MS;
+
   return (
-    <div className={styles.wheelRegion} role="region" aria-label={label}>
+    <div ref={regionRef} className={styles.wheelRegion} role="region" aria-label={label}>
+      {!announce && (
+        <p className={styles.srOnly}>{items.map((segment) => segment.name).join(', ')}</p>
+      )}
+
       <div className={styles.wheelFrame}>
         <span className={styles.pointer} aria-hidden="true" />
 
@@ -112,10 +151,10 @@ export default function SpinningWheel({ segments = defaultSegments, intervalMs =
                       width={BADGE_RADIUS * 2}
                       height={BADGE_RADIUS * 2}
                       clipPath={`url(#${clipId})`}
-                      // cover crops a logo on colour to the badge; full fits a
-                      // wide logo whole; contain does too, with a margin.
+                      // cover crops a logo on colour to the badge; anything
+                      // else is fitted whole, with a margin inside the circle.
                       preserveAspectRatio={segment.fit === 'cover' ? 'xMidYMid slice' : 'xMidYMid meet'}
-                      transform={segment.fit === 'cover' || segment.fit === 'full' ? undefined : 'scale(0.78)'}
+                      transform={segment.fit === 'cover' ? undefined : 'scale(0.8)'}
                     />
                   </g>
                 ) : (
@@ -139,8 +178,8 @@ export default function SpinningWheel({ segments = defaultSegments, intervalMs =
       {/* The selected shop under the wheel: its logo, or its name when it has
           none. Also the live region, so screen readers hear "Selected
           segment: Bol.com" when it changes. */}
-      <div className={styles.selected} aria-live="polite" aria-atomic="true">
-        <span className={styles.srOnly}>Selected segment: {current.name}</span>
+      <div className={styles.selected} aria-live={announce ? 'polite' : 'off'} aria-atomic="true">
+        {announce && <span className={styles.srOnly}>Selected segment: {current.name}</span>}
         {current.image ? (
           // Keyed by index, so each change mounts a fresh logo and fades it in.
           <span key={currentIndex} className={styles.selectedCard} aria-hidden="true">

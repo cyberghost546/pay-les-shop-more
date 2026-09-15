@@ -12,14 +12,7 @@
 // list a customer decides on. One edit here changes the page.
 
 import { DESTINATIONS } from './destinations';
-import autodocLogo from '../images/autodoc-logo.png';
-import bolLogo from '../images/Bol.com-image.webp';
-import brunaLogo from '../images/Bruna.png';
-import coolblueLogo from '../images/coolblue-image.jpg';
-import daDrogistLogo from '../images/DA-Drogist-Logo.jpg';
-import ikeaLogo from '../images/IKEA-Image.png';
-import ritualsLogo from '../images/Rituals.png';
-import top1ToysLogo from '../images/top1toys-2710135365.png';
+import { SHOPS } from './shops';
 
 // What every island has. Kept separate so adding a service everywhere is one
 // line rather than five.
@@ -62,19 +55,7 @@ export const ISLAND_SERVICES = DESTINATIONS.map((destination) => ({
 }));
 
 /**
- * The logo strip.
- *
- * To add a brand: put the logo in src/images/, import it at the top of this
- * module, and add it below. A brand with `logo: null` shows its name in type
- * instead, so the strip keeps its shape either way.
+ * The logo strip: the same shops as the home page wheel, from ./shops.js.
+ * Edit the shops there. A brand with no logo shows its name in type instead.
  */
-export const BRANDS = [
-  { name: 'Autodoc', logo: autodocLogo },
-  { name: 'Bol.com', logo: bolLogo },
-  { name: 'IKEA', logo: ikeaLogo },
-  { name: 'Bruna', logo: brunaLogo },
-  { name: 'Rituals', logo: ritualsLogo },
-  { name: 'DA Drogist', logo: daDrogistLogo },
-  { name: 'Top 1 Toys', logo: top1ToysLogo },
-  { name: 'Coolblue', logo: coolblueLogo },
-];
+export const BRANDS = SHOPS.map(({ name, logo }) => ({ name, logo: logo ?? null }));

@@ -18,10 +18,10 @@ describe('SpinningWheel', () => {
 
   it('shows the first name, then the next one every 10 seconds', () => {
     render(<SpinningWheel />);
-    expect(selectedName()).toBe('Ikea');
+    expect(selectedName()).toBe('IKEA');
 
     act(() => vi.advanceTimersByTime(9_999));
-    expect(selectedName()).toBe('Ikea');
+    expect(selectedName()).toBe('IKEA');
 
     act(() => vi.advanceTimersByTime(1));
     expect(selectedName()).toBe('Bol.com');
@@ -38,12 +38,37 @@ describe('SpinningWheel', () => {
       previous = now;
     }
 
-    expect(selectedName()).toBe('Ikea');
+    expect(selectedName()).toBe('IKEA');
   });
 
   it('announces changes politely', () => {
     render(<SpinningWheel />);
     expect(screen.getByText(/Selected segment/).closest('[aria-live]')).toHaveAttribute('aria-live', 'polite');
+  });
+
+  it('does not read out every change when it turns quickly', () => {
+    const { container } = render(<SpinningWheel intervalMs={5000} />);
+
+    expect(container.querySelector('[aria-live]')).toHaveAttribute('aria-live', 'off');
+    expect(screen.queryByText(/Selected segment/)).not.toBeInTheDocument();
+    // The whole list, once, instead.
+    expect(screen.getByText(segments.map((segment) => segment.name).join(', '))).toBeInTheDocument();
+  });
+
+  it('pauses while the tab is in the background', () => {
+    const { container } = render(<SpinningWheel />);
+    const rotation = rotationOf(container);
+
+    const visibility = vi.spyOn(document, 'visibilityState', 'get').mockReturnValue('hidden');
+    act(() => document.dispatchEvent(new Event('visibilitychange')));
+    act(() => vi.advanceTimersByTime(30_000));
+    expect(rotationOf(container)).toBe(rotation);
+
+    visibility.mockReturnValue('visible');
+    act(() => document.dispatchEvent(new Event('visibilitychange')));
+    act(() => vi.advanceTimersByTime(10_000));
+    expect(rotationOf(container)).toBeLessThan(rotation);
+    visibility.mockRestore();
   });
 
   it('stops its timer when unmounted', () => {

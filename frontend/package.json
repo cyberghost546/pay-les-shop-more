@@ -11,7 +11,8 @@
     "test": "vitest",
     "test:run": "vitest run",
     "coverage": "vitest run --coverage",
-    "images": "node scripts/optimize-images.js"
+    "images": "node scripts/optimize-images.js",
+    "logos": "node scripts/optimize-logos.js"
   },
   "dependencies": {
     "@zxing/browser": "^0.1.5",

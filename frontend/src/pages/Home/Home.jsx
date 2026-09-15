@@ -163,10 +163,10 @@ export default function Home() {
           </div>
 
           {/* The shops customers order from, on a wheel that turns to the
-              next one every 2 seconds. Names are in SpinningWheel/segments.js. */}
+              next one every 5 seconds. The shops are in src/data/shops.js. */}
           <div className={styles.visual}>
             <p className={styles.shopsCaption}>{t('home.hero.shops')}</p>
-            <SpinningWheel label={t('home.hero.shops')} intervalMs={2000} />
+            <SpinningWheel label={t('home.hero.shops')} intervalMs={5000} />
           </div>
         </div>
 

@@ -28,7 +28,7 @@ with what it does; these are the ones without which the site does not work:
 | `DJANGO_ALLOWED_HOSTS` | The hostnames Django will answer for. |
 | `DJANGO_CORS_ORIGINS`, `DJANGO_CSRF_ORIGINS` | The origin the React app is served from. |
 | `DATABASE_URL` | The whole connection in one string, which is what a hosted PostgreSQL hands you. The separate `POSTGRES_*` variables still work. Without either, and with `DJANGO_DEBUG` off, Django refuses to start rather than quietly falling back to SQLite. |
-| `AWS_STORAGE_BUCKET_NAME` | Where invoice PDFs and quote attachments are kept. Without it they go to the local disk, which is only safe on a host with a persistent volume and exactly one web process. The bucket must be private: the files are streamed by views that check who is asking. |
+| `AWS_STORAGE_BUCKET_NAME` | Where invoice PDFs, quote attachments, customer documents and warehouse damage photos are kept. Without it they go to the local disk, which is only safe on a host with a persistent volume and exactly one web process. The bucket must be private: the files are streamed by views that check who is asking. |
 | `EMAIL_*`, `DJANGO_FROM_EMAIL` | Password-reset mail. Unset means no reset link ever arrives. |
 | `DJANGO_FRONTEND_URL` | The absolute URL used to build that reset link. |
 | `CELERY_BROKER_URL` | Where invoice rendering is queued. Unset means it happens inside the approval request. |
