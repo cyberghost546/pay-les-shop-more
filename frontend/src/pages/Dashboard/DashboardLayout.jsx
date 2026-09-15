@@ -11,6 +11,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { getOverview } from '../../api/staff';
 import { useAuth } from '../../auth/useAuth';
+import AccountMenu from '../../components/AccountMenu/AccountMenu';
 import LanguageMenu from '../../components/LanguageSwitcher/LanguageMenu';
 import { useLanguage } from '../../i18n/useLanguage';
 import { CountPill } from './ui';
@@ -289,16 +290,23 @@ export default function DashboardLayout() {
             />
           </form>
 
-          <LanguageMenu />
-
+          {/* Hidden on phones; the account menu carries the same link. */}
           <div className={styles.topRight}>
             <Link to="/warehouse" className={styles.topLink}>
               {t('dashboard.office.warehouse')}
             </Link>
-            <button type="button" className={styles.signOut} onClick={handleSignOut}>
-              {t('dashboard.office.signOut')}
-            </button>
           </div>
+
+          <LanguageMenu />
+
+          <AccountMenu
+            links={[
+              { to: '/warehouse/profile', label: t('dashboard.warehouse.nav.profile') },
+              { to: '/warehouse', label: t('dashboard.office.nav.warehouseDashboard') },
+            ]}
+            signOutLabel={t('dashboard.office.signOut')}
+            onSignOut={handleSignOut}
+          />
         </header>
 
         <main className={styles.main}>

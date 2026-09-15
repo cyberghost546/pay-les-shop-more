@@ -15,6 +15,7 @@ import { useAuth } from '../../auth/useAuth';
 import LanguageMenu from '../../components/LanguageSwitcher/LanguageMenu';
 import { useLanguage } from '../../i18n/useLanguage';
 import dashboard from '../Dashboard/Dashboard.module.css';
+import AccountMenu from '../../components/AccountMenu/AccountMenu';
 import {
   AlertIcon,
   ClockIcon,
@@ -73,27 +74,35 @@ export default function WarehouseLayout() {
     <div className={`${dashboard.app} ${styles.shell}`}>
       <header className={styles.topbar}>
         <Link to="/warehouse" className={styles.brand}>
-          PayLesShopMore<span className={styles.brandDot}>.com</span>
-          <span className={styles.brandTag}>{t('dashboard.warehouse.tag')}</span>
+          <span className={styles.brandMark} aria-hidden="true">
+            P
+          </span>
+          <span className={styles.brandText}>
+            <span className={styles.brandName}>
+              PayLesShopMore<span className={styles.brandDot}>.com</span>
+            </span>
+            <span className={styles.brandTag}>{t('dashboard.warehouse.tag')}</span>
+          </span>
         </Link>
 
-        <div className={styles.languageSlot}>
-          <LanguageMenu />
-        </div>
-
         <div className={styles.topRight}>
-          <Link to="/warehouse/profile" className={styles.who}>
-            {user?.name?.trim() || user?.email}
-          </Link>
           {/* Office accounts can switch; warehouse workers have no office. */}
           {user?.isStaff && (
             <Link to="/dashboard" className={styles.officeLink}>
               {t('dashboard.warehouse.office')}
             </Link>
           )}
-          <button type="button" className={styles.signOut} onClick={handleSignOut}>
-            {t('dashboard.warehouse.signOut')}
-          </button>
+          <LanguageMenu />
+          <AccountMenu
+            links={[
+              { to: '/warehouse/profile', label: t('dashboard.warehouse.nav.profile') },
+              ...(user?.isStaff
+                ? [{ to: '/dashboard', label: t('dashboard.warehouse.nav.officeDashboard') }]
+                : []),
+            ]}
+            signOutLabel={t('dashboard.warehouse.signOut')}
+            onSignOut={handleSignOut}
+          />
         </div>
       </header>
 

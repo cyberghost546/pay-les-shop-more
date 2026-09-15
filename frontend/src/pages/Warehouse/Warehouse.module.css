@@ -9,7 +9,7 @@
  */
 
 .shell {
-  --topbar-height: 56px;
+  --topbar-height: 68px;
   --tabbar-height: 64px;
 }
 
@@ -23,21 +23,55 @@
   align-items: center;
   gap: 1rem;
   height: var(--topbar-height);
-  padding: 0 1.25rem;
-  background: #ffffff;
+  padding: 0 1.5rem;
+  box-sizing: border-box;
   border-bottom: 1px solid var(--line);
-  box-shadow: 0 1px 2px rgba(11, 37, 69, 0.04);
+  background: rgba(255, 255, 255, 0.94);
+  -webkit-backdrop-filter: saturate(1.4) blur(10px);
+  backdrop-filter: saturate(1.4) blur(10px);
 }
 
 .brand {
   display: flex;
-  align-items: baseline;
   flex-shrink: 0;
+  align-items: center;
+  gap: 0.7rem;
+  min-width: 0;
   color: var(--navy);
+  text-decoration: none;
+}
+
+.brand:focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: 4px;
+  border-radius: 10px;
+}
+
+.brandMark {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 2.35rem;
+  height: 2.35rem;
+  border-radius: 11px;
+  background: linear-gradient(135deg, var(--cyan), #2563eb);
+  box-shadow: 0 6px 14px rgba(37, 99, 235, 0.3);
+  color: #ffffff;
+  font-size: 1.1rem;
+  font-weight: 800;
+}
+
+.brandText {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.15;
+}
+
+.brandName {
   font-size: 1rem;
   font-weight: 800;
   letter-spacing: -0.01em;
-  text-decoration: none;
   white-space: nowrap;
 }
 
@@ -47,67 +81,38 @@
 }
 
 .brandTag {
-  margin-left: 0.6rem;
-  padding: 0.15rem 0.5rem;
-  border-radius: 999px;
-  background: var(--navy);
-  color: #ffffff;
+  color: var(--muted);
   font-size: 0.68rem;
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
-}
-
-/* The flags sit at the right, just before the account buttons - and at the
-   far right on phones, where those buttons are hidden. */
-.languageSlot {
-  margin-left: auto;
 }
 
 .topRight {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.6rem;
+  margin-left: auto;
 }
 
-/* Logo, WAREHOUSE tag and three flags do not fit across the narrowest
-   phones; the tag goes first. */
-@media (max-width: 400px) {
-  .brandTag {
-    display: none;
-  }
-}
-
-.who {
-  color: var(--ink);
-  font-size: 0.85rem;
-  text-decoration: none;
-  white-space: nowrap;
-}
-
-a.who:hover {
-  color: var(--cyan);
-}
-
-.officeLink,
-.signOut {
-  padding: 0.35rem 0.9rem;
+.officeLink {
+  display: inline-flex;
+  align-items: center;
+  height: 2.5rem;
+  padding: 0 1rem;
   border: 1px solid var(--line);
-  border-radius: 8px;
-  background: none;
-  color: #475569;
-  font: inherit;
+  border-radius: 999px;
+  background: #ffffff;
+  color: var(--navy);
   font-size: 0.86rem;
-  font-weight: 600;
+  font-weight: 700;
   text-decoration: none;
-  cursor: pointer;
   white-space: nowrap;
 }
 
-.officeLink:hover,
-.signOut:hover {
+.officeLink:hover {
   border-color: var(--cyan);
-  color: var(--navy);
+  background: #f0f9ff;
 }
 
 /* -------------------------------------------------------------- navigation */
@@ -974,10 +979,6 @@ a.boardCard:focus-visible {
 }
 
 @media (max-width: 720px) {
-  .who {
-    display: none;
-  }
-
   .topbar {
     padding: 0 1rem;
   }
@@ -985,15 +986,6 @@ a.boardCard:focus-visible {
   .main {
     padding-right: 1rem;
     padding-left: 1rem;
-  }
-}
-
-@media (max-width: 480px) {
-  /* Brand, Office and Sign out do not fit side by side on a phone - Sign out
-     was pushed off the right edge and made the whole page wider than the
-     screen. Both move into the More sheet (and the Profile page) instead. */
-  .topRight {
-    display: none;
   }
 }
 
@@ -1007,10 +999,27 @@ a.boardCard:focus-visible {
   overflow-x: clip;
 }
 
-/* Brand, the Warehouse tag and Sign out come to about 420px together, so the
-   ".com" goes first on anything narrower than that plus the gutters. */
-@media (max-width: 440px) {
-  .brandDot {
+
+/* Phones: the office link moves into the account menu, and the brand drops
+   its ".com" and its subtitle so the mark, the language and the account fit. */
+@media (max-width: 560px) {
+  .officeLink,
+  .brandDot,
+  .brandTag {
+    display: none;
+  }
+
+  .topbar {
+    gap: 0.5rem;
+  }
+
+  .topRight {
+    gap: 0.35rem;
+  }
+}
+
+@media (max-width: 360px) {
+  .brandName {
     display: none;
   }
 }

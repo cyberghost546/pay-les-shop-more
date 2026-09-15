@@ -113,6 +113,7 @@ export const dashboardTranslations = {
     },
     warehouse: {
       tag: 'Magazijn',
+      account: 'Account',
       sectionsLabel: 'Magazijnonderdelen',
       moreLabel: 'Meer magazijnonderdelen',
       nav: {
@@ -264,6 +265,7 @@ export const dashboardTranslations = {
     },
     warehouse: {
       tag: 'Warehouse',
+      account: 'Account',
       sectionsLabel: 'Warehouse sections',
       moreLabel: 'More warehouse sections',
       nav: {
@@ -415,6 +417,7 @@ export const dashboardTranslations = {
     },
     warehouse: {
       tag: 'Pakus',
+      account: 'Kuenta',
       sectionsLabel: 'Seccionnan di pakus',
       moreLabel: 'Mas seccion di pakus',
       nav: {

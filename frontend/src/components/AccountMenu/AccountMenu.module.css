@@ -1,0 +1,157 @@
+/* src/components/AccountMenu/AccountMenu.module.css
+ *
+ * The signed-in person in a dashboard top bar, and the menu it opens. The
+ * palette variables come from the dashboard shell; the fallbacks are the same
+ * values, for use anywhere else.
+ */
+
+.account {
+  position: relative;
+}
+
+.accountButton {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  height: 2.75rem;
+  padding: 0 0.7rem 0 0.25rem;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: none;
+  color: var(--ink, #0f172a);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.accountButton:hover,
+.accountButton[aria-expanded='true'] {
+  border-color: var(--line, #e2e8f0);
+  background: var(--ground, #f3f6fb);
+}
+
+.accountButton:focus-visible {
+  outline: 2px solid var(--cyan, #0ea5e9);
+  outline-offset: 2px;
+}
+
+.accountAvatar {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 50%;
+  background: var(--navy, #0b2545);
+  color: #ffffff;
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.accountText {
+  display: flex;
+  flex-direction: column;
+  max-width: 11rem;
+  line-height: 1.2;
+}
+
+.accountName {
+  overflow: hidden;
+  font-size: 0.88rem;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.accountRole {
+  color: var(--muted, #64748b);
+  font-size: 0.74rem;
+}
+
+.accountChevron {
+  width: 0.4rem;
+  height: 0.4rem;
+  border-right: 2px solid var(--muted, #64748b);
+  border-bottom: 2px solid var(--muted, #64748b);
+  transform: translateY(-2px) rotate(45deg);
+}
+
+.accountMenu {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  right: 0;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  min-width: 14rem;
+  padding: 0.4rem;
+  border: 1px solid var(--line, #e2e8f0);
+  border-radius: 14px;
+  background: #ffffff;
+  box-shadow: 0 16px 40px rgba(11, 37, 69, 0.16);
+}
+
+.accountMenuHead {
+  display: flex;
+  flex-direction: column;
+  padding: 0.55rem 0.7rem 0.7rem;
+  margin-bottom: 0.3rem;
+  border-bottom: 1px solid var(--line, #e2e8f0);
+}
+
+.accountMenuName {
+  color: var(--ink, #0f172a);
+  font-size: 0.92rem;
+  font-weight: 800;
+}
+
+.accountMenuEmail {
+  overflow: hidden;
+  color: var(--muted, #64748b);
+  font-size: 0.8rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.accountMenuItem {
+  display: flex;
+  align-items: center;
+  min-height: 2.75rem;
+  padding: 0 0.7rem;
+  border: 0;
+  border-radius: 10px;
+  background: none;
+  color: var(--ink, #0f172a);
+  font: inherit;
+  font-size: 0.92rem;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.accountMenuItem:hover {
+  background: var(--ground, #f3f6fb);
+}
+
+.accountMenuItem:focus-visible {
+  outline: 2px solid var(--cyan, #0ea5e9);
+  outline-offset: -2px;
+}
+
+.accountMenuSignOut {
+  color: #b91c1c;
+}
+
+
+/* Tablets and phones: the name and role go; the initials open the same menu. */
+@media (max-width: 960px) {
+  .accountText,
+  .accountChevron {
+    display: none;
+  }
+
+  .accountButton {
+    padding: 0 0.25rem;
+  }
+}
