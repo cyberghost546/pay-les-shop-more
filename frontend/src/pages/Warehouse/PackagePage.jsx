@@ -18,6 +18,8 @@ import { getWarehouseShipment } from '../../api/staff';
 import { errorMessage, getPackageTimeline, moveStage, setLocation } from '../../api/warehouse';
 import ConnectionError from '../../components/ConnectionError/ConnectionError';
 import Loading from '../../components/Loading/Loading';
+import { fill } from '../../i18n/fill';
+import { useLanguage } from '../../i18n/useLanguage';
 import DamageForm from './DamageForm';
 import MeasurementForm from './MeasurementForm';
 import { Message, Timeline } from './opsUi';
@@ -27,8 +29,8 @@ import styles from './Ops.module.css';
 
 const LEFT = ['in_transit', 'arrived', 'delivered', 'cancelled'];
 const PACKED_OR_LATER = ['packed', 'ready', 'shipped'];
-
-const STEP_LABELS = ['Verify', 'Measure', 'Packaging', 'Packaged', 'Ready'];
+const STEP_KEYS = ['verify', 'measure', 'packaging', 'packaged', 'ready'];
+const P = 'dashboard.flow.package.';
 
 /** Which step a package in this stage is on. */
 function stepFor(stage) {
@@ -39,6 +41,7 @@ function stepFor(stage) {
 }
 
 function Steps({ shipment, step }) {
+  const { t } = useLanguage();
   const stage = shipment.warehouse_stage;
   const done = [
     step !== 'verify',
@@ -50,17 +53,17 @@ function Steps({ shipment, step }) {
   const current = { verify: 0, measure: 1, packaging: 2, ready: 4 }[step] ?? -1;
 
   return (
-    <ol className={styles.steps} aria-label="Progress">
-      {STEP_LABELS.map((label, index) => {
+    <ol className={styles.steps} aria-label={t(`${P}progress`)}>
+      {STEP_KEYS.map((key, index) => {
         const className = [
           styles.step,
           done[index] && index !== current ? styles.stepDone : '',
           index === current ? styles.stepCurrent : '',
         ].join(' ');
         return (
-          <li key={label} className={className} aria-current={index === current ? 'step' : undefined}>
+          <li key={key} className={className} aria-current={index === current ? 'step' : undefined}>
             <span className={styles.stepDot}>{done[index] && index !== current ? '✓' : index + 1}</span>
-            <span>{label}</span>
+            <span>{t(`${P}steps.${key}`)}</span>
           </li>
         );
       })}
@@ -78,6 +81,7 @@ function Fact({ label, children, big }) {
 }
 
 function LocationForm({ shipment, onSaved }) {
+  const { t } = useLanguage();
   const [value, setValue] = useState(shipment.warehouse_location ?? '');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -88,9 +92,10 @@ function LocationForm({ shipment, onSaved }) {
     setBusy(true);
     setError('');
     try {
-      onSaved(await setLocation(shipment.id, value), `Location set to ${value.trim().toUpperCase() || 'none'}.`);
+      const location = value.trim().toUpperCase() || t(`${P}noLocation`);
+      onSaved(await setLocation(shipment.id, value), fill(t(`${P}locationSet`), { location }));
     } catch (caught) {
-      setError(errorMessage(caught));
+      setError(errorMessage(caught, undefined, t));
     } finally {
       setBusy(false);
     }
@@ -99,12 +104,12 @@ function LocationForm({ shipment, onSaved }) {
   return (
     <form onSubmit={submit} className={`${styles.fields} ${styles.alignEnd}`}>
       <label className={styles.field}>
-        <span className={styles.label}>Warehouse location</span>
+        <span className={styles.label}>{t(`${P}location`)}</span>
         <input
           className={styles.input}
           value={value}
           maxLength={40}
-          placeholder="e.g. B-04"
+          placeholder={t(`${P}locationPlaceholder`)}
           autoCapitalize="characters"
           autoComplete="off"
           onChange={(event) => setValue(event.target.value)}
@@ -112,7 +117,7 @@ function LocationForm({ shipment, onSaved }) {
         {error && <span className={styles.fieldError}>{error}</span>}
       </label>
       <button type="submit" className={styles.secondary} disabled={busy || !changed}>
-        {busy ? 'Saving…' : 'Save location'}
+        {busy ? t('dashboard.flow.common.saving') : t(`${P}saveLocation`)}
       </button>
     </form>
   );
@@ -121,6 +126,7 @@ function LocationForm({ shipment, onSaved }) {
 export default function PackagePage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { t } = useLanguage();
 
   const [attempt, setAttempt] = useState(0);
   const [load, setLoad] = useState({ key: null, status: 'loading' });
@@ -169,7 +175,7 @@ export default function PackagePage() {
   }
 
   function failed(error, fallback) {
-    setFlash({ tone: 'error', text: errorMessage(error, fallback) });
+    setFlash({ tone: 'error', text: errorMessage(error, fallback, t) });
     topRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
@@ -179,7 +185,7 @@ export default function PackagePage() {
     try {
       completed(await moveStage(shipment.id, stage), text, nextStep);
     } catch (error) {
-      failed(error, 'The package could not be moved. Try again.');
+      failed(error, t(`${P}moveError`));
     } finally {
       setBusy('');
     }
@@ -188,7 +194,7 @@ export default function PackagePage() {
   async function confirmPackage() {
     // An expected package being held is a package received.
     if (shipment.warehouse_stage === 'awaiting_pickup' && shipment.allowed_stages.includes('received')) {
-      await move('received', 'Package received. Now measure it.', 'measure');
+      await move('received', t(`${P}received`), 'measure');
       return;
     }
     setFlash({ tone: '', text: '' });
@@ -197,15 +203,16 @@ export default function PackagePage() {
 
   const nextPackage = () => navigate('/warehouse/scan');
   const state = load.key === key ? load.status : 'loading';
+  const saving = t('dashboard.flow.common.saving');
 
   if (state === 'loading') return <Loading inline />;
   if (state === 'error') return <ConnectionError inline onRetry={() => setAttempt((n) => n + 1)} />;
   if (state === 'missing') {
     return (
       <div className={styles.page}>
-        <Message tone="error">There is no package with this number.</Message>
+        <Message tone="error">{t(`${P}missing`)}</Message>
         <button type="button" className={`${styles.primary} ${styles.wide}`} onClick={nextPackage}>
-          Scan another package
+          {t(`${P}scanAnother`)}
         </button>
       </div>
     );
@@ -217,7 +224,7 @@ export default function PackagePage() {
   return (
     <div className={styles.page} ref={topRef}>
       <Link to="/warehouse/packages" className={styles.backLink}>
-        ← Packages
+        {t('dashboard.flow.common.backToPackages')}
       </Link>
 
       <Message tone={flash.tone || 'info'}>{flash.text}</Message>
@@ -232,39 +239,39 @@ export default function PackagePage() {
         </div>
 
         <dl className={styles.identity}>
-          <Fact label="Tracking number" big>
+          <Fact label={t(`${P}facts.tracking`)} big>
             {shipment.tracking_number}
           </Fact>
-          <Fact label="Customer">{shipment.customer}</Fact>
-          <Fact label="Order number">{shipment.order_number}</Fact>
-          <Fact label="Destination">{shipment.destination}</Fact>
-          <Fact label="Package type">
+          <Fact label={t(`${P}facts.customer`)}>{shipment.customer}</Fact>
+          <Fact label={t(`${P}facts.order`)}>{shipment.order_number}</Fact>
+          <Fact label={t(`${P}facts.destination`)}>{shipment.destination}</Fact>
+          <Fact label={t(`${P}facts.type`)}>
             {[shipment.package_type, shipment.freight_display].filter(Boolean).join(' · ')}
           </Fact>
-          <Fact label="Current status">{shipment.warehouse_stage_display}</Fact>
-          <Fact label="Warehouse location">{shipment.warehouse_location}</Fact>
+          <Fact label={t(`${P}facts.status`)}>{t(`dashboard.flow.stages.${shipment.warehouse_stage}`)}</Fact>
+          <Fact label={t(`${P}facts.location`)}>{shipment.warehouse_location}</Fact>
         </dl>
 
         {(shipment.has_open_damage || shipment.has_problem || shipment.overdue) && (
           <div className={styles.flagRow}>
-            {shipment.has_open_damage && <span className={styles.flag}>Open damage report</span>}
-            {shipment.has_problem && <span className={styles.flag}>Problem: {shipment.problem_note}</span>}
-            {shipment.overdue && <span className={`${styles.flag} ${styles.flagWarn}`}>Waiting too long</span>}
+            {shipment.has_open_damage && <span className={styles.flag}>{t(`${P}flagDamage`)}</span>}
+            {shipment.has_problem && (
+              <span className={styles.flag}>{fill(t(`${P}flagProblem`), { note: shipment.problem_note })}</span>
+            )}
+            {shipment.overdue && <span className={`${styles.flag} ${styles.flagWarn}`}>{t(`${P}flagOverdue`)}</span>}
           </div>
         )}
       </section>
 
       {hasLeft ? (
-        <Message tone="info">
-          This package is {shipment.status_display.toLowerCase()}. The warehouse can no longer change it.
-        </Message>
+        <Message tone="info">{fill(t(`${P}left`), { status: shipment.status_display.toLowerCase() })}</Message>
       ) : (
         <>
           <Steps shipment={shipment} step={step} />
 
           {step === 'verify' && (
             <section className={styles.card}>
-              <h2 className={styles.cardTitle}>Is this the package in front of you?</h2>
+              <h2 className={styles.cardTitle}>{t(`${P}verifyTitle`)}</h2>
               <div className={styles.buttonRow}>
                 <button
                   type="button"
@@ -273,10 +280,10 @@ export default function PackagePage() {
                   onClick={confirmPackage}
                   autoFocus
                 >
-                  {busy ? 'Saving…' : 'Yes, measure it'}
+                  {busy ? saving : t(`${P}verifyYes`)}
                 </button>
                 <button type="button" className={styles.secondary} onClick={nextPackage}>
-                  No, scan again
+                  {t(`${P}verifyNo`)}
                 </button>
               </div>
             </section>
@@ -284,13 +291,17 @@ export default function PackagePage() {
 
           {step === 'measure' && (
             <section className={styles.card}>
-              <h2 className={styles.cardTitle}>Measure</h2>
+              <h2 className={styles.cardTitle}>{t(`${P}measureTitle`)}</h2>
               <MeasurementForm
                 shipment={shipment}
                 onSaved={({ measurement, shipment: data }) =>
                   completed(
                     data,
-                    `Measurements saved: ${Number(measurement.weight_kg)} kg · ${Number(measurement.volume_m3)} m³ · dim. weight ${Number(measurement.dimensional_weight_kg)} kg.`,
+                    fill(t(`${P}measured`), {
+                      weight: Number(measurement.weight_kg),
+                      volume: Number(measurement.volume_m3),
+                      dim: Number(measurement.dimensional_weight_kg),
+                    }),
                     'packaging',
                   )
                 }
@@ -301,7 +312,7 @@ export default function PackagePage() {
                   className={`${styles.secondary} ${styles.wide} ${styles.gapTop}`}
                   onClick={() => setStep('packaging')}
                 >
-                  Keep current measurements
+                  {t(`${P}keepMeasurements`)}
                 </button>
               )}
             </section>
@@ -310,15 +321,21 @@ export default function PackagePage() {
           {step === 'packaging' && (
             <section className={styles.card}>
               <div className={styles.cardHead}>
-                <h2 className={styles.cardTitle}>Packaging</h2>
+                <h2 className={styles.cardTitle}>{t(`${P}packagingTitle`)}</h2>
                 <button type="button" className={styles.textButton} onClick={() => setStep('measure')}>
-                  Re-measure
+                  {t(`${P}remeasure`)}
                 </button>
               </div>
               <PackagingForm
                 shipment={shipment}
                 onSaved={({ packaging, shipment: data }) =>
-                  completed(data, `${packaging.quantity} × ${packaging.packaging_type_display} added.`)
+                  completed(
+                    data,
+                    fill(t(`${P}packagingAdded`), {
+                      quantity: packaging.quantity,
+                      type: t(`dashboard.flow.packaging.types.${packaging.packaging_type}`),
+                    }),
+                  )
                 }
               />
               <div className={`${styles.buttonRow} ${styles.gapTop}`}>
@@ -326,9 +343,9 @@ export default function PackagePage() {
                   type="button"
                   className={styles.primary}
                   disabled={Boolean(busy) || !canMove('packed')}
-                  onClick={() => move('packed', 'Package marked as packaged.', 'ready')}
+                  onClick={() => move('packed', t(`${P}packagedDone`), 'ready')}
                 >
-                  {busy === 'packed' ? 'Saving…' : 'Mark Packaged'}
+                  {busy === 'packed' ? saving : t(`${P}markPackaged`)}
                 </button>
               </div>
             </section>
@@ -336,21 +353,19 @@ export default function PackagePage() {
 
           {step === 'ready' && (
             <section className={styles.card}>
-              <h2 className={styles.cardTitle}>Ready for shipping?</h2>
-              <p className={`${styles.pageLead} ${styles.gapBottom}`}>
-                Put the package in the outgoing area, then confirm.
-              </p>
+              <h2 className={styles.cardTitle}>{t(`${P}readyTitle`)}</h2>
+              <p className={`${styles.pageLead} ${styles.gapBottom}`}>{t(`${P}readyLead`)}</p>
               <div className={styles.buttonRow}>
                 <button
                   type="button"
                   className={styles.success}
                   disabled={Boolean(busy) || !canMove('ready')}
-                  onClick={() => move('ready', 'Ready for shipping. Well done.', 'done')}
+                  onClick={() => move('ready', t(`${P}readyDone`), 'done')}
                 >
-                  {busy === 'ready' ? 'Saving…' : 'Mark Ready for Shipping'}
+                  {busy === 'ready' ? saving : t(`${P}markReady`)}
                 </button>
                 <button type="button" className={styles.secondary} onClick={() => setStep('packaging')}>
-                  Back to packaging
+                  {t(`${P}backToPackaging`)}
                 </button>
               </div>
             </section>
@@ -359,16 +374,16 @@ export default function PackagePage() {
           {step === 'done' && (
             <section className={styles.done}>
               <p className={styles.doneTitle}>
-                {shipment.warehouse_stage === 'shipped' ? 'This package has shipped' : 'Ready for shipping'}
+                {shipment.warehouse_stage === 'shipped' ? t(`${P}doneShipped`) : t(`${P}doneReady`)}
               </p>
-              <p className={styles.doneText}>Nothing more to do on this package.</p>
+              <p className={styles.doneText}>{t(`${P}doneText`)}</p>
               <div className={styles.buttonRow}>
                 {/* The label goes on the box before it leaves the floor. */}
                 <Link to={`/warehouse/shipments/${shipment.id}/label`} className={styles.secondary}>
-                  Print label
+                  {t(`${P}printLabel`)}
                 </Link>
                 <button type="button" className={styles.primary} onClick={nextPackage} autoFocus>
-                  Next Package
+                  {t('dashboard.flow.common.nextPackage')}
                 </button>
               </div>
             </section>
@@ -380,7 +395,7 @@ export default function PackagePage() {
               className={`${styles.secondary} ${styles.wide} ${styles.gapBottom}`}
               onClick={nextPackage}
             >
-              Next Package
+              {t('dashboard.flow.common.nextPackage')}
             </button>
           )}
         </>
@@ -389,20 +404,23 @@ export default function PackagePage() {
       <section className={styles.card}>
         {reportingDamage ? (
           <>
-            <h2 className={styles.cardTitle}>Report damage</h2>
+            <h2 className={styles.cardTitle}>{t(`${P}damageTitle`)}</h2>
             <DamageForm
               shipment={shipment}
               onCancel={() => setReportingDamage(false)}
               onSaved={({ damage_report: report, shipment: data }) => {
                 setReportingDamage(false);
-                completed(data, `Damage reported: ${report.damage_type_display}.`);
+                completed(
+                  data,
+                  fill(t(`${P}damageReported`), { type: t(`dashboard.flow.damage.types.${report.damage_type}`) }),
+                );
               }}
             />
           </>
         ) : (
           <div className={styles.buttonRow}>
             <button type="button" className={styles.danger} onClick={() => setReportingDamage(true)}>
-              Report damage
+              {t(`${P}reportDamage`)}
             </button>
           </div>
         )}
@@ -418,14 +436,14 @@ export default function PackagePage() {
       </section>
 
       <details className={styles.disclosure} open>
-        <summary>Package history ({timeline.length})</summary>
+        <summary>{fill(t(`${P}history`), { count: timeline.length })}</summary>
         <section className={styles.card}>
           <Timeline entries={timeline} />
         </section>
       </details>
 
       <details className={styles.disclosure}>
-        <summary>Full details and corrections</summary>
+        <summary>{t(`${P}details`)}</summary>
         <ShipmentCard
           shipment={shipment}
           onChange={(data) => {

@@ -156,11 +156,21 @@ export function fieldError(error, field) {
   return Array.isArray(messages) ? messages[0] : messages || '';
 }
 
-/** A sentence for the worker from any failed request. */
-export function errorMessage(error, fallback = 'That did not save. Check the connection and try again.') {
+/**
+ * A sentence for the worker from any failed request.
+ *
+ * @param {object} error
+ * @param {string} [fallback] shown when the server gave no reason
+ * @param {(key: string) => string} [t] the translator; English without one
+ */
+export function errorMessage(error, fallback, t) {
   const detail = error?.fields?.detail;
   if (typeof detail === 'string' && detail) return detail;
-  if (error?.status === 403) return 'Your account is not allowed to do that.';
-  if (error?.status === 404) return 'That package could not be found.';
-  return fallback;
+  if (error?.status === 403) {
+    return t ? t('dashboard.flow.errors.notAllowed') : 'Your account is not allowed to do that.';
+  }
+  if (error?.status === 404) {
+    return t ? t('dashboard.flow.errors.notFound') : 'That package could not be found.';
+  }
+  return fallback ?? (t ? t('dashboard.flow.errors.generic') : 'That did not save. Check the connection and try again.');
 }

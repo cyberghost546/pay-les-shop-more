@@ -163,7 +163,7 @@ export default function WarehouseHome() {
                         <span className={styles.fieldError}>{reasonFor(row, t)}</span>
                       </span>
                       <span className={styles.rowSide}>
-                        <StagePill stage={row.warehouse_stage} label={row.warehouse_stage_display} />
+                        <StagePill stage={row.warehouse_stage} label={t(`dashboard.flow.stages.${row.warehouse_stage}`)} />
                       </span>
                     </Link>
                   </li>

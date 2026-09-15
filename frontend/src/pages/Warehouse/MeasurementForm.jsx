@@ -8,6 +8,8 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { MEASUREMENT_LIMITS, errorMessage, fieldError, saveMeasurement } from '../../api/warehouse';
+import { fill } from '../../i18n/fill';
+import { useLanguage } from '../../i18n/useLanguage';
 import { MEASUREMENT_FIELDS, derived, toPayload, validateMeasurement } from './measurement';
 import { Message } from './opsUi';
 import styles from './Ops.module.css';
@@ -24,6 +26,7 @@ function formatNumber(value, digits) {
  *   autoFocus?: boolean }} props
  */
 export default function MeasurementForm({ shipment, onSaved, autoFocus = true }) {
+  const { t } = useLanguage();
   const [values, setValues] = useState(EMPTY);
   const [touched, setTouched] = useState({});
   const [serverError, setServerError] = useState(null);
@@ -34,7 +37,7 @@ export default function MeasurementForm({ shipment, onSaved, autoFocus = true })
     if (autoFocus) inputs.current.weight_kg?.focus();
   }, [autoFocus]);
 
-  const errors = validateMeasurement(values);
+  const errors = validateMeasurement(values, t);
   const figures = derived(values);
   const current = shipment.measurement;
 
@@ -77,15 +80,20 @@ export default function MeasurementForm({ shipment, onSaved, autoFocus = true })
 
   const generalError =
     serverError && !MEASUREMENT_FIELDS.some((field) => fieldError(serverError, field))
-      ? errorMessage(serverError, 'The measurement could not be saved. Check the connection and try again.')
+      ? errorMessage(serverError, t('dashboard.flow.measure.saveError'), t)
       : '';
 
   return (
     <form onSubmit={submit} noValidate>
       {current && (
         <Message tone="info">
-          Current: {Number(current.weight_kg)} kg · {Number(current.length_cm)} × {Number(current.width_cm)} ×{' '}
-          {Number(current.height_cm)} cm by {current.worker?.name}. Saving again records an update.
+          {fill(t('dashboard.flow.measure.current'), {
+            weight: Number(current.weight_kg),
+            length: Number(current.length_cm),
+            width: Number(current.width_cm),
+            height: Number(current.height_cm),
+            name: current.worker?.name ?? '',
+          })}
         </Message>
       )}
       <Message tone="error">{generalError}</Message>
@@ -98,7 +106,7 @@ export default function MeasurementForm({ shipment, onSaved, autoFocus = true })
           return (
             <label key={field} className={styles.field}>
               <span className={styles.label}>
-                {limits.label} ({limits.unit})
+                {t(`dashboard.flow.measure.fields.${field}`)} ({limits.unit})
               </span>
               <span className={styles.inputWrap}>
                 <input
@@ -130,21 +138,21 @@ export default function MeasurementForm({ shipment, onSaved, autoFocus = true })
 
       <dl className={styles.results} aria-live="polite">
         <div className={styles.result}>
-          <dt>Volume</dt>
+          <dt>{t('dashboard.flow.measure.volume')}</dt>
           <dd>{formatNumber(figures.volumeM3, 4)} m³</dd>
         </div>
         <div className={styles.result}>
-          <dt>Dimensional weight</dt>
+          <dt>{t('dashboard.flow.measure.dimensional')}</dt>
           <dd>{formatNumber(figures.dimensionalWeightKg, 2)} kg</dd>
         </div>
         <div className={styles.result}>
-          <dt>Chargeable weight</dt>
+          <dt>{t('dashboard.flow.measure.chargeable')}</dt>
           <dd>{formatNumber(figures.chargeableKg, 2)} kg</dd>
         </div>
       </dl>
 
       <button type="submit" className={`${styles.primary} ${styles.wide}`} disabled={busy}>
-        {busy ? 'Saving…' : current ? 'Save updated measurements' : 'Save measurements'}
+        {busy ? t('dashboard.flow.common.saving') : current ? t('dashboard.flow.measure.saveUpdate') : t('dashboard.flow.measure.save')}
       </button>
     </form>
   );

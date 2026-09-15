@@ -6,33 +6,35 @@ import { Link } from 'react-router-dom';
 import { listMeasurements } from '../../api/warehouse';
 import ConnectionError from '../../components/ConnectionError/ConnectionError';
 import Loading from '../../components/Loading/Loading';
+import { useLanguage } from '../../i18n/useLanguage';
 import PackageQueue from './PackageQueue';
 import { useLoad } from './useLoad';
 import styles from './Ops.module.css';
 
 function MeasuredToday() {
+  const { t } = useLanguage();
   const { state, data, reload } = useLoad(() => listMeasurements({ today: 'true', page_size: 200 }), 'today');
 
   return (
     <section className={styles.card} id="today">
-      <h2 className={styles.cardTitle}>Measured today{data ? ` (${data.count})` : ''}</h2>
+      <h2 className={styles.cardTitle}>{t('dashboard.flow.measurementsPage.todayTitle')}{data ? ` (${data.count})` : ''}</h2>
       {state === 'loading' && <Loading inline />}
       {state === 'error' && <ConnectionError inline onRetry={reload} />}
       {state === 'ready' &&
         (data.results.length === 0 ? (
-          <p className={styles.empty}>Nothing measured yet today.</p>
+          <p className={styles.empty}>{t('dashboard.flow.measurementsPage.todayEmpty')}</p>
         ) : (
           <div className={styles.tableWrap}>
             <table className={styles.table}>
               <thead>
                 <tr>
-                  <th>Time</th>
-                  <th>Package</th>
-                  <th className={styles.num}>Weight</th>
-                  <th className={styles.num}>L × W × H (cm)</th>
-                  <th className={styles.num}>Volume</th>
-                  <th className={styles.num}>Dim. weight</th>
-                  <th>By</th>
+                  <th>{t('dashboard.flow.measurementsPage.time')}</th>
+                  <th>{t('dashboard.flow.measurementsPage.package')}</th>
+                  <th className={styles.num}>{t('dashboard.flow.measurementsPage.weight')}</th>
+                  <th className={styles.num}>{t('dashboard.flow.measurementsPage.dims')}</th>
+                  <th className={styles.num}>{t('dashboard.flow.measurementsPage.volume')}</th>
+                  <th className={styles.num}>{t('dashboard.flow.measurementsPage.dimensional')}</th>
+                  <th>{t('dashboard.flow.measurementsPage.by')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -41,7 +43,7 @@ function MeasuredToday() {
                     <td>{row.time}</td>
                     <td>
                       <Link to={`/warehouse/packages/${row.package.id}`}>{row.package.tracking_number}</Link>
-                      {!row.current && <div className={styles.rowDetail}>Replaced by a later measurement</div>}
+                      {!row.current && <div className={styles.rowDetail}>{t('dashboard.flow.measurementsPage.replaced')}</div>}
                     </td>
                     <td className={styles.num}>{Number(row.weight_kg)} kg</td>
                     <td className={styles.num}>
@@ -61,18 +63,19 @@ function MeasuredToday() {
 }
 
 export default function MeasurementsPage() {
+  const { t } = useLanguage();
   return (
     <div className={styles.page}>
       <div className={styles.pageHead}>
         <div>
-          <h1 className={styles.pageTitle}>Measurements</h1>
-          <p className={styles.pageLead}>Tap a package to weigh and measure it.</p>
+          <h1 className={styles.pageTitle}>{t('dashboard.flow.measurementsPage.title')}</h1>
+          <p className={styles.pageLead}>{t('dashboard.flow.measurementsPage.lead')}</p>
         </div>
       </div>
       <PackageQueue
-        title="Waiting for measurement"
+        title={t('dashboard.flow.measurementsPage.waitingTitle')}
         stages={['received', 'awaiting_measurement']}
-        empty="Nothing is waiting to be measured."
+        empty={t('dashboard.flow.measurementsPage.waitingEmpty')}
       />
       <MeasuredToday />
     </div>

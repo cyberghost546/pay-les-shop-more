@@ -19,6 +19,7 @@ import {
 import { errorMessage } from '../../api/warehouse';
 import { Banner, StatusBadge } from '../Dashboard/ui';
 import { formatDateTime, formatWeight } from '../Dashboard/format';
+import { useLanguage } from '../../i18n/useLanguage';
 import StagePill from './StagePill';
 import { waitedFor } from './waited';
 import styles from './Warehouse.module.css';
@@ -43,6 +44,7 @@ function dims(line) {
  * @param {{ shipment: object, onChange: (shipment: object) => void }} props
  */
 export default function ShipmentCard({ shipment, onChange }) {
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const [busy, setBusy] = useState('');
   const [error, setError] = useState('');
@@ -97,7 +99,7 @@ export default function ShipmentCard({ shipment, onChange }) {
           <h2 className={styles.shipmentNumber}>{shipment.tracking_number}</h2>
         </div>
         <div className={styles.shipmentBadges}>
-          <StagePill stage={shipment.warehouse_stage} label={shipment.warehouse_stage_display} />
+          <StagePill stage={shipment.warehouse_stage} label={t(`dashboard.flow.stages.${shipment.warehouse_stage}`)} />
           {shipment.overdue && <StatusBadge tone="attention">Waiting too long</StatusBadge>}
         </div>
       </header>
@@ -202,7 +204,7 @@ export default function ShipmentCard({ shipment, onChange }) {
                 disabled={current || Boolean(busy) || shipment.status === 'cancelled'}
                 onClick={() => run(`stage-${stage.value}`, () => setWarehouseStage(shipment.id, stage.value))}
               >
-                {busy === `stage-${stage.value}` ? 'Saving…' : stage.label}
+                {busy === `stage-${stage.value}` ? t('dashboard.flow.common.saving') : t(`dashboard.flow.stages.${stage.value}`)}
               </button>
             );
           })}

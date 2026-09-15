@@ -8,18 +8,20 @@ import { Link } from 'react-router-dom';
 import { listActivity } from '../../api/warehouse';
 import ConnectionError from '../../components/ConnectionError/ConnectionError';
 import Loading from '../../components/Loading/Loading';
+import { useLanguage } from '../../i18n/useLanguage';
 import { useLoad } from './useLoad';
 import { whoAndWhen } from './when';
 import styles from './Ops.module.css';
 
 const FILTERS = [
-  { value: 'mine-today', label: 'My work today', params: { mine: 'true', today: 'true' } },
-  { value: 'today', label: 'Everyone today', params: { today: 'true' } },
-  { value: 'mine', label: 'All my work', params: { mine: 'true' } },
-  { value: 'all', label: 'Everything', params: {} },
+  { value: 'mine-today', labelKey: 'mineToday', params: { mine: 'true', today: 'true' } },
+  { value: 'today', labelKey: 'everyoneToday', params: { today: 'true' } },
+  { value: 'mine', labelKey: 'mine', params: { mine: 'true' } },
+  { value: 'all', labelKey: 'all', params: {} },
 ];
 
 export default function ActivityPage() {
+  const { t } = useLanguage();
   const [filter, setFilter] = useState('mine-today');
   const [page, setPage] = useState(1);
   const params = FILTERS.find((option) => option.value === filter).params;
@@ -33,12 +35,12 @@ export default function ActivityPage() {
     <div className={styles.page}>
       <div className={styles.pageHead}>
         <div>
-          <h1 className={styles.pageTitle}>Activity</h1>
-          <p className={styles.pageLead}>Every warehouse action is recorded here and cannot be changed.</p>
+          <h1 className={styles.pageTitle}>{t('dashboard.flow.activityPage.title')}</h1>
+          <p className={styles.pageLead}>{t('dashboard.flow.activityPage.lead')}</p>
         </div>
       </div>
 
-      <div className={styles.filterBar} role="group" aria-label="Show">
+      <div className={styles.filterBar} role="group" aria-label={t('dashboard.flow.activityPage.show')}>
         {FILTERS.map((option) => (
           <button
             key={option.value}
@@ -50,7 +52,7 @@ export default function ActivityPage() {
               setPage(1);
             }}
           >
-            {option.label}
+            {t(`dashboard.flow.activityPage.${option.labelKey}`)}
           </button>
         ))}
       </div>
@@ -60,7 +62,7 @@ export default function ActivityPage() {
         {state === 'error' && <ConnectionError inline onRetry={reload} />}
         {state === 'ready' &&
           (data.results.length === 0 ? (
-            <p className={styles.empty}>No activity here yet.</p>
+            <p className={styles.empty}>{t('dashboard.flow.activityPage.empty')}</p>
           ) : (
             <ul className={styles.rows}>
               {data.results.map((entry) => (
@@ -90,7 +92,7 @@ export default function ActivityPage() {
               disabled={!data.hasPrevious}
               onClick={() => setPage((n) => n - 1)}
             >
-              Newer
+              {t('dashboard.flow.activityPage.newer')}
             </button>
             <button
               type="button"
@@ -98,7 +100,7 @@ export default function ActivityPage() {
               disabled={!data.hasNext}
               onClick={() => setPage((n) => n + 1)}
             >
-              Older
+              {t('dashboard.flow.activityPage.older')}
             </button>
           </div>
         )}

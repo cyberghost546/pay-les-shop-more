@@ -7,6 +7,7 @@
 // wording changes, change `nl` first and bring the other two in line.
 
 import { dashboardTranslations } from './dashboardTranslations';
+import { warehouseFlowTranslations } from './warehouseFlowTranslations';
 
 export const LANGUAGES = [
   { code: 'nl', label: 'Nederlands', short: 'NL' },
@@ -19,7 +20,7 @@ export const DEFAULT_LANGUAGE = 'nl';
 export const translations = {
   nl: {
     // The office and warehouse dashboards; see dashboardTranslations.js.
-    dashboard: dashboardTranslations.nl,
+    dashboard: { ...dashboardTranslations.nl, flow: warehouseFlowTranslations.nl },
     nav: {
       home: 'Home',
       services: 'Diensten',
@@ -828,7 +829,7 @@ export const translations = {
 
   en: {
     // The office and warehouse dashboards; see dashboardTranslations.js.
-    dashboard: dashboardTranslations.en,
+    dashboard: { ...dashboardTranslations.en, flow: warehouseFlowTranslations.en },
     nav: {
       home: 'Home',
       services: 'Services',
@@ -1639,7 +1640,7 @@ export const translations = {
   // See the spelling note at the bottom of this file.
   pap: {
     // The office and warehouse dashboards; see dashboardTranslations.js.
-    dashboard: dashboardTranslations.pap,
+    dashboard: { ...dashboardTranslations.pap, flow: warehouseFlowTranslations.pap },
     nav: {
       home: 'Home',
       services: 'Servisionan',

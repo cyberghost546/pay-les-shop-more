@@ -2,6 +2,7 @@
 //
 // Small pieces the warehouse operation screens share.
 
+import { useLanguage } from '../../i18n/useLanguage';
 import styles from './Ops.module.css';
 
 /** A large, unmissable success/error/info line. Nothing when empty. */
@@ -25,7 +26,8 @@ export function Message({ tone = 'info', children }) {
  * @param {{ entries: object[] }} props rows from getPackageTimeline
  */
 export function Timeline({ entries }) {
-  if (!entries.length) return <p className={styles.empty}>Nothing has happened to this package yet.</p>;
+  const { t } = useLanguage();
+  if (!entries.length) return <p className={styles.empty}>{t('dashboard.flow.timeline.empty')}</p>;
 
   return (
     <ol className={styles.timeline}>
@@ -43,7 +45,7 @@ export function Timeline({ entries }) {
               <span className={styles.eventAction}>{entry.action_display}</span>
             </div>
             <div className={styles.eventMeta}>
-              {entry.user?.name ?? 'System'}
+              {entry.user?.name ?? t('dashboard.flow.timeline.system')}
               {entry.date && ` · ${entry.date}`}
             </div>
             {entry.description && <p className={styles.eventDetail}>{entry.description}</p>}

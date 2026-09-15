@@ -12,16 +12,13 @@ import { Empty, FilterSelect, Pagination, SearchInput, StatusBadge, Toolbar } fr
 import { useCollection } from '../Dashboard/useCollection';
 import { formatWeight } from '../Dashboard/format';
 import dashboard from '../Dashboard/Dashboard.module.css';
+import { fill } from '../../i18n/fill';
+import { useLanguage } from '../../i18n/useLanguage';
 import StagePill from './StagePill';
 import { waitedFor } from './waited';
 import styles from './Warehouse.module.css';
 
-const SHOW = [
-  { value: 'attention', label: 'Requiring attention' },
-  { value: 'damaged', label: 'Open damage' },
-  { value: 'problem', label: 'With a problem' },
-  { value: 'overdue', label: 'Waiting too long' },
-];
+const SHOW = ['attention', 'damaged', 'problem', 'overdue'];
 
 // Module scope, so useCollection sees one stable function. The page's single
 // "show" choice becomes one of the API's separate flags here.
@@ -31,21 +28,21 @@ const fetchShipments = ({ show, ...filters }) =>
     ...(show ? { [show]: 'true' } : {}),
   });
 
-function titleFor(filters) {
-  const shown = SHOW.find((option) => option.value === filters.show);
-  if (shown) return shown.label;
+function titleFor(filters, t) {
+  if (SHOW.includes(filters.show)) return t(`dashboard.flow.list.${filters.show}`);
   const stage = WAREHOUSE_STAGES.find((option) => option.value === filters.stage);
-  return stage ? stage.label : 'Packages';
+  return stage ? t(`dashboard.flow.stages.${stage.value}`) : t('dashboard.flow.list.title');
 }
 
 export default function ShipmentList() {
+  const { t } = useLanguage();
   const [params] = useSearchParams();
 
   const list = useCollection(
     fetchShipments,
     {
       stage: params.get('stage') ?? '',
-      show: SHOW.find((option) => params.get(option.value) === 'true')?.value ?? '',
+      show: SHOW.find((value) => params.get(value) === 'true') ?? '',
     },
     params.get('search') ?? '',
   );
@@ -53,30 +50,30 @@ export default function ShipmentList() {
   return (
     <>
       <header className={dashboard.head}>
-        <h1 className={dashboard.title}>{titleFor(list.filters)}</h1>
-        <p className={dashboard.subtitle}>Oldest first. Tap a package to work on it.</p>
+        <h1 className={dashboard.title}>{titleFor(list.filters, t)}</h1>
+        <p className={dashboard.subtitle}>{t('dashboard.flow.list.lead')}</p>
       </header>
 
       <Toolbar>
         <SearchInput
           value={list.searchInput}
           onChange={list.setSearchInput}
-          label="Search packages"
-          placeholder="Tracking number, customer, product or location"
+          label={t('dashboard.flow.list.search')}
+          placeholder={t('dashboard.flow.list.searchPlaceholder')}
         />
         <FilterSelect
-          label="Stage"
+          label={t('dashboard.flow.list.stage')}
           value={list.filters.stage}
           onChange={(value) => list.setFilter('stage', value)}
-          options={WAREHOUSE_STAGES}
-          allLabel="Every stage"
+          options={WAREHOUSE_STAGES.map((stage) => ({ value: stage.value, label: t(`dashboard.flow.stages.${stage.value}`) }))}
+          allLabel={t('dashboard.flow.list.everyStage')}
         />
         <FilterSelect
-          label="Show"
+          label={t('dashboard.flow.list.show')}
           value={list.filters.show}
           onChange={(value) => list.setFilter('show', value)}
-          options={SHOW}
-          allLabel="Everything"
+          options={SHOW.map((value) => ({ value, label: t(`dashboard.flow.list.${value}`) }))}
+          allLabel={t('dashboard.flow.list.everything')}
         />
       </Toolbar>
 
@@ -85,7 +82,7 @@ export default function ShipmentList() {
 
       {list.state === 'ready' &&
         (list.rows.length === 0 ? (
-          <Empty>Nothing here. Good work.</Empty>
+          <Empty>{t('dashboard.flow.list.empty')}</Empty>
         ) : (
           <ul className={`${dashboard.card} ${styles.recent}`}>
             {list.rows.map((row) => (
@@ -94,21 +91,21 @@ export default function ShipmentList() {
                   <span className={styles.recentMain}>
                     <span className={styles.recentLabel}>{row.tracking_number}</span>
                     <span className={styles.recentDetail}>
-                      {row.customer} · {row.destination || 'No destination'}
+                      {row.customer} · {row.destination || t('dashboard.flow.list.noDestination')}
                       {row.warehouse_location ? ` · ${row.warehouse_location}` : ''}
                       {row.weight_kg ? ` · ${formatWeight(row.weight_kg)}` : ''}
                     </span>
-                    {row.has_open_damage && <span className={styles.rowProblem}>Open damage report</span>}
+                    {row.has_open_damage && <span className={styles.rowProblem}>{t('dashboard.flow.list.openDamage')}</span>}
                     <span className={styles.recentDetail}>
-                      {waitedFor(row.warehouse_stage_at)} in this stage
+                      {fill(t('dashboard.flow.list.inStage'), { time: waitedFor(row.warehouse_stage_at) })}
                     </span>
                     {row.has_problem && (
-                      <span className={styles.rowProblem}>Problem: {row.problem_note}</span>
+                      <span className={styles.rowProblem}>{fill(t('dashboard.flow.list.problemNote'), { note: row.problem_note })}</span>
                     )}
                   </span>
                   <span className={styles.rowBadges}>
-                    <StagePill stage={row.warehouse_stage} label={row.warehouse_stage_display} />
-                    {row.overdue && <StatusBadge tone="attention">Too long</StatusBadge>}
+                    <StagePill stage={row.warehouse_stage} label={t(`dashboard.flow.stages.${row.warehouse_stage}`)} />
+                    {row.overdue && <StatusBadge tone="attention">{t('dashboard.flow.list.tooLong')}</StatusBadge>}
                   </span>
                 </Link>
               </li>

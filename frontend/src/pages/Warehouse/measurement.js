@@ -5,8 +5,18 @@
 // the worker sees a mistake while the tape measure is still in their hand.
 
 import { MEASUREMENT_LIMITS, VOLUMETRIC_DIVISOR } from '../../api/warehouse';
+import { fill } from '../../i18n/fill';
 
 export const MEASUREMENT_FIELDS = ['weight_kg', 'length_cm', 'width_cm', 'height_cm'];
+
+// Used when no translator is passed, which keeps these pure functions easy to
+// test on their own.
+const ENGLISH = {
+  required: '{field} is required.',
+  number: '{field} must be a number.',
+  range: '{field} must be between {min} and {max} {unit}.',
+  places: '{field}: at most {places} decimal place(s).',
+};
 
 /** "12,5" and "12.5" are both twelve and a half. Blank or junk is null. */
 export function parseNumber(raw) {
@@ -16,29 +26,39 @@ export function parseNumber(raw) {
   return Number.isFinite(value) ? value : null;
 }
 
-/** An error sentence for one field, or '' when it is fine. */
-export function validateField(field, raw) {
+/**
+ * An error sentence for one field, or '' when it is fine.
+ *
+ * @param {string} field
+ * @param {string} raw
+ * @param {(key: string) => string} [t] the translator; English without one
+ */
+export function validateField(field, raw, t) {
   const limits = MEASUREMENT_LIMITS[field];
-  if (String(raw ?? '').trim() === '') return `${limits.label} is required.`;
+  const message = (key, values) =>
+    fill(t ? t(`dashboard.flow.measure.${key}`) : ENGLISH[key], {
+      field: t ? t(`dashboard.flow.measure.fields.${field}`) : limits.label,
+      ...values,
+    });
+
+  if (String(raw ?? '').trim() === '') return message('required');
 
   const value = parseNumber(raw);
-  if (value === null) return `${limits.label} must be a number.`;
+  if (value === null) return message('number');
   if (value < limits.min || value > limits.max) {
-    return `${limits.label} must be between ${limits.min} and ${limits.max} ${limits.unit}.`;
+    return message('range', { min: limits.min, max: limits.max, unit: limits.unit });
   }
   const decimals = String(raw).trim().replace(',', '.').split('.')[1] ?? '';
-  if (decimals.length > limits.places) {
-    return `${limits.label}: at most ${limits.places} decimal place${limits.places === 1 ? '' : 's'}.`;
-  }
+  if (decimals.length > limits.places) return message('places', { places: limits.places });
   return '';
 }
 
 /** Every field's error, keyed by field, for the ones that have one. */
-export function validateMeasurement(values) {
+export function validateMeasurement(values, t) {
   const errors = {};
   for (const field of MEASUREMENT_FIELDS) {
-    const message = validateField(field, values[field]);
-    if (message) errors[field] = message;
+    const text = validateField(field, values[field], t);
+    if (text) errors[field] = text;
   }
   return errors;
 }

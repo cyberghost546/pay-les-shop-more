@@ -5,6 +5,7 @@
 
 import { useState } from 'react';
 import { PACKAGING_TYPES, addPackaging, errorMessage, fieldError } from '../../api/warehouse';
+import { useLanguage } from '../../i18n/useLanguage';
 import { Message } from './opsUi';
 import styles from './Ops.module.css';
 
@@ -12,6 +13,7 @@ import styles from './Ops.module.css';
  * @param {{ shipment: object, onSaved: (answer: {packaging: object, shipment: object}) => void }} props
  */
 export default function PackagingForm({ shipment, onSaved }) {
+  const { t } = useLanguage();
   const [type, setType] = useState('');
   const [quantity, setQuantity] = useState(1);
   const [notes, setNotes] = useState('');
@@ -24,16 +26,16 @@ export default function PackagingForm({ shipment, onSaved }) {
   async function submit(event) {
     event.preventDefault();
     if (!type) {
-      setClientError('Choose the packaging you used.');
+      setClientError(t('dashboard.flow.packaging.chooseType'));
       return;
     }
     if (needsNotes && !notes.trim()) {
-      setClientError('Say what packaging was used.');
+      setClientError(t('dashboard.flow.packaging.sayWhat'));
       return;
     }
     const count = Number(quantity);
     if (!Number.isInteger(count) || count < 1 || count > 999) {
-      setClientError('Quantity must be a whole number from 1 to 999.');
+      setClientError(t('dashboard.flow.packaging.quantityRange'));
       return;
     }
 
@@ -61,13 +63,13 @@ export default function PackagingForm({ shipment, onSaved }) {
     fieldError(error, 'packaging_type') ||
     fieldError(error, 'quantity') ||
     fieldError(error, 'notes') ||
-    (error ? errorMessage(error) : '');
+    (error ? errorMessage(error, undefined, t) : '');
 
   return (
     <form onSubmit={submit} noValidate>
       <Message tone="error">{clientError || serverMessage}</Message>
 
-      <div className={styles.choices} role="radiogroup" aria-label="Packaging type">
+      <div className={styles.choices} role="radiogroup" aria-label={t('dashboard.flow.packaging.typeLabel')}>
         {PACKAGING_TYPES.map((option) => (
           <button
             key={option.value}
@@ -80,7 +82,7 @@ export default function PackagingForm({ shipment, onSaved }) {
               setClientError('');
             }}
           >
-            {option.label}
+            {t(`dashboard.flow.packaging.types.${option.value}`)}
           </button>
         ))}
       </div>
@@ -88,13 +90,13 @@ export default function PackagingForm({ shipment, onSaved }) {
       <div className={styles.fields}>
         <div className={styles.field}>
           <span className={styles.label} id="packaging-quantity">
-            Quantity
+            {t('dashboard.flow.packaging.quantity')}
           </span>
           <div className={styles.stepper}>
             <button
               type="button"
               className={styles.stepperButton}
-              aria-label="One less"
+              aria-label={t('dashboard.flow.packaging.less')}
               onClick={() => setQuantity((n) => Math.max(1, Number(n) - 1 || 1))}
             >
               −
@@ -109,7 +111,7 @@ export default function PackagingForm({ shipment, onSaved }) {
             <button
               type="button"
               className={styles.stepperButton}
-              aria-label="One more"
+              aria-label={t('dashboard.flow.packaging.more')}
               onClick={() => setQuantity((n) => Math.min(999, (Number(n) || 0) + 1))}
             >
               +
@@ -118,19 +120,19 @@ export default function PackagingForm({ shipment, onSaved }) {
         </div>
 
         <label className={styles.field}>
-          <span className={styles.label}>Notes{needsNotes ? ' (required)' : ' (optional)'}</span>
+          <span className={styles.label}>{needsNotes ? t('dashboard.flow.packaging.notesRequired') : t('dashboard.flow.packaging.notesOptional')}</span>
           <input
             className={styles.input}
             value={notes}
             maxLength={500}
-            placeholder={needsNotes ? 'What did you use?' : ''}
+            placeholder={needsNotes ? t('dashboard.flow.packaging.otherPlaceholder') : ''}
             onChange={(event) => setNotes(event.target.value)}
           />
         </label>
       </div>
 
       <button type="submit" className={`${styles.secondary} ${styles.wide}`} disabled={busy}>
-        {busy ? 'Saving…' : 'Add packaging'}
+        {busy ? t('dashboard.flow.common.saving') : t('dashboard.flow.packaging.add')}
       </button>
     </form>
   );

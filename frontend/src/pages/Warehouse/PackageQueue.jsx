@@ -7,6 +7,8 @@ import { Link } from 'react-router-dom';
 import { listWarehouseShipments } from '../../api/staff';
 import ConnectionError from '../../components/ConnectionError/ConnectionError';
 import Loading from '../../components/Loading/Loading';
+import { fill } from '../../i18n/fill';
+import { useLanguage } from '../../i18n/useLanguage';
 import StagePill from './StagePill';
 import { useLoad } from './useLoad';
 import { waitedFor } from './waited';
@@ -18,6 +20,7 @@ const PAGE_SIZE = 50;
  * @param {{ title: string, stages: string[], empty: string }} props
  */
 export default function PackageQueue({ title, stages, empty }) {
+  const { t } = useLanguage();
   const stage = stages.join(',');
   const { state, data, reload } = useLoad(
     () => listWarehouseShipments({ stage, page_size: PAGE_SIZE }),
@@ -32,7 +35,7 @@ export default function PackageQueue({ title, stages, empty }) {
           {data ? ` (${data.count})` : ''}
         </h2>
         <Link to={`/warehouse/packages?stage=${stage}`} className={styles.backLink}>
-          See all
+          {t('dashboard.flow.common.seeAll')}
         </Link>
       </div>
 
@@ -51,12 +54,12 @@ export default function PackageQueue({ title, stages, empty }) {
                     <span className={styles.rowDetail}>
                       {row.customer}
                       {row.warehouse_location && ` · ${row.warehouse_location}`}
-                      {` · waiting ${waitedFor(row.warehouse_stage_at)}`}
+                      {` · ${fill(t('dashboard.flow.queue.waiting'), { time: waitedFor(row.warehouse_stage_at) })}`}
                     </span>
                   </span>
                   <span className={styles.rowSide}>
-                    <StagePill stage={row.warehouse_stage} label={row.warehouse_stage_display} />
-                    {row.has_open_damage && <span className={styles.flag}>Damage</span>}
+                    <StagePill stage={row.warehouse_stage} label={t(`dashboard.flow.stages.${row.warehouse_stage}`)} />
+                    {row.has_open_damage && <span className={styles.flag}>{t('dashboard.flow.queue.damage')}</span>}
                   </span>
                 </Link>
               </li>

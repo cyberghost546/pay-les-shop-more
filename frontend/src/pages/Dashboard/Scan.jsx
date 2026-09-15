@@ -25,6 +25,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createIntakeSheet, scanCode } from '../../api/staff';
 import { recordScan } from '../../api/warehouse';
+import { fill } from '../../i18n/fill';
+import { useLanguage } from '../../i18n/useLanguage';
 import { Banner, StatusBadge } from './ui';
 import styles from './Dashboard.module.css';
 
@@ -77,9 +79,7 @@ function useScanner(onCode) {
 
     if (!cameraAvailable()) {
       setError(
-        window.isSecureContext === false
-          ? 'The camera only works over https. Open the dashboard on the secure address.'
-          : 'This device has no camera the browser can use. Type the code instead.',
+        window.isSecureContext === false ? 'cameraHttps' : 'cameraNone',
       );
       return;
     }
@@ -112,9 +112,7 @@ function useScanner(onCode) {
       setRunning(true);
     } catch (failure) {
       setError(
-        failure?.name === 'NotAllowedError'
-          ? 'The camera was blocked. Allow it for this site in your browser settings, or type the code instead.'
-          : 'The camera could not be started. Type the code instead.',
+        failure?.name === 'NotAllowedError' ? 'cameraBlocked' : 'cameraFailed',
       );
     } finally {
       setStarting(false);
@@ -126,12 +124,13 @@ function useScanner(onCode) {
 
 /** What a scan found, and the one thing to do about it. */
 function Result({ result, onStart, busy }) {
+  const { t } = useLanguage();
   const { match, code, sheet, package: shipment, booking } = result;
 
   if (match === 'sheet') {
     return (
       <div className={styles.scanResult}>
-        <p className={styles.scanResultHead}>Already written up</p>
+        <p className={styles.scanResultHead}>{t('dashboard.flow.scan.sheetFound')}</p>
         <p className={styles.scanCode}>{sheet.label}</p>
 
         <div className={styles.scanBadges}>
@@ -139,20 +138,20 @@ function Result({ result, onStart, busy }) {
             {sheet.status_display}
           </StatusBadge>
           {sheet.revision > 1 && (
-            <StatusBadge tone="attention">Version {sheet.revision}</StatusBadge>
+            <StatusBadge tone="attention">{fill(t('dashboard.flow.scan.version'), { number: sheet.revision })}</StatusBadge>
           )}
         </div>
 
         <p className={styles.scanDetail}>
-          {sheet.destination || 'No destination yet'}
+          {sheet.destination || t('dashboard.flow.scan.noDestination')}
           {sheet.colli_count ? ` · ${sheet.colli_count} colli` : ''}
           {sheet.status === 'draft' && sheet.missing?.length > 0
-            ? ` · ${sheet.missing.length} still to fill in`
+            ? ` · ${fill(t('dashboard.flow.scan.stillToFill'), { count: sheet.missing.length })}`
             : ''}
         </p>
 
         <button type="button" className={styles.scanAction} onClick={onStart}>
-          Open this sheet
+          {t('dashboard.flow.scan.openSheet')}
         </button>
       </div>
     );
@@ -161,7 +160,7 @@ function Result({ result, onStart, busy }) {
   if (match === 'package') {
     return (
       <div className={styles.scanResult}>
-        <p className={styles.scanResultHead}>Shipment on file</p>
+        <p className={styles.scanResultHead}>{t('dashboard.flow.scan.packageFound')}</p>
         <p className={styles.scanCode}>{shipment.tracking_number}</p>
         <p className={styles.scanDetail}>
           {shipment.customer}
@@ -174,7 +173,7 @@ function Result({ result, onStart, busy }) {
           disabled={busy}
           onClick={onStart}
         >
-          {busy ? 'Starting…' : 'Start the intake'}
+          {busy ? t('dashboard.flow.scan.starting') : t('dashboard.flow.scan.startIntake')}
         </button>
       </div>
     );
@@ -183,7 +182,7 @@ function Result({ result, onStart, busy }) {
   if (match === 'booking') {
     return (
       <div className={styles.scanResult}>
-        <p className={styles.scanResultHead}>Booking on file</p>
+        <p className={styles.scanResultHead}>{t('dashboard.flow.scan.bookingFound')}</p>
         <p className={styles.scanCode}>{booking.shipping_number}</p>
         <p className={styles.scanDetail}>
           {booking.sender} → {booking.recipient}
@@ -196,7 +195,7 @@ function Result({ result, onStart, busy }) {
           disabled={busy}
           onClick={onStart}
         >
-          {busy ? 'Starting…' : 'Start the intake'}
+          {busy ? t('dashboard.flow.scan.starting') : t('dashboard.flow.scan.startIntake')}
         </button>
       </div>
     );
@@ -206,11 +205,10 @@ function Result({ result, onStart, busy }) {
   // a supplier's own barcode and nothing else every day of the week.
   return (
     <div className={styles.scanResult}>
-      <p className={styles.scanResultHead}>Nothing on file</p>
+      <p className={styles.scanResultHead}>{t('dashboard.flow.scan.nothingFound')}</p>
       <p className={styles.scanCode}>{code}</p>
       <p className={styles.scanDetail}>
-        No sheet, shipment or booking has this code. Start a sheet under it and
-        fill in the rest by hand.
+        {t('dashboard.flow.scan.nothingText')}
       </p>
 
       <button
@@ -219,7 +217,7 @@ function Result({ result, onStart, busy }) {
         disabled={busy}
         onClick={onStart}
       >
-        {busy ? 'Starting…' : 'Start a sheet for this code'}
+        {busy ? t('dashboard.flow.scan.starting') : t('dashboard.flow.scan.startSheet')}
       </button>
     </div>
   );
@@ -227,6 +225,7 @@ function Result({ result, onStart, busy }) {
 
 export default function Scan() {
   const navigate = useNavigate();
+  const { t } = useLanguage();
 
   const [result, setResult] = useState(null);
   const [typed, setTyped] = useState('');
@@ -255,7 +254,7 @@ export default function Scan() {
 
         setResult(found);
       } catch {
-        setError('That code could not be looked up. Check the connection and try again.');
+        setError('lookupError');
       } finally {
         setBusy(false);
       }
@@ -312,7 +311,7 @@ export default function Scan() {
 
       navigate(`/warehouse/intake?sheet=${sheet.id}`);
     } catch {
-      setError('The sheet could not be started. Check the connection and try again.');
+      setError('startError');
       setBusy(false);
     }
   }
@@ -320,15 +319,12 @@ export default function Scan() {
   return (
     <>
       <header className={styles.head}>
-        <h1 className={styles.title}>Scan Package</h1>
-        <p className={styles.subtitle}>
-          Point the camera at the barcode or QR code on the box, or use a
-          handheld scanner. A known package opens straight away; anything else
-          can be started as an intake sheet.
-        </p>
+        <h1 className={styles.title}>{t('dashboard.flow.scan.title')}</h1>
+        <p className={styles.subtitle}>{t('dashboard.flow.scan.lead')}</p>
       </header>
 
-      <Banner tone="error">{error || cameraError}</Banner>
+      {/* Both hold a key, so the message follows the chosen language. */}
+      <Banner tone="error">{error || cameraError ? t(`dashboard.flow.scan.${error || cameraError}`) : ''}</Banner>
 
       <div className={styles.scanStage}>
         {/* Always mounted, hidden until running. zxing is handed this element
@@ -348,7 +344,7 @@ export default function Scan() {
             className={styles.scanSecondary}
             onClick={stopCamera}
           >
-            Stop the camera
+            {t('dashboard.flow.scan.stopCamera')}
           </button>
         ) : (
           <button
@@ -357,7 +353,7 @@ export default function Scan() {
             disabled={starting}
             onClick={startCamera}
           >
-            {starting ? 'Starting the camera…' : 'Scan with the camera'}
+            {starting ? t('dashboard.flow.scan.startingCamera') : t('dashboard.flow.scan.startCamera')}
           </button>
         )}
       </div>
@@ -377,7 +373,7 @@ export default function Scan() {
         }}
       >
         <label className={styles.intakeField}>
-          <span className={styles.intakeLabel}>Or type or scan the code</span>
+          <span className={styles.intakeLabel}>{t('dashboard.flow.scan.typeLabel')}</span>
           <input
             ref={typeInRef}
             className={styles.intakeInput}
@@ -395,7 +391,7 @@ export default function Scan() {
         </label>
 
         <button type="submit" className={styles.scanSecondary} disabled={busy}>
-          {busy ? 'Looking…' : 'Look it up'}
+          {busy ? t('dashboard.flow.scan.looking') : t('dashboard.flow.scan.lookUp')}
         </button>
       </form>
     </>

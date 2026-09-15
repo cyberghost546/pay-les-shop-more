@@ -5,6 +5,8 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { DAMAGE_TYPES, errorMessage, fieldError, reportDamage } from '../../api/warehouse';
+import { fill } from '../../i18n/fill';
+import { useLanguage } from '../../i18n/useLanguage';
 import { Message } from './opsUi';
 import styles from './Ops.module.css';
 
@@ -17,6 +19,7 @@ const ACCEPT = 'image/jpeg,image/png,image/webp';
  *   onCancel: () => void }} props
  */
 export default function DamageForm({ shipment, onSaved, onCancel }) {
+  const { t } = useLanguage();
   const [type, setType] = useState('');
   const [description, setDescription] = useState('');
   const [photos, setPhotos] = useState([]);
@@ -33,12 +36,12 @@ export default function DamageForm({ shipment, onSaved, onCancel }) {
     const incoming = Array.from(fileList ?? []);
     const tooBig = incoming.find((file) => file.size > MAX_BYTES);
     if (tooBig) {
-      setClientError(`${tooBig.name} is larger than 10 MB.`);
+      setClientError(fill(t('dashboard.flow.damage.tooBig'), { name: tooBig.name }));
       return;
     }
     const next = [...photos, ...incoming].slice(0, MAX_PHOTOS);
     if (photos.length + incoming.length > MAX_PHOTOS) {
-      setClientError(`At most ${MAX_PHOTOS} photos. The extra ones were left out.`);
+      setClientError(fill(t('dashboard.flow.damage.tooMany'), { max: MAX_PHOTOS }));
     } else {
       setClientError('');
     }
@@ -48,11 +51,11 @@ export default function DamageForm({ shipment, onSaved, onCancel }) {
   async function submit(event) {
     event.preventDefault();
     if (!type) {
-      setClientError('Choose what kind of damage it is.');
+      setClientError(t('dashboard.flow.damage.chooseType'));
       return;
     }
     if (type === 'other' && !description.trim()) {
-      setClientError('Describe the damage.');
+      setClientError(t('dashboard.flow.damage.describe'));
       return;
     }
 
@@ -77,13 +80,13 @@ export default function DamageForm({ shipment, onSaved, onCancel }) {
     fieldError(error, 'damage_type') ||
     fieldError(error, 'description') ||
     fieldError(error, 'photos') ||
-    (error ? errorMessage(error, 'The damage report could not be saved. Try again.') : '');
+    (error ? errorMessage(error, t('dashboard.flow.damage.saveError'), t) : '');
 
   return (
     <form onSubmit={submit} noValidate>
       <Message tone="error">{clientError || serverMessage}</Message>
 
-      <div className={styles.choices} role="radiogroup" aria-label="Damage type">
+      <div className={styles.choices} role="radiogroup" aria-label={t('dashboard.flow.damage.typeLabel')}>
         {DAMAGE_TYPES.map((option) => (
           <button
             key={option.value}
@@ -96,19 +99,19 @@ export default function DamageForm({ shipment, onSaved, onCancel }) {
               setClientError('');
             }}
           >
-            {option.label}
+            {t(`dashboard.flow.damage.types.${option.value}`)}
           </button>
         ))}
       </div>
 
       <div className={styles.fields}>
         <label className={styles.field}>
-          <span className={styles.label}>Description{type === 'other' ? ' (required)' : ''}</span>
+          <span className={styles.label}>{t('dashboard.flow.damage.description')}{type === 'other' ? t('dashboard.flow.damage.required') : ''}</span>
           <textarea
             className={styles.textarea}
             value={description}
             maxLength={1000}
-            placeholder="Where is the damage and how bad is it?"
+            placeholder={t('dashboard.flow.damage.descriptionPlaceholder')}
             onChange={(event) => setDescription(event.target.value)}
           />
         </label>
@@ -117,11 +120,11 @@ export default function DamageForm({ shipment, onSaved, onCancel }) {
       <div className={styles.photos}>
         {previews.map((url, index) => (
           <span key={url} className={styles.photoPick}>
-            <img src={url} alt={`Damage photo ${index + 1}`} className={styles.photo} />
+            <img src={url} alt={fill(t('dashboard.flow.damage.photo'), { number: index + 1 })} className={styles.photo} />
             <button
               type="button"
               className={styles.photoRemove}
-              aria-label={`Remove photo ${index + 1}`}
+              aria-label={fill(t('dashboard.flow.damage.removePhoto'), { number: index + 1 })}
               onClick={() => setPhotos((list) => list.filter((_, i) => i !== index))}
             >
               ×
@@ -151,13 +154,13 @@ export default function DamageForm({ shipment, onSaved, onCancel }) {
           disabled={photos.length >= MAX_PHOTOS}
           onClick={() => fileInput.current?.click()}
         >
-          {photos.length ? `Add photo (${photos.length}/${MAX_PHOTOS})` : 'Take photo'}
+          {photos.length ? fill(t('dashboard.flow.damage.addPhoto'), { count: photos.length, max: MAX_PHOTOS }) : t('dashboard.flow.damage.takePhoto')}
         </button>
         <button type="submit" className={styles.danger} disabled={busy}>
-          {busy ? 'Saving…' : 'Report damage'}
+          {busy ? t('dashboard.flow.common.saving') : t('dashboard.flow.damage.submit')}
         </button>
         <button type="button" className={styles.secondary} onClick={onCancel}>
-          Cancel
+          {t('dashboard.flow.common.cancel')}
         </button>
       </div>
     </form>
