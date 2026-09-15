@@ -70,6 +70,52 @@
   gap: 0.75rem;
 }
 
+/* What we do, in three numbered lines between the lead and the buttons. */
+.heroPoints {
+  display: grid;
+  gap: 0.85rem;
+  margin: -0.75rem 0 2rem;
+  padding: 0;
+  list-style: none;
+}
+
+.heroPoint {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.8rem;
+}
+
+.heroPointNumber {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 1.9rem;
+  height: 1.9rem;
+  border-radius: 50%;
+  background: rgba(56, 189, 248, 0.16);
+  color: #7dd3fc;
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.heroPointTitle {
+  display: block;
+  color: #ffffff;
+  font-size: 1rem;
+}
+
+.heroPointBody {
+  display: block;
+  color: #b9cbe0;
+  font-size: 0.93rem;
+  line-height: 1.5;
+}
+
+/* "How it works" scrolls here; clear the fixed site header. */
+.anchor {
+  scroll-margin-top: 110px;
+}
+
 .primaryButton,
 .ghostButton {
   display: inline-block;
@@ -112,87 +158,122 @@
   scroll-margin-top: 130px;
 }
 
-/* ------------------------------------------------------- hero illustration */
+/* ------------------------------------------------------- shop slideshow */
 
 .visual {
   position: relative;
+  text-align: center;
 }
 
-.visualSvg {
+.shopsCaption {
+  margin: 0 0 1rem;
+  color: #7dd3fc;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+/* Every slide stacked in one grid cell, so the box keeps its size whichever
+   logo is showing and nothing jumps between slides. */
+.slides {
+  display: grid;
+  /* minmax(0, 1fr): without it a large image grows the row past the card and
+     the logo ends up off-centre, clipped by overflow. */
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
+  max-width: 440px;
+  margin: 0 auto;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  border-radius: 24px;
+  background: #ffffff;
+  box-shadow: 0 24px 60px rgba(3, 12, 26, 0.5);
+}
+
+.slide {
+  grid-area: 1 / 1;
+  min-width: 0;
+  min-height: 0;
+  visibility: hidden;
+}
+
+.slideCurrent {
+  visibility: visible;
+}
+
+.slideLogo {
   display: block;
   width: 100%;
-  height: auto;
+  height: 100%;
 }
 
-.globe {
-  fill: none;
-  stroke: rgba(146, 191, 232, 0.22);
-  stroke-width: 1;
+/* Coloured background to the edge: crop to the card. */
+.slideLogo_fill {
+  object-fit: cover;
 }
 
-.grid line,
-.grid ellipse {
-  fill: none;
-  stroke: rgba(146, 191, 232, 0.13);
-  stroke-width: 1;
+/* A logo on white: shrink to fit, never crop. */
+.slideLogo_fit {
+  box-sizing: border-box;
+  padding: 2.5rem;
+  object-fit: contain;
 }
 
-.routeBase {
-  stroke: rgba(56, 189, 248, 0.25);
-  stroke-width: 2;
-  fill: none;
+.slideControls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 1.1rem;
 }
 
-.routeDash {
-  stroke: var(--cyan-bright);
-  stroke-width: 2;
-  fill: none;
-  stroke-linecap: round;
-  stroke-dasharray: 10 14;
-  animation: routeFlow 1.6s linear infinite;
+.slideArrow {
+  display: grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 50%;
+  background: transparent;
+  color: #ffffff;
+  font: inherit;
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
 }
 
-@keyframes routeFlow {
-  to {
-    stroke-dashoffset: -24;
-  }
+.slideArrow:hover {
+  border-color: #7dd3fc;
+  color: #7dd3fc;
 }
 
-.markerLabel {
-  fill: #b9cbe0;
-  font-size: 13px;
-  font-weight: 600;
-  font-family: inherit;
+.slideDots {
+  display: flex;
+  gap: 0.5rem;
 }
 
-.markerDot {
-  fill: var(--cyan-bright);
+.slideDot {
+  width: 0.65rem;
+  height: 0.65rem;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  cursor: pointer;
 }
 
-.markerDotEnd {
-  fill: #f59e0b;
+.slideDotCurrent {
+  background: #7dd3fc;
 }
 
-.markerSmall {
-  fill: rgba(245, 158, 11, 0.65);
+.slideArrow:focus-visible,
+.slideDot:focus-visible {
+  outline: 2px solid #7dd3fc;
+  outline-offset: 3px;
 }
 
-.markerHalo {
-  fill: none;
-  stroke: var(--cyan-bright);
-  stroke-width: 1.5;
-  opacity: 0.6;
-  transform-origin: center;
-  animation: pulse 2.8s ease-out infinite;
-}
-
-/* Offset so the two ends do not pulse in lockstep, which reads as a blink
-   rather than as two separate places. */
-.markerHaloLate {
-  stroke: #f59e0b;
-  animation-delay: 1.4s;
-}
-
+/* Used by the routes map further down the page. */
 @keyframes pulse {
   0% {
     transform: scale(0.6);
@@ -202,61 +283,6 @@
   100% {
     transform: scale(1.6);
     opacity: 0;
-  }
-}
-
-.parcel rect {
-  fill: #f8fafc;
-  stroke: #0b2545;
-  stroke-width: 1.5;
-}
-
-.parcelTape {
-  stroke: #f59e0b;
-  stroke-width: 1.5;
-  fill: none;
-}
-
-.ship {
-  animation: bob 5s ease-in-out infinite;
-  transform-origin: 256px 320px;
-}
-
-@keyframes bob {
-  0%,
-  100% {
-    transform: translateY(0) rotate(0deg);
-  }
-  50% {
-    transform: translateY(-5px) rotate(-0.7deg);
-  }
-}
-
-.wake path {
-  stroke: rgba(56, 189, 248, 0.45);
-  stroke-width: 2.5;
-  stroke-linecap: round;
-  fill: none;
-  animation: wake 3s ease-in-out infinite;
-}
-
-.wake path:nth-child(2) {
-  animation-delay: 0.5s;
-}
-
-.wake path:nth-child(3) {
-  animation-delay: 1s;
-}
-
-@keyframes wake {
-  0%,
-  100% {
-    opacity: 0.2;
-    transform: translateX(0);
-  }
-  50% {
-    opacity: 0.7;
-    transform: translateX(-8px);
   }
 }
 
@@ -612,16 +638,8 @@
     transition: none;
   }
 
-  .routeDash,
-  .markerHalo,
-  .mapHalo,
-  .ship,
-  .wake path {
+  .mapHalo {
     animation: none;
-  }
-
-  .routeDash {
-    stroke-dasharray: none;
   }
 
   .primaryButton:hover,

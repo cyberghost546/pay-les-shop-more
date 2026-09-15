@@ -11,8 +11,9 @@ import ShipmentTimeline from '../../components/ShipmentTimeline/ShipmentTimeline
 import StatsBand from '../../components/StatsBand/StatsBand';
 import Steps from '../../components/Steps/Steps';
 import ShopAndShip from '../../components/ShopAndShip/ShopAndShip';
-import ShippingVisual from './ShippingVisual';
+import ShopSlideshow from './ShopSlideshow';
 import RouteMap from './RouteMap';
+import { useAuth } from '../../auth/useAuth';
 import { useInViewport } from '../../hooks/useInViewport';
 import { useLanguage } from '../../i18n/useLanguage';
 import { usePageMeta } from '../../hooks/usePageMeta';
@@ -84,11 +85,16 @@ const EXPLAINER_STAGES = [
   'delivered',
 ];
 
-function Section({ children, className = '' }) {
+// The three sentences that say what this company does, shown in the hero so a
+// first-time visitor knows before scrolling.
+const HERO_POINTS = ['shop', 'ship', 'deliver'];
+
+function Section({ children, className = '', id }) {
   const [ref, seen] = useInViewport();
 
   return (
     <section
+      id={id}
       ref={ref}
       className={`${styles.section} ${className} ${seen ? styles.revealed : ''}`}
     >
@@ -99,6 +105,10 @@ function Section({ children, className = '' }) {
 
 export default function Home() {
   const { t } = useLanguage();
+  // Tracking is for customers with a shipment: the box and the buttons that
+  // lead to it are only shown once somebody is signed in. A first-time visitor
+  // gets what we do and how to start instead.
+  const { isAuthenticated } = useAuth();
   usePageMeta(t('home.hero.title'), t('home.hero.lead'), '/');
 
   return (
@@ -111,24 +121,57 @@ export default function Home() {
             <h1 className={styles.heroTitle}>{t('home.hero.title')}</h1>
             <p className={styles.heroLead}>{t('home.hero.lead')}</p>
 
+            <ol className={styles.heroPoints}>
+              {HERO_POINTS.map((point, index) => (
+                <li key={point} className={styles.heroPoint}>
+                  <span className={styles.heroPointNumber} aria-hidden="true">
+                    {index + 1}
+                  </span>
+                  <span>
+                    <strong className={styles.heroPointTitle}>
+                      {t(`home.hero.points.${point}.title`)}
+                    </strong>
+                    <span className={styles.heroPointBody}>
+                      {t(`home.hero.points.${point}.body`)}
+                    </span>
+                  </span>
+                </li>
+              ))}
+            </ol>
+
             <div className={styles.heroButtons}>
-              <a className={styles.primaryButton} href="#track">
-                {t('home.hero.trackCta')}
-              </a>
-              <Link className={styles.ghostButton} to="/signup">
-                {t('home.hero.startCta')}
-              </Link>
+              {isAuthenticated ? (
+                <>
+                  <a className={styles.primaryButton} href="#track">
+                    {t('home.hero.trackCta')}
+                  </a>
+                  <Link className={styles.ghostButton} to="/profile">
+                    {t('home.hero.myShipments')}
+                  </Link>
+                </>
+              ) : (
+                <>
+                  <Link className={styles.primaryButton} to="/signup">
+                    {t('home.hero.startCta')}
+                  </Link>
+                  <a className={styles.ghostButton} href="#how">
+                    {t('home.hero.howCta')}
+                  </a>
+                </>
+              )}
             </div>
           </div>
 
-          <ShippingVisual />
+          <ShopSlideshow />
         </div>
 
-        {/* 3. Tracking, inside the hero as the brief asks — it is the single
-            most common reason a returning visitor opens the site. */}
-        <div className={styles.heroTracking} id="track">
-          <TrackingPanel variant="hero" />
-        </div>
+        {/* 3. Tracking, for signed-in customers only - it is the most common
+            reason a returning customer opens the site. */}
+        {isAuthenticated && (
+          <div className={styles.heroTracking} id="track">
+            <TrackingPanel variant="hero" />
+          </div>
+        )}
       </div>
 
       {/* 4. Live statistics ---------------------------------------------- */}
@@ -136,7 +179,7 @@ export default function Home() {
 
       {/* 5. How it works — the existing Steps component, unchanged, which
           already tells this story in three languages. */}
-      <Section className={styles.plain}>
+      <Section className={`${styles.plain} ${styles.anchor}`} id="how">
         <Steps />
       </Section>
 
@@ -207,9 +250,11 @@ export default function Home() {
             <Link className={styles.primaryButton} to="/signup">
               {t('home.cta2.start')}
             </Link>
-            <Link className={styles.ghostButton} to="/tracking">
-              {t('home.cta2.track')}
-            </Link>
+            {isAuthenticated && (
+              <Link className={styles.ghostButton} to="/tracking">
+                {t('home.cta2.track')}
+              </Link>
+            )}
           </div>
         </div>
       </section>

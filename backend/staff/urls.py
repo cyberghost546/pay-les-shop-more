@@ -3,6 +3,7 @@
 from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
+from warehouse import records as warehouse_records
 from warehouse import shipments as warehouse_shipments
 from warehouse import views as warehouse_views
 
@@ -26,6 +27,21 @@ router.register(
     "warehouse/shipments",
     warehouse_shipments.ShipmentViewSet,
     basename="staff-warehouse-shipment",
+)
+# The warehouse's own records, read by the floor and the office alike.
+router.register(
+    "warehouse/activity", warehouse_records.ActivityViewSet, basename="staff-warehouse-activity"
+)
+router.register(
+    "warehouse/measurements",
+    warehouse_records.MeasurementViewSet,
+    basename="staff-warehouse-measurement",
+)
+router.register(
+    "warehouse/packaging", warehouse_records.PackagingViewSet, basename="staff-warehouse-packaging"
+)
+router.register(
+    "warehouse/damage", warehouse_records.DamageReportViewSet, basename="staff-warehouse-damage"
 )
 
 urlpatterns = [

@@ -24,9 +24,18 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createIntakeSheet, scanCode } from '../../api/staff';
-import ShipmentCard from '../Warehouse/ShipmentCard';
+import { recordScan } from '../../api/warehouse';
 import { Banner, StatusBadge } from './ui';
 import styles from './Dashboard.module.css';
+
+/**
+ * A touch device - a tablet or phone, where the camera is the scanner. On a
+ * warehouse PC the scanner is usually a handheld gun that types the code and
+ * presses Enter, so there the text box gets the focus instead.
+ */
+function isTouchDevice() {
+  return typeof window !== 'undefined' && window.matchMedia?.('(pointer: coarse)').matches;
+}
 
 /**
  * Whether the browser will give us a camera at all.
@@ -224,22 +233,35 @@ export default function Scan() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
 
-  const lookUp = useCallback(async (code) => {
-    const trimmed = (code ?? '').trim();
-    if (!trimmed) return;
+  const lookUp = useCallback(
+    async (code) => {
+      const trimmed = (code ?? '').trim();
+      if (!trimmed) return;
 
-    setError('');
-    setResult(null);
-    setBusy(true);
+      setError('');
+      setResult(null);
+      setBusy(true);
 
-    try {
-      setResult(await scanCode(trimmed));
-    } catch {
-      setError('That code could not be looked up. Check the connection and try again.');
-    } finally {
-      setBusy(false);
-    }
-  }, []);
+      try {
+        const found = await scanCode(trimmed);
+
+        // A package on file goes straight to its workflow - the fastest path
+        // the floor has. The scan is recorded on the package's history first.
+        if (found.shipment) {
+          await recordScan(found.shipment.id, trimmed);
+          navigate(`/warehouse/packages/${found.shipment.id}`);
+          return;
+        }
+
+        setResult(found);
+      } catch {
+        setError('That code could not be looked up. Check the connection and try again.');
+      } finally {
+        setBusy(false);
+      }
+    },
+    [navigate],
+  );
 
   // Destructured rather than kept as one `scanner` object. The hook returns
   // a ref among its values, and reading anything off that object during
@@ -253,6 +275,20 @@ export default function Scan() {
     starting,
     error: cameraError,
   } = useScanner(lookUp);
+
+  const typeInRef = useRef(null);
+
+  // Ready to scan the moment the page opens: the camera on a tablet, the
+  // text box (for a handheld scanner gun) on a computer.
+  useEffect(() => {
+    if (isTouchDevice()) {
+      startCamera();
+    } else {
+      typeInRef.current?.focus();
+    }
+    // Once, on arrival.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   /** Open the sheet a scan found, or start the one it says is missing. */
   async function act() {
@@ -284,11 +320,11 @@ export default function Scan() {
   return (
     <>
       <header className={styles.head}>
-        <h1 className={styles.title}>Scan a package</h1>
+        <h1 className={styles.title}>Scan Package</h1>
         <p className={styles.subtitle}>
-          Point the camera at the barcode or QR code on the box. A known order
-          shows its customer, products, stage and invoice, with buttons to move
-          it along; anything else can be started as an intake sheet.
+          Point the camera at the barcode or QR code on the box, or use a
+          handheld scanner. A known package opens straight away; anything else
+          can be started as an intake sheet.
         </p>
       </header>
 
@@ -326,18 +362,9 @@ export default function Scan() {
         )}
       </div>
 
-      {/* A code that belongs to a shipment gets the whole order - customer,
-          products, stage, invoice - and the buttons to move it along. The
-          card links to the intake sheet, or starts one, itself. Anything
-          else gets the intake answer as before. */}
-      {result?.shipment ? (
-        <ShipmentCard
-          shipment={result.shipment}
-          onChange={(shipment) => setResult((current) => ({ ...current, shipment }))}
-        />
-      ) : (
-        result && <Result result={result} onStart={act} busy={busy} />
-      )}
+      {/* A package on file has already been opened in its workflow by
+          lookUp. Anything else gets the intake answer as before. */}
+      {result && <Result result={result} onStart={act} busy={busy} />}
 
       {/* Not tucked behind a link. A torn label is an ordinary morning, and
           typing the number has to be as reachable as the camera. */}
@@ -350,9 +377,11 @@ export default function Scan() {
         }}
       >
         <label className={styles.intakeField}>
-          <span className={styles.intakeLabel}>Or type the code</span>
+          <span className={styles.intakeLabel}>Or type or scan the code</span>
           <input
+            ref={typeInRef}
             className={styles.intakeInput}
+            enterKeyHint="search"
             value={typed}
             onChange={(event) => setTyped(event.target.value)}
             placeholder="CI-1001"

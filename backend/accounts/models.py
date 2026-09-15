@@ -65,6 +65,40 @@ class User(AbstractUser):
         help_text="Can scan packages and write intake sheets.",
     )
 
+    # The named role, which is what people actually assign. The two flags
+    # above stay, because Django's admin and every existing permission check
+    # read them, but they are now written *from* the role (see _sync_role):
+    #
+    #   admin       is_staff. The whole back office, including who gets which
+    #               role. Every account that had is_staff before roles existed
+    #               became an admin, so nobody lost anything in the move.
+    #   office      is_staff. The whole back office except role management.
+    #   warehouse   is_warehouse. Warehouse operations and nothing else.
+    #   driver      neither flag. Deliberately no warehouse or office access.
+    #   customer    neither flag.
+    class Role(models.TextChoices):
+        CUSTOMER = "customer", "Customer"
+        ADMIN = "admin", "Admin"
+        OFFICE = "office", "Office worker"
+        WAREHOUSE = "warehouse", "Warehouse worker"
+        DRIVER = "driver", "Driver"
+
+    # (is_staff, is_warehouse) for each role.
+    ROLE_FLAGS = {
+        Role.CUSTOMER: (False, False),
+        Role.ADMIN: (True, False),
+        Role.OFFICE: (True, False),
+        Role.WAREHOUSE: (False, True),
+        Role.DRIVER: (False, False),
+    }
+
+    role = models.CharField(
+        max_length=10,
+        choices=Role.choices,
+        default=Role.CUSTOMER,
+        db_index=True,
+    )
+
     # What this customer agreed to be contacted about. Shipping updates are on
     # by default because they are about an order the customer placed;
     # marketing is opt-in, which is what the GDPR requires.
@@ -98,6 +132,82 @@ class User(AbstractUser):
             return f"deleted customer #{self.pk}"
         full_name = self.get_full_name()
         return full_name or self.username
+
+    # ---- roles ------------------------------------------------------------
+
+    @property
+    def is_admin(self):
+        """May manage other accounts' roles. Superusers always may."""
+        return bool(self.is_active and (self.is_superuser or self.role == self.Role.ADMIN))
+
+    @property
+    def can_use_warehouse(self):
+        return bool(self.is_active and (self.is_staff or self.is_warehouse))
+
+    @property
+    def is_warehouse_worker_only(self):
+        """The floor without the office: limited to warehouse stages."""
+        return bool(self.is_warehouse and not self.is_staff)
+
+    def _role_from_flags(self):
+        if self.is_superuser or self.is_staff:
+            # An office worker keeps being an office worker when some other
+            # flag moves; only a customer given is_staff directly (the Django
+            # admin, a fixture) becomes an admin, as is_staff always meant.
+            return self.role if self.role in (self.Role.ADMIN, self.Role.OFFICE) else self.Role.ADMIN
+        if self.is_warehouse:
+            return self.Role.WAREHOUSE
+        return self.Role.DRIVER if self.role == self.Role.DRIVER else self.Role.CUSTOMER
+
+    def _sync_role(self):
+        """Keep `role` and the two flags saying the same thing.
+
+        Whichever side was changed wins. A new row with a role set is written
+        from the role; a new row created the old way, with is_staff=True, gets
+        the role those flags mean. Returns the columns that were rewritten.
+        """
+        loaded = getattr(self, "_loaded_role", None)
+        flags = (self.is_staff, self.is_warehouse, self.is_superuser)
+
+        if loaded is None:
+            role_changed = self.role != self.Role.CUSTOMER
+            flags_changed = not role_changed
+        else:
+            role_changed = self.role != loaded[0]
+            flags_changed = flags != loaded[1:]
+
+        if role_changed:
+            self.is_staff, self.is_warehouse = self.ROLE_FLAGS[self.role]
+            if self.is_superuser:
+                # A superuser keeps /admin/ whatever role label it carries.
+                self.is_staff = True
+            return {"is_staff", "is_warehouse"}
+        if flags_changed:
+            role = self._role_from_flags()
+            if role != self.role:
+                self.role = role
+                return {"role"}
+        return set()
+
+    @classmethod
+    def from_db(cls, db, field_names, values):
+        instance = super().from_db(db, field_names, values)
+        row = dict(zip(field_names, values))
+        if {"role", "is_staff", "is_warehouse", "is_superuser"} <= set(row):
+            instance._loaded_role = (
+                row["role"], row["is_staff"], row["is_warehouse"], row["is_superuser"]
+            )
+        return instance
+
+    def save(self, *args, **kwargs):
+        touched = self._sync_role()
+
+        update_fields = kwargs.get("update_fields")
+        if update_fields is not None and touched:
+            kwargs["update_fields"] = set(update_fields) | touched | {"role"}
+
+        super().save(*args, **kwargs)
+        self._loaded_role = (self.role, self.is_staff, self.is_warehouse, self.is_superuser)
 
     @property
     def default_address(self):
@@ -133,6 +243,7 @@ class User(AbstractUser):
         self.set_unusable_password()
 
         self.is_active = False
+        self.role = self.Role.CUSTOMER
         self.is_warehouse = False
         self.notify_shipping = False
         self.notify_offers = False
@@ -397,21 +508,67 @@ class Package(models.Model):
     # item goes back to processing, and that is a correction, not a rewrite of
     # anything the customer was told.
     class WarehouseStage(models.TextChoices):
-        AWAITING_PICKUP = "awaiting_pickup", "Waiting for pickup"
-        RECEIVED = "received", "Received"
-        PROCESSING = "processing", "Being processed"
-        PACKED = "packed", "Packed"
-        READY = "ready", "Ready for shipment"
+        # The stored value predates the wording; "expected" is what it means.
+        AWAITING_PICKUP = "awaiting_pickup", "Package expected"
+        RECEIVED = "received", "Package received"
+        AWAITING_MEASUREMENT = "awaiting_measurement", "Waiting for measurement"
+        MEASURED = "measured", "Measured"
+        AWAITING_PACKAGING = "awaiting_packaging", "Waiting for packaging"
+        PACKED = "packed", "Packaged"
+        READY = "ready", "Ready for shipping"
         SHIPPED = "shipped", "Shipped"
 
     # How long a shipment may sit in a stage before the board calls it
     # waiting too long. Shipped is absent: it has left, nothing is waiting.
     WAREHOUSE_STAGE_LIMITS = {
         WarehouseStage.AWAITING_PICKUP: timedelta(days=3),
-        WarehouseStage.RECEIVED: timedelta(days=2),
-        WarehouseStage.PROCESSING: timedelta(days=2),
+        WarehouseStage.RECEIVED: timedelta(days=1),
+        WarehouseStage.AWAITING_MEASUREMENT: timedelta(days=2),
+        WarehouseStage.MEASURED: timedelta(days=2),
+        WarehouseStage.AWAITING_PACKAGING: timedelta(days=2),
         WarehouseStage.PACKED: timedelta(days=2),
         WarehouseStage.READY: timedelta(days=5),
+    }
+
+    # The stages a warehouse worker may put a shipment in. Expected belongs to
+    # the office (it is what an order is before goods arrive) and shipped to
+    # dispatch; those, and every customer-facing status, are the office's and
+    # the drivers'. Enforced in warehouse/operations.py, on the server.
+    WAREHOUSE_WORKER_STAGES = (
+        WarehouseStage.RECEIVED,
+        WarehouseStage.AWAITING_MEASUREMENT,
+        WarehouseStage.MEASURED,
+        WarehouseStage.AWAITING_PACKAGING,
+        WarehouseStage.PACKED,
+        WarehouseStage.READY,
+    )
+
+    # One status line for the whole journey, read from `status` and
+    # `warehouse_stage` together. Derived rather than stored, so the two
+    # columns that own the facts cannot disagree with a third copy.
+    class Workflow(models.TextChoices):
+        ORDER_CREATED = "order_created", "Order created"
+        PACKAGE_EXPECTED = "package_expected", "Package expected"
+        PACKAGE_RECEIVED = "package_received", "Package received"
+        WAITING_FOR_MEASUREMENT = "waiting_for_measurement", "Waiting for measurement"
+        MEASURED = "measured", "Measured"
+        WAITING_FOR_PACKAGING = "waiting_for_packaging", "Waiting for packaging"
+        PACKAGED = "packaged", "Packaged"
+        READY_FOR_SHIPPING = "ready_for_shipping", "Ready for shipping"
+        SHIPPED = "shipped", "Shipped"
+        IN_TRANSIT = "in_transit", "In transit"
+        ARRIVED = "arrived", "Arrived at destination"
+        DELIVERED = "delivered", "Delivered"
+        CANCELLED = "cancelled", "Cancelled"
+
+    _STAGE_WORKFLOW = {
+        WarehouseStage.RECEIVED: Workflow.PACKAGE_RECEIVED,
+        WarehouseStage.AWAITING_MEASUREMENT: Workflow.WAITING_FOR_MEASUREMENT,
+        WarehouseStage.MEASURED: Workflow.MEASURED,
+        WarehouseStage.AWAITING_PACKAGING: Workflow.WAITING_FOR_PACKAGING,
+        WarehouseStage.PACKED: Workflow.PACKAGED,
+        WarehouseStage.READY: Workflow.READY_FOR_SHIPPING,
+        WarehouseStage.SHIPPED: Workflow.SHIPPED,
     }
 
     objects = PackageQuerySet.as_manager()
@@ -430,6 +587,9 @@ class Package(models.Model):
     # When it entered the stage it is in, which is what "waiting too long" is
     # measured from.
     warehouse_stage_at = models.DateTimeField(default=timezone.now)
+    # Where on the floor it is: a rack, bay or shelf code such as "B-04".
+    # Free text, because every warehouse labels its racks its own way.
+    warehouse_location = models.CharField(max_length=40, blank=True)
     # The first time it was received, kept when the stage moves on, so "today's
     # packages" still counts a box that was received and packed the same day.
     received_at = models.DateTimeField(null=True, blank=True)
@@ -527,6 +687,30 @@ class Package(models.Model):
 
     def __str__(self):
         return f"{self.tracking_number} ({self.get_status_display()})"
+
+    @property
+    def workflow_status(self):
+        """Where the shipment is in the one combined workflow."""
+        W = self.Workflow
+        if self.status == self.Status.CANCELLED:
+            return W.CANCELLED
+        if self.status == self.Status.DELIVERED:
+            return W.DELIVERED
+        if self.status == self.Status.ARRIVED:
+            return W.ARRIVED
+        if self.status == self.Status.IN_TRANSIT:
+            return W.IN_TRANSIT
+        if self.warehouse_stage in self._STAGE_WORKFLOW:
+            return self._STAGE_WORKFLOW[self.warehouse_stage]
+        return W.ORDER_CREATED if self.status == self.Status.QUOTED else W.PACKAGE_EXPECTED
+
+    def get_workflow_status_display(self):
+        return self.Workflow(self.workflow_status).label
+
+    @property
+    def package_number(self):
+        """The internal package number printed on the floor's screens."""
+        return f"PKG-{self.pk:06d}" if self.pk else ""
 
     @property
     def overdue_since(self):

@@ -41,6 +41,9 @@ function toProfile(data) {
     // person open the dashboard at all" is the question.
     isStaff: Boolean(data.is_staff),
     isWarehouse: Boolean(data.is_warehouse),
+    // The named role: 'admin', 'office', 'warehouse', 'driver' or 'customer'.
+    role: data.role ?? 'customer',
+    isAdmin: data.role === 'admin',
     addresses: data.addresses ?? [],
     notifications: {
       shipping: data.notify_shipping ?? true,

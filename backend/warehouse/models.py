@@ -27,11 +27,12 @@ staff wrote about a delivery - damage, bad packing, a name off the van - and
 that is an internal record, not a shipment update.
 """
 
-from decimal import Decimal
+from decimal import ROUND_HALF_UP, Decimal
 
 from django.conf import settings
-from django.core.validators import MinValueValidator
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
+from django.db.models import Q
 from django.utils import timezone
 
 
@@ -493,3 +494,369 @@ def measurement_totals(measurements):
         "volumetric_weight_kg": volumetric.quantize(Decimal("0.01")),
         "chargeable_weight_kg": max(weight, volumetric).quantize(Decimal("0.01")),
     }
+
+
+# ===========================================================================
+# Warehouse operations on a single package
+#
+# The intake sheet above describes a delivery as it arrived. The tables below
+# are what the floor then does to one package: measure it, pack it, report it
+# damaged. Each row belongs to a Package (accounts_package) and to the worker
+# who did it (accounts_user), so the office reads the same rows the warehouse
+# wrote - one database, no copy.
+#
+# Table names are set explicitly to the names the operations team uses.
+# ===========================================================================
+
+
+class ImmutableRecord(Exception):
+    """An attempt to change or delete a record that is write-once."""
+
+
+class AppendOnlyQuerySet(models.QuerySet):
+    """Refuses bulk update() and delete(), which bypass Model.save().
+
+    A package deleted outright still takes its records with it: Django's
+    cascade goes through the SQL delete collector, not through this method.
+    """
+
+    def update(self, **kwargs):
+        raise ImmutableRecord(f"{self.model.__name__} rows cannot be changed.")
+
+    def delete(self):
+        raise ImmutableRecord(f"{self.model.__name__} rows cannot be deleted.")
+
+    def bulk_update(self, *args, **kwargs):
+        raise ImmutableRecord(f"{self.model.__name__} rows cannot be changed.")
+
+
+class AppendOnlyModel(models.Model):
+    """Write once. Corrections are new rows, never edits."""
+
+    objects = AppendOnlyQuerySet.as_manager()
+
+    class Meta:
+        abstract = True
+
+    def save(self, *args, **kwargs):
+        if not self._state.adding:
+            raise ImmutableRecord(
+                f"{self.__class__.__name__} rows are append-only. Record a new one instead."
+            )
+        return super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        raise ImmutableRecord(f"{self.__class__.__name__} rows cannot be deleted.")
+
+
+# The limits a real warehouse package can plausibly have. A value outside them
+# is a typing mistake - an extra zero, grams typed as kilograms - and refusing
+# it is cheaper than a freight quote built on it.
+MIN_WEIGHT_KG = Decimal("0.01")
+MAX_WEIGHT_KG = Decimal("5000")
+MIN_SIDE_CM = Decimal("0.1")
+MAX_SIDE_CM = Decimal("1500")
+
+
+def volume_m3(length_cm, width_cm, height_cm):
+    return (Decimal(length_cm) * Decimal(width_cm) * Decimal(height_cm) / Decimal(1_000_000)).quantize(
+        Decimal("0.0001"), rounding=ROUND_HALF_UP
+    )
+
+
+def dimensional_weight_kg(length_cm, width_cm, height_cm):
+    return (
+        Decimal(length_cm) * Decimal(width_cm) * Decimal(height_cm) / Decimal(VOLUMETRIC_DIVISOR)
+    ).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+
+
+class PackageMeasurement(AppendOnlyModel):
+    """One weighing and measuring of one package.
+
+    Append-only: re-measuring writes a new row that `supersedes` the previous
+    one, so the history of what the scale said is kept. The current
+    measurement is the newest row for the package.
+    """
+
+    package = models.ForeignKey(
+        "accounts.Package", on_delete=models.CASCADE, related_name="warehouse_measurements"
+    )
+    # PROTECT: the audit trail must keep naming who measured. Accounts are
+    # erased by anonymising, which keeps the row.
+    worker = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="package_measurements"
+    )
+
+    weight_kg = models.DecimalField(
+        max_digits=8, decimal_places=2,
+        validators=[MinValueValidator(MIN_WEIGHT_KG), MaxValueValidator(MAX_WEIGHT_KG)],
+    )
+    length_cm = models.DecimalField(
+        max_digits=6, decimal_places=1,
+        validators=[MinValueValidator(MIN_SIDE_CM), MaxValueValidator(MAX_SIDE_CM)],
+    )
+    width_cm = models.DecimalField(
+        max_digits=6, decimal_places=1,
+        validators=[MinValueValidator(MIN_SIDE_CM), MaxValueValidator(MAX_SIDE_CM)],
+    )
+    height_cm = models.DecimalField(
+        max_digits=6, decimal_places=1,
+        validators=[MinValueValidator(MIN_SIDE_CM), MaxValueValidator(MAX_SIDE_CM)],
+    )
+    # Stored as well as derivable, so a report reads what was quoted at the
+    # time even if the divisor ever changes.
+    volume_m3 = models.DecimalField(max_digits=12, decimal_places=4)
+    dimensional_weight_kg = models.DecimalField(max_digits=12, decimal_places=2)
+
+    supersedes = models.OneToOneField(
+        "self", on_delete=models.PROTECT, null=True, blank=True, related_name="superseded_by"
+    )
+    measured_at = models.DateTimeField(default=timezone.now, db_index=True)
+
+    class Meta:
+        db_table = "package_measurements"
+        ordering = ["-measured_at", "-id"]
+        indexes = [models.Index(fields=["package", "-measured_at"])]
+        constraints = [
+            models.CheckConstraint(
+                condition=Q(weight_kg__gt=0) & Q(length_cm__gt=0)
+                & Q(width_cm__gt=0) & Q(height_cm__gt=0),
+                name="package_measurement_positive",
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.weight_kg} kg, {self.length_cm}×{self.width_cm}×{self.height_cm} cm"
+
+    def save(self, *args, **kwargs):
+        if self._state.adding:
+            self.volume_m3 = volume_m3(self.length_cm, self.width_cm, self.height_cm)
+            self.dimensional_weight_kg = dimensional_weight_kg(
+                self.length_cm, self.width_cm, self.height_cm
+            )
+        return super().save(*args, **kwargs)
+
+    @property
+    def chargeable_weight_kg(self):
+        return max(Decimal(self.weight_kg), Decimal(self.dimensional_weight_kg))
+
+
+class PackagePackaging(AppendOnlyModel):
+    """One packaging action: so much bubble wrap, a box, tape."""
+
+    class Type(models.TextChoices):
+        BUBBLE_WRAP = "bubble_wrap", "Bubble wrap"
+        TAPE = "tape", "Tape"
+        BOX = "box", "Box"
+        PROTECTION = "protection", "Protection"
+        OTHER = "other", "Other"
+
+    package = models.ForeignKey(
+        "accounts.Package", on_delete=models.CASCADE, related_name="packaging_records"
+    )
+    worker = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="package_packaging"
+    )
+    packaging_type = models.CharField(max_length=20, choices=Type.choices)
+    quantity = models.PositiveIntegerField(
+        default=1, validators=[MinValueValidator(1), MaxValueValidator(999)]
+    )
+    notes = models.CharField(max_length=500, blank=True)
+    created_at = models.DateTimeField(default=timezone.now, db_index=True)
+
+    class Meta:
+        db_table = "package_packaging"
+        ordering = ["-created_at", "-id"]
+        indexes = [models.Index(fields=["package", "-created_at"])]
+        constraints = [
+            models.CheckConstraint(
+                condition=Q(quantity__gte=1), name="package_packaging_quantity_positive"
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.quantity} × {self.get_packaging_type_display()}"
+
+
+class PackageDamageReport(models.Model):
+    """Damage found on a package, and whether it has been dealt with.
+
+    What was reported is fixed once written. Only the resolution moves, and
+    only once, through resolve().
+    """
+
+    class DamageType(models.TextChoices):
+        BOX_DAMAGED = "box_damaged", "Box damaged"
+        CONTENTS_DAMAGED = "contents_damaged", "Contents damaged"
+        WET_PACKAGE = "wet_package", "Wet package"
+        BROKEN_PACKAGING = "broken_packaging", "Broken packaging"
+        OTHER = "other", "Other"
+
+    class Resolution(models.TextChoices):
+        OPEN = "open", "Open"
+        RESOLVED = "resolved", "Resolved"
+
+    package = models.ForeignKey(
+        "accounts.Package", on_delete=models.CASCADE, related_name="damage_reports"
+    )
+    worker = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="damage_reports_filed"
+    )
+    damage_type = models.CharField(max_length=20, choices=DamageType.choices)
+    description = models.TextField(max_length=1000, blank=True)
+
+    resolution_status = models.CharField(
+        max_length=10, choices=Resolution.choices, default=Resolution.OPEN, db_index=True
+    )
+    resolution_note = models.CharField(max_length=500, blank=True)
+    resolved_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="damage_reports_resolved",
+    )
+    resolved_at = models.DateTimeField(null=True, blank=True)
+
+    created_at = models.DateTimeField(default=timezone.now, db_index=True)
+
+    class Meta:
+        db_table = "package_damage_reports"
+        ordering = ["-created_at", "-id"]
+        indexes = [
+            models.Index(fields=["package", "-created_at"]),
+            models.Index(fields=["resolution_status", "-created_at"]),
+        ]
+        constraints = [
+            models.CheckConstraint(
+                condition=Q(resolution_status="open") | Q(resolved_by__isnull=False),
+                name="package_damage_resolved_has_resolver",
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.get_damage_type_display()} ({self.get_resolution_status_display()})"
+
+    def save(self, *args, **kwargs):
+        if not self._state.adding:
+            raise ImmutableRecord("A damage report cannot be edited. Resolve it instead.")
+        return super().save(*args, **kwargs)
+
+    def resolve(self, by, note=""):
+        """Close the report, exactly once. Returns False if it was already closed.
+
+        A conditional UPDATE, so two people pressing Resolve at once produce
+        one resolution and one refusal.
+        """
+        now = timezone.now()
+        moved = PackageDamageReport.objects.filter(
+            pk=self.pk, resolution_status=self.Resolution.OPEN
+        ).update(
+            resolution_status=self.Resolution.RESOLVED,
+            resolution_note=note,
+            resolved_by=by,
+            resolved_at=now,
+        )
+        if moved:
+            self.resolution_status = self.Resolution.RESOLVED
+            self.resolution_note = note
+            self.resolved_by = by
+            self.resolved_at = now
+        return bool(moved)
+
+
+def damage_photo_path(instance, filename):
+    """Stored under the report. The uploader's own filename is never used."""
+    return f"damage/{timezone.localtime():%Y/%m}/report-{instance.report_id}/{filename}"
+
+
+class PackageDamagePhoto(AppendOnlyModel):
+    """A photograph attached to a damage report.
+
+    Served only through the authenticated warehouse API, never via MEDIA_URL.
+    """
+
+    # The bytes a real file of each type starts with. The extension and the
+    # browser's content type are only the caller's word.
+    SIGNATURES = {
+        "image/jpeg": (b"\xff\xd8\xff",),
+        "image/png": (b"\x89PNG\r\n\x1a\n",),
+    }
+    EXTENSIONS = {"image/jpeg": ".jpg", "image/png": ".png", "image/webp": ".webp"}
+    MAX_BYTES = 10 * 1024 * 1024
+    MAX_PER_REPORT = 6
+
+    report = models.ForeignKey(
+        PackageDamageReport, on_delete=models.CASCADE, related_name="photos"
+    )
+    image = models.FileField(upload_to=damage_photo_path)
+    content_type = models.CharField(max_length=20)
+    size_bytes = models.PositiveIntegerField(default=0)
+    uploaded_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        db_table = "package_damage_photos"
+        ordering = ["id"]
+
+    def __str__(self):
+        return f"Photo {self.pk} of damage report {self.report_id}"
+
+    @classmethod
+    def sniff(cls, head):
+        """The real image type of a file from its first bytes, or None."""
+        if head[:4] == b"RIFF" and head[8:12] == b"WEBP":
+            return "image/webp"
+        for content_type, prefixes in cls.SIGNATURES.items():
+            if any(head.startswith(prefix) for prefix in prefixes):
+                return content_type
+        return None
+
+
+class PackageActivity(AppendOnlyModel):
+    """One warehouse action on one package. Immutable.
+
+    Every write the warehouse API makes records one of these in the same
+    transaction as the write, so a package's timeline is complete by
+    construction rather than by everybody remembering.
+    """
+
+    class Action(models.TextChoices):
+        PACKAGE_SCANNED = "package_scanned", "Package scanned"
+        PACKAGE_RECEIVED = "package_received", "Package received"
+        MEASUREMENT_COMPLETED = "measurement_completed", "Measurement completed"
+        MEASUREMENT_UPDATED = "measurement_updated", "Measurement updated"
+        BUBBLE_WRAP_ADDED = "bubble_wrap_added", "Bubble wrap added"
+        PACKAGING_ADDED = "packaging_added", "Packaging added"
+        PACKAGE_PACKED = "package_packed", "Package packed"
+        DAMAGE_REPORTED = "damage_reported", "Damage reported"
+        DAMAGE_RESOLVED = "damage_resolved", "Damage resolved"
+        PACKAGE_MARKED_READY = "package_marked_ready", "Package marked ready"
+        PACKAGE_STATUS_CHANGED = "package_status_changed", "Package status changed"
+        LOCATION_CHANGED = "location_changed", "Location changed"
+        PROBLEM_REPORTED = "problem_reported", "Problem reported"
+        PROBLEM_RESOLVED = "problem_resolved", "Problem resolved"
+
+    package = models.ForeignKey(
+        "accounts.Package", on_delete=models.CASCADE, related_name="activity"
+    )
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="package_activity"
+    )
+    action = models.CharField(max_length=32, choices=Action.choices, db_index=True)
+    description = models.CharField(max_length=500)
+    # The facts behind the sentence (from/to stage, a measurement id), so a
+    # report never has to parse the description.
+    context = models.JSONField(default=dict, blank=True)
+    timestamp = models.DateTimeField(default=timezone.now, db_index=True)
+
+    class Meta:
+        db_table = "package_activity"
+        ordering = ["-timestamp", "-id"]
+        verbose_name_plural = "package activity"
+        indexes = [
+            models.Index(fields=["package", "timestamp"]),
+            models.Index(fields=["user", "-timestamp"]),
+        ]
+
+    def __str__(self):
+        return f"{self.package_id}: {self.get_action_display()}"

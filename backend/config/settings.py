@@ -444,6 +444,10 @@ REST_FRAMEWORK = {
         # visitor sending a few enquiries, tight enough to make the forms a
         # poor spam target.
         'forms': '20/hour',
+        # The warehouse API, per account. Working one package through scan,
+        # measure, pack and ready is about a dozen requests, and a fast
+        # worker does well over a hundred packages an hour.
+        'warehouse': '6000/hour',
     },
     # A page size the caller may raise, within a ceiling. 25 is right for a
     # table somebody reads; a control that has to offer every shipment a

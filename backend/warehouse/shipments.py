@@ -3,30 +3,46 @@
 Mounted at /api/staff/warehouse/shipments/ by staff/urls.py, behind
 IsWarehouseOrStaff like the intake sheets.
 
-What a worker may do here is narrow on purpose. They move a shipment through
-the warehouse stages and they flag or clear a problem. They do not change the
-customer-facing status, the weight, the address or the invoice - those stay
-with the office in staff/views.py, where the lock and the invoice rules live.
+What a worker may do here is narrow on purpose. They scan, measure, pack,
+report damage, set a rack location and move a shipment through the warehouse
+stages they are allowed to set. They do not change the customer-facing
+status, the declared weight, the address or the invoice - those stay with the
+office in staff/views.py, where the lock and the invoice rules live.
+
+Every write goes through warehouse/operations.py, which checks permissions and
+records the immutable activity row.
 """
 
 from datetime import timedelta
 from decimal import Decimal
 
-from django.db import transaction
-from django.db.models import Count, Q, Sum
+from django.db.models import Count, Exists, OuterRef, Q, Sum
 from django.utils import timezone
-from rest_framework import mixins, serializers, viewsets
+from rest_framework import mixins, serializers, status as http_status, viewsets
 from rest_framework.decorators import action
-from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 
-from accounts.events import record_event
 from accounts.models import Package, PackageEvent
-from accounts.warehouse import move_warehouse_stage
 from invoicing.pdf import invoice_number
-from staff.permissions import IsWarehouseOrStaff
+from staff.permissions import IsWarehouseOrStaff, WarehouseRateThrottle
 
-from .models import IntakeSheet, measurement_totals
+from . import operations
+from .models import (
+    IntakeSheet,
+    PackageActivity,
+    PackageDamageReport,
+    PackageMeasurement,
+    measurement_totals,
+)
+from .records import (
+    ID_REGEX,
+    DamageReportSerializer,
+    MeasurementSerializer,
+    PackagingSerializer,
+    local_date,
+    local_time,
+    person,
+)
 
 Stage = Package.WarehouseStage
 
@@ -50,11 +66,34 @@ def board_queryset(queryset=None):
     )
 
 
+def open_damage_q():
+    return Exists(
+        PackageDamageReport.objects.filter(
+            package=OuterRef("pk"), resolution_status=PackageDamageReport.Resolution.OPEN
+        )
+    )
+
+
+def with_flags(queryset):
+    """Annotate whether each shipment has an open damage report."""
+    return queryset.annotate(has_open_damage=open_damage_q())
+
+
 def detail_queryset():
     """Shipments with everything the detail card reads, in a handful of queries."""
-    return Package.objects.select_related(
-        "user", "delivery_address", "problem_reported_by", "invoice"
-    ).prefetch_related("intake_sheets__measurements")
+    return with_flags(
+        Package.objects.select_related(
+            "user", "delivery_address", "problem_reported_by", "invoice"
+        ).prefetch_related(
+            "intake_sheets__measurements",
+            "warehouse_measurements__worker",
+        )
+    )
+
+
+def attention_q(now=None):
+    """Needs somebody: a problem flag, open damage, or waiting too long."""
+    return ~Q(problem_note="") | Q(has_open_damage=True) | overdue_q(now)
 
 
 def overdue_q(now=None):
@@ -103,13 +142,20 @@ class ShipmentRowSerializer(serializers.ModelSerializer):
     warehouse_stage_display = serializers.CharField(
         source="get_warehouse_stage_display", read_only=True
     )
+    workflow_status = serializers.CharField(read_only=True)
+    workflow_status_display = serializers.CharField(
+        source="get_workflow_status_display", read_only=True
+    )
+    package_number = serializers.CharField(read_only=True)
     overdue = serializers.SerializerMethodField()
     has_problem = serializers.SerializerMethodField()
+    has_open_damage = serializers.SerializerMethodField()
 
     class Meta:
         model = Package
         fields = [
             "id",
+            "package_number",
             "tracking_number",
             "customer",
             "destination",
@@ -118,9 +164,13 @@ class ShipmentRowSerializer(serializers.ModelSerializer):
             "warehouse_stage",
             "warehouse_stage_display",
             "warehouse_stage_at",
+            "warehouse_location",
+            "workflow_status",
+            "workflow_status_display",
             "overdue",
             "has_problem",
             "problem_note",
+            "has_open_damage",
         ]
 
     def get_customer(self, obj):
@@ -132,6 +182,14 @@ class ShipmentRowSerializer(serializers.ModelSerializer):
     def get_has_problem(self, obj):
         return bool(obj.problem_note)
 
+    def get_has_open_damage(self, obj):
+        annotated = getattr(obj, "has_open_damage", None)
+        if annotated is not None:
+            return bool(annotated)
+        return obj.damage_reports.filter(
+            resolution_status=PackageDamageReport.Resolution.OPEN
+        ).exists()
+
 
 class ShipmentDetailSerializer(ShipmentRowSerializer):
     """Everything a worker needs after a scan, on one card."""
@@ -142,9 +200,15 @@ class ShipmentDetailSerializer(ShipmentRowSerializer):
     problem_reported_by = serializers.SerializerMethodField()
     invoice = serializers.SerializerMethodField()
     intake = serializers.SerializerMethodField()
+    order_number = serializers.SerializerMethodField()
+    package_type = serializers.SerializerMethodField()
+    measurement = serializers.SerializerMethodField()
+    allowed_stages = serializers.SerializerMethodField()
 
     class Meta(ShipmentRowSerializer.Meta):
         fields = ShipmentRowSerializer.Meta.fields + [
+            "order_number",
+            "package_type",
             "freight",
             "freight_display",
             "status",
@@ -156,8 +220,48 @@ class ShipmentDetailSerializer(ShipmentRowSerializer):
             "problem_reported_by",
             "invoice",
             "intake",
+            "measurement",
+            "allowed_stages",
             "created_at",
         ]
+
+    def _latest_sheet(self, obj):
+        sheets = sorted(obj.intake_sheets.all(), key=lambda s: s.created_at, reverse=True)
+        return sheets[0] if sheets else None
+
+    def get_order_number(self, obj):
+        """The reference the office bills and books this shipment under.
+
+        Packages have no order column of their own; the invoice number is the
+        order reference customers are sent, and an intake sheet's reference
+        the one written on the paperwork when there is no invoice yet.
+        """
+        invoice = getattr(obj, "invoice", None)
+        if invoice is not None:
+            return invoice_number(invoice)
+        sheet = self._latest_sheet(obj)
+        return sheet.reference if sheet is not None and sheet.reference else ""
+
+    def get_package_type(self, obj):
+        """What the goods came as, from the intake sheet: pallet, box, crate."""
+        sheet = self._latest_sheet(obj)
+        if sheet is None or not sheet.packaging:
+            return ""
+        if sheet.packaging == IntakeSheet.Packaging.OTHER and sheet.packaging_other:
+            return sheet.packaging_other
+        return sheet.get_packaging_display()
+
+    def get_measurement(self, obj):
+        measurements = list(obj.warehouse_measurements.all())
+        if not measurements:
+            return None
+        return MeasurementSerializer(measurements[0]).data | {"current": True}
+
+    def get_allowed_stages(self, obj):
+        request = self.context.get("request")
+        if request is None:
+            return []
+        return list(operations.allowed_stages(request.user))
 
     def get_customer_phone(self, obj):
         return obj.user.phone_number if obj.user else ""
@@ -186,11 +290,10 @@ class ShipmentDetailSerializer(ShipmentRowSerializer):
         nothing about freight or what is in the boxes; the sheet is where the
         warehouse wrote those down.
         """
-        sheets = sorted(obj.intake_sheets.all(), key=lambda s: s.created_at, reverse=True)
-        if not sheets:
+        sheet = self._latest_sheet(obj)
+        if sheet is None:
             return None
 
-        sheet = sheets[0]
         lines = list(sheet.measurements.all())
         totals = measurement_totals(lines)
 
@@ -222,10 +325,13 @@ class ShipmentDetailSerializer(ShipmentRowSerializer):
 class ShipmentViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet):
     """The warehouse's shipments. Read, move along a stage, flag a problem.
 
-    List filters: ?stage=, ?problem=true, ?overdue=true, ?search=.
+    List filters: ?stage= (one, or several comma-separated), ?problem=true,
+    ?overdue=true, ?damaged=true, ?attention=true, ?search=.
     """
 
     permission_classes = [IsWarehouseOrStaff]
+    throttle_classes = [WarehouseRateThrottle]
+    lookup_value_regex = ID_REGEX
 
     def get_queryset(self):
         queryset = detail_queryset()
@@ -238,116 +344,199 @@ class ShipmentViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets
         queryset = board_queryset(queryset)
         params = self.request.query_params
 
-        stage = params.get("stage")
-        if stage in Stage.values:
-            queryset = queryset.filter(warehouse_stage=stage)
+        stages = [value for value in params.get("stage", "").split(",") if value in Stage.values]
+        if stages:
+            queryset = queryset.filter(warehouse_stage__in=stages)
         if params.get("problem") == "true":
             queryset = queryset.exclude(problem_note="")
         if params.get("overdue") == "true":
             queryset = queryset.filter(overdue_q())
+        if params.get("damaged") == "true":
+            queryset = queryset.filter(has_open_damage=True)
+        if params.get("attention") == "true":
+            queryset = queryset.filter(attention_q())
 
         search = params.get("search", "").strip()
         if search:
             queryset = queryset.filter(
                 Q(tracking_number__icontains=search)
                 | Q(description__icontains=search)
+                | Q(warehouse_location__icontains=search)
                 | Q(user__first_name__icontains=search)
                 | Q(user__last_name__icontains=search)
                 | Q(user__email__icontains=search)
             )
 
-        return queryset.order_by("warehouse_stage_at")
+        return queryset.order_by("warehouse_stage_at", "id")
 
     def get_serializer_class(self):
         return ShipmentRowSerializer if self.action in ("list", "board") else ShipmentDetailSerializer
 
-    def _detail(self, package):
+    def _detail(self, package, status=http_status.HTTP_200_OK):
         # Re-read with the prefetches, so the answer to a write is the same
         # shape as a scan and carries what the write just changed.
-        return Response(ShipmentDetailSerializer(self.get_queryset().get(pk=package.pk)).data)
+        fresh = detail_queryset().get(pk=package.pk)
+        return Response(
+            ShipmentDetailSerializer(fresh, context={"request": self.request}).data,
+            status=status,
+        )
 
     @action(detail=False, methods=["get"])
     def lookup(self, request):
-        """`?code=` - the shipment behind a scanned code, or 404."""
+        """`?code=` - the shipment behind a scanned code, or 404. Writes nothing."""
         package = find_shipment(request.query_params.get("code"))
         if package is None:
             return Response({"detail": "No shipment has this code."}, status=404)
         return self._detail(package)
 
     @action(detail=True, methods=["post"])
-    def stage(self, request, pk=None):
-        """Move to `stage`. Either direction: the floor corrects its own mistakes."""
+    def scanned(self, request, pk=None):
+        """Record that a worker scanned this package and opened it. `code` optional."""
         package = self.get_object()
-        to_stage = request.data.get("stage")
+        operations.record_scan(package, request.user, str(request.data.get("code") or ""))
+        return self._detail(package)
 
-        if to_stage not in Stage.values:
-            raise ValidationError({"stage": ["Not a warehouse stage."]})
-        if package.status == Package.Status.CANCELLED:
-            raise ValidationError({"stage": ["This shipment was cancelled."]})
+    @action(detail=True, methods=["post"])
+    def stage(self, request, pk=None):
+        """Move to `stage`, if the caller's role may set it. See operations.change_stage."""
+        package = self.get_object()
+        operations.change_stage(package, request.data.get("stage"), request.user)
+        return self._detail(package)
 
-        with transaction.atomic():
-            move_warehouse_stage(package, to_stage, actor=request.user)
-
+    @action(detail=True, methods=["post"])
+    def location(self, request, pk=None):
+        """Set the rack or shelf the package sits on. `location`, blank to clear."""
+        package = self.get_object()
+        operations.set_location(package, request.user, request.data.get("location"))
         return self._detail(package)
 
     @action(detail=True, methods=["post"])
     def problem(self, request, pk=None):
         """Flag a problem with `note`, or replace the note on one already flagged."""
         package = self.get_object()
-        note = (request.data.get("note") or "").strip()
-
-        if not note:
-            raise ValidationError({"note": ["Say what the problem is."]})
-        if len(note) > 500:
-            raise ValidationError({"note": ["Keep it under 500 characters."]})
-
-        package.problem_note = note
-        package.problem_reported_at = timezone.now()
-        package.problem_reported_by = request.user
-
-        with transaction.atomic():
-            package.save(
-                update_fields=[
-                    "problem_note", "problem_reported_at", "problem_reported_by", "updated_at"
-                ]
-            )
-            record_event(
-                package, PackageEvent.Kind.PROBLEM_REPORTED, actor=request.user, note=note
-            )
-
+        operations.report_problem(package, request.user, request.data.get("note"))
         return self._detail(package)
 
     @action(detail=True, methods=["post"])
     def resolve(self, request, pk=None):
         """Clear the problem. The note stays on the history, not on the row."""
         package = self.get_object()
-
-        if not package.problem_note:
-            return self._detail(package)
-
-        note = package.problem_note
-        package.problem_note = ""
-        package.problem_reported_at = None
-        package.problem_reported_by = None
-
-        with transaction.atomic():
-            package.save(
-                update_fields=[
-                    "problem_note", "problem_reported_at", "problem_reported_by", "updated_at"
-                ]
-            )
-            record_event(
-                package, PackageEvent.Kind.PROBLEM_RESOLVED, actor=request.user, note=note
-            )
-
+        operations.resolve_problem(package, request.user)
         return self._detail(package)
+
+    @action(detail=True, methods=["get", "post"])
+    def measurements(self, request, pk=None):
+        """GET the measurement history, newest first. POST a new measurement.
+
+        POST {weight_kg, length_cm, width_cm, height_cm}. The worker is the
+        signed-in account; volume and dimensional weight are computed here.
+        """
+        package = self.get_object()
+        if request.method == "POST":
+            measurement, package = operations.save_measurement(package, request.user, request.data)
+            response = self._detail(package, status=http_status.HTTP_201_CREATED)
+            response.data = {
+                "measurement": MeasurementSerializer(measurement).data,
+                "shipment": response.data,
+            }
+            return response
+
+        rows = package.warehouse_measurements.select_related("worker", "superseded_by")
+        return Response(MeasurementSerializer(rows, many=True).data)
+
+    @action(detail=True, methods=["get", "post"])
+    def packaging(self, request, pk=None):
+        """GET the packaging records. POST {packaging_type, quantity, notes}."""
+        package = self.get_object()
+        if request.method == "POST":
+            record = operations.add_packaging(package, request.user, request.data)
+            response = self._detail(package, status=http_status.HTTP_201_CREATED)
+            response.data = {
+                "packaging": PackagingSerializer(record).data,
+                "shipment": response.data,
+            }
+            return response
+
+        rows = package.packaging_records.select_related("worker")
+        return Response(PackagingSerializer(rows, many=True).data)
+
+    @action(detail=True, methods=["get", "post"])
+    def damage(self, request, pk=None):
+        """GET damage reports. POST multipart {damage_type, description, photos[]}."""
+        package = self.get_object()
+        if request.method == "POST":
+            report = operations.report_damage(
+                package, request.user, request.data, request.FILES.getlist("photos")
+            )
+            response = self._detail(package, status=http_status.HTTP_201_CREATED)
+            response.data = {
+                "damage_report": DamageReportSerializer(report).data,
+                "shipment": response.data,
+            }
+            return response
+
+        rows = package.damage_reports.select_related(
+            "package__user", "worker", "resolved_by"
+        ).prefetch_related("photos")
+        return Response(DamageReportSerializer(rows, many=True).data)
+
+    @action(detail=True, methods=["get"])
+    def activity(self, request, pk=None):
+        """The package's whole history, oldest first, as one timeline.
+
+        The warehouse's own activity rows, plus the office's status changes
+        from the order history, so the floor sees "In transit" land on the
+        same line as their own work.
+        """
+        package = self.get_object()
+
+        entries = [
+            {
+                "id": f"activity-{row.pk}",
+                "source": "warehouse",
+                "action": row.action,
+                "action_display": row.get_action_display(),
+                "description": row.description,
+                "user": person(row.user),
+                "timestamp": row.timestamp,
+                "date": local_date(row.timestamp),
+                "time": local_time(row.timestamp),
+            }
+            for row in package.activity.select_related("user").order_by("-timestamp", "-id")[:500]
+        ]
+
+        status_labels = dict(Package.Status.choices)
+        for event in package.events.filter(kind=PackageEvent.Kind.STATUS_CHANGED).select_related(
+            "actor"
+        )[:200]:
+            context = event.context or {}
+            entries.append(
+                {
+                    "id": f"event-{event.pk}",
+                    "source": "office",
+                    "action": "shipment_status_changed",
+                    "action_display": "Shipment status changed",
+                    "description": " → ".join(
+                        status_labels.get(value, value)
+                        for value in (context.get("from_status"), context.get("to_status"))
+                        if value
+                    ),
+                    "user": person(event.actor),
+                    "timestamp": event.at,
+                    "date": local_date(event.at),
+                    "time": local_time(event.at),
+                }
+            )
+
+        entries.sort(key=lambda entry: entry["timestamp"])
+        return Response(entries)
 
     @action(detail=False, methods=["get"])
     def board(self, request):
         """The warehouse dashboard in one request: a card per stage and the alarms."""
         now = timezone.now()
         today = timezone.localdate()
-        active = board_queryset()
+        active = with_flags(board_queryset())
 
         def count_by_stage(queryset):
             # order_by() cleared, so the model's default ordering cannot sneak
@@ -377,6 +566,22 @@ class ShipmentViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets
                 ],
                 "problems": problems.count(),
                 "overdue": overdue.count(),
+                # The warehouse dashboard's six headline numbers.
+                "waiting_measurement": active.filter(
+                    warehouse_stage__in=[Stage.RECEIVED, Stage.AWAITING_MEASUREMENT]
+                ).count(),
+                "measured_today": PackageMeasurement.objects.filter(
+                    measured_at__date=today
+                ).values("package").distinct().count(),
+                "waiting_packaging": active.filter(
+                    warehouse_stage__in=[Stage.MEASURED, Stage.AWAITING_PACKAGING]
+                ).count(),
+                "ready_for_shipment": active.filter(warehouse_stage=Stage.READY).count(),
+                "damaged": Package.objects.filter(open_damage_q()).count(),
+                "attention": active.filter(attention_q(now)).count(),
+                "activity_today": PackageActivity.objects.filter(
+                    timestamp__date=today, user=request.user
+                ).count(),
                 "today": {
                     "packages": received_today.count(),
                     # Quantized, because SQLite and Postgres disagree on the

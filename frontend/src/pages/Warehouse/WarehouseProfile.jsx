@@ -16,6 +16,7 @@ import {
   createIntakeSheet,
   getWarehouseSummary,
   listIntakeSheets,
+  roleLabel,
 } from '../../api/staff';
 import { changePassword, setWarehouseEmails } from '../../api/profile';
 import { useAuth } from '../../auth/useAuth';
@@ -212,7 +213,7 @@ export default function WarehouseProfile() {
   const [error, setError] = useState('');
 
   const mailsMe = user?.notifications?.warehouse ?? true;
-  const roles = [user?.isWarehouse && 'Warehouse', user?.isStaff && 'Office'].filter(Boolean);
+  const roles = [roleLabel(user?.role)];
 
   async function startSheet() {
     setStarting(true);

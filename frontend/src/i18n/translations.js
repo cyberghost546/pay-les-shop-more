@@ -520,11 +520,28 @@ export const translations = {
     },
     home: {
       hero: {
-        eyebrow: 'Shop & ship naar de Cariben',
-        title: 'Verplaats uw wereld. Volg elke zending.',
-        lead: 'Bestel bij Nederlandse webshops, laat alles bij ons samenkomen en volg uw zending tot aan de deur — vanuit één platform.',
+        eyebrow: 'Btw-vrij van Nederland naar Curaçao en Bonaire',
+        title: 'Bestel in Nederland. Wij bezorgen het btw-vrij op het eiland.',
+        lead: 'Koop bij elke Nederlandse webshop en laat het naar ons magazijn in Nederland sturen. Wij bundelen uw bestellingen, verschepen ze btw-vrij per boot of vliegtuig en bezorgen ze bij u thuis op Curaçao of Bonaire.',
         trackCta: 'Zending volgen',
         startCta: 'Aan de slag',
+        howCta: 'Hoe het werkt',
+        myShipments: 'Mijn zendingen',
+        shops: 'Bestel bij winkels zoals',
+        points: {
+          shop: {
+            title: 'U bestelt',
+            body: 'Bij elke Nederlandse webshop, met ons adres als afleveradres.',
+          },
+          ship: {
+            title: 'Wij verschepen',
+            body: 'We bundelen uw pakketten en versturen ze btw-vrij per zee of lucht.',
+          },
+          deliver: {
+            title: 'U ontvangt',
+            body: 'Onze agent op het eiland bezorgt alles bij u thuis of op het werk.',
+          },
+        },
       },
       stats: {
         title: 'Onze cijfers',
@@ -1310,11 +1327,28 @@ export const translations = {
     },
     home: {
       hero: {
-        eyebrow: 'Shop and ship to the Caribbean',
-        title: 'Move your world. Track every shipment.',
-        lead: 'Order from Dutch webshops, have everything gathered in one place, and follow your shipment to your door — all from one platform.',
+        eyebrow: 'BTW-free from the Netherlands to Curaçao and Bonaire',
+        title: 'Shop in the Netherlands. We deliver it BTW-free to the island.',
+        lead: 'Buy from any Dutch webshop and have it sent to our warehouse in the Netherlands. We combine your orders, ship them BTW-free (no Dutch VAT) by sea or air, and deliver them to your door in Curaçao or Bonaire.',
         trackCta: 'Track a shipment',
         startCta: 'Get started',
+        howCta: 'How it works',
+        myShipments: 'My shipments',
+        shops: 'Order from shops like',
+        points: {
+          shop: {
+            title: 'You shop',
+            body: 'At any Dutch webshop, with our address as the delivery address.',
+          },
+          ship: {
+            title: 'We ship',
+            body: 'We combine your parcels and send them BTW-free by sea or air.',
+          },
+          deliver: {
+            title: 'You receive',
+            body: 'Our agent on the island delivers everything to your home or business.',
+          },
+        },
       },
       stats: {
         title: 'Our numbers',
@@ -2100,11 +2134,28 @@ export const translations = {
     },
     home: {
       hero: {
-        eyebrow: 'Shop & ship pa Karibe',
-        title: 'Move bo mundu. Sigui tur enbio.',
-        lead: 'Bestel na webshopnan hulandes, laga tur kos yega na un solo lugá, i sigui bo enbio te na bo porta — for di un solo plataforma.',
+        eyebrow: 'Sin BTW for di Hulanda pa Kòrsou i Boneiru',
+        title: 'Kumpra na Hulanda. Nos ta entregá e sin BTW na e isla.',
+        lead: 'Kumpra na kualke webshop hulandes i laga nan manda e pa nos warehouse na Hulanda. Nos ta hunta bo órdennan, manda nan sin BTW pa barku òf avion, i entregá nan na bo porta na Kòrsou òf Boneiru.',
         trackCta: 'Sigui un enbio',
         startCta: 'Kuminsá',
+        howCta: 'Kon e ta funshoná',
+        myShipments: 'Mi enbionan',
+        shops: 'Kumpra na tiendanan manera',
+        points: {
+          shop: {
+            title: 'Bo ta kumpra',
+            body: 'Na kualke webshop hulandes, ku nos adrès komo adrès di entrega.',
+          },
+          ship: {
+            title: 'Nos ta manda',
+            body: 'Nos ta hunta bo pakètnan i manda nan sin BTW pa laman òf pa aire.',
+          },
+          deliver: {
+            title: 'Bo ta risibí',
+            body: 'Nos agente na e isla ta entregá tur kos na bo kas òf bo negoshi.',
+          },
+        },
       },
       stats: {
         title: 'Nos siframan',

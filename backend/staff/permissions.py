@@ -1,6 +1,13 @@
 """Who is allowed into the staff API."""
 
 from rest_framework.permissions import BasePermission
+from rest_framework.throttling import UserRateThrottle
+
+
+class WarehouseRateThrottle(UserRateThrottle):
+    """A per-account budget sized for scanning all day. See settings 'warehouse'."""
+
+    scope = "warehouse"
 
 
 class IsStaff(BasePermission):
@@ -20,6 +27,21 @@ class IsStaff(BasePermission):
     def has_permission(self, request, view):
         user = request.user
         return bool(user and user.is_authenticated and user.is_active and user.is_staff)
+
+
+class IsAdmin(BasePermission):
+    """Admins only: the role that may decide what other accounts can do.
+
+    Office workers share every other back-office screen with admins. What
+    they do not get is the power to hand out roles, so a compromised or
+    careless office account cannot make itself - or anybody - an admin.
+    """
+
+    message = "Only an admin can do this."
+
+    def has_permission(self, request, view):
+        user = request.user
+        return bool(user and user.is_authenticated and user.is_admin)
 
 
 class IsWarehouseOrStaff(BasePermission):

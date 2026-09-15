@@ -219,13 +219,7 @@ class StaffCustomerSerializer(serializers.ModelSerializer):
         return str(obj)
 
     def get_role(self, obj):
-        # Office first: an account holding both flags is an admin, because
-        # that is the larger of the two and the one worth seeing at a glance.
-        if obj.is_staff:
-            return StaffRoleSerializer.ADMIN
-        if obj.is_warehouse:
-            return StaffRoleSerializer.WAREHOUSE
-        return StaffRoleSerializer.CUSTOMER
+        return obj.role
 
     def get_is_erased(self, obj):
         return obj.anonymised_at is not None
@@ -236,46 +230,36 @@ class StaffCustomerSerializer(serializers.ModelSerializer):
             return False
 
         return not (
-            obj.pk == request.user.pk
+            not request.user.is_admin
+            or obj.pk == request.user.pk
             or obj.is_superuser
             or obj.anonymised_at is not None
         )
 
 
 class StaffRoleSerializer(serializers.Serializer):
-    """The body of a role change: which of the roles the account gets.
+    """The body of a role change: which role the account gets.
 
     A named role rather than raw booleans, because that is what the screen
-    offers and what the person pressing it means. The mapping onto the flags
-    lives here, in one place.
-
-    Three roles over two flags, and the pairing is the whole definition:
+    offers and what the person pressing it means. User.ROLE_FLAGS maps each
+    role onto is_staff and is_warehouse, in one place:
 
         customer    neither. No dashboard at all.
-        warehouse   is_warehouse only. The scanner and intake sheets. Not
-                    Django's /admin/, which is exactly why the floor does not
-                    get is_staff.
-        admin       is_staff only. The whole back office.
-
-    A supervisor who does both jobs is the one arrangement this screen cannot
-    make. That is deliberate rather than missing: it is rare, it is the most
-    powerful account in the building, and the Django admin is a better place
-    to grant it than a dropdown in a table.
+        driver      neither. No warehouse or office access.
+        warehouse   is_warehouse only. Warehouse operations. Not Django's
+                    /admin/, which is exactly why the floor does not get
+                    is_staff.
+        office      is_staff. The back office, without role management.
+        admin       is_staff. The whole back office.
     """
 
-    ADMIN = "admin"
-    WAREHOUSE = "warehouse"
-    CUSTOMER = "customer"
+    ADMIN = User.Role.ADMIN
+    OFFICE = User.Role.OFFICE
+    WAREHOUSE = User.Role.WAREHOUSE
+    DRIVER = User.Role.DRIVER
+    CUSTOMER = User.Role.CUSTOMER
 
-    role = serializers.ChoiceField(choices=[ADMIN, WAREHOUSE, CUSTOMER])
-
-    @property
-    def grants_staff(self):
-        return self.validated_data["role"] == self.ADMIN
-
-    @property
-    def grants_warehouse(self):
-        return self.validated_data["role"] == self.WAREHOUSE
+    role = serializers.ChoiceField(choices=User.Role.values)
 
 
 class StaffCustomerCreateSerializer(serializers.ModelSerializer):
@@ -301,11 +285,7 @@ class StaffCustomerCreateSerializer(serializers.ModelSerializer):
     """
 
     role = serializers.ChoiceField(
-        choices=[
-            StaffRoleSerializer.ADMIN,
-            StaffRoleSerializer.WAREHOUSE,
-            StaffRoleSerializer.CUSTOMER,
-        ],
+        choices=User.Role.values,
         default=StaffRoleSerializer.CUSTOMER,
     )
 
@@ -355,12 +335,8 @@ class StaffCustomerCreateSerializer(serializers.ModelSerializer):
         role = validated_data.pop("role")
         email = validated_data["email"]
 
-        user = User.objects.create_user(
-            username=email,
-            is_staff=role == StaffRoleSerializer.ADMIN,
-            is_warehouse=role == StaffRoleSerializer.WAREHOUSE,
-            **validated_data,
-        )
+        # The role alone; User.save() sets is_staff and is_warehouse from it.
+        user = User.objects.create_user(username=email, role=role, **validated_data)
 
         # No password at all, rather than a random one nobody keeps. Nothing
         # hashes to this, so the account cannot be signed into until its owner
@@ -398,6 +374,16 @@ class StaffPackageSerializer(_StaffPackageInvoiceMixin, serializers.ModelSeriali
     # delivery_address_text; this is the one line the Add invoice form needs to
     # let an admin recognise a shipment in a list of them.
     destination = serializers.CharField(source="destination_label", read_only=True)
+    # What the warehouse has done, read from the same rows the floor writes -
+    # a measurement saved on a tablet is on this page on the next request.
+    warehouse_stage_display = serializers.CharField(
+        source="get_warehouse_stage_display", read_only=True
+    )
+    workflow_status = serializers.CharField(read_only=True)
+    workflow_status_display = serializers.CharField(
+        source="get_workflow_status_display", read_only=True
+    )
+    measurement = serializers.SerializerMethodField()
 
     class Meta:
         model = Package
@@ -408,6 +394,12 @@ class StaffPackageSerializer(_StaffPackageInvoiceMixin, serializers.ModelSeriali
             "description",
             "status",
             "status_display",
+            "warehouse_stage",
+            "warehouse_stage_display",
+            "warehouse_location",
+            "workflow_status",
+            "workflow_status_display",
+            "measurement",
             "destination",
             "locked",
             "locked_for_customer",
@@ -444,7 +436,26 @@ class StaffPackageSerializer(_StaffPackageInvoiceMixin, serializers.ModelSeriali
             "locked",
             "locked_for_customer",
             "lock_reason",
+            "warehouse_stage",
+            "warehouse_location",
         ]
+
+    def get_measurement(self, obj):
+        """The current warehouse measurement, or None. Uses the prefetch."""
+        rows = list(obj.warehouse_measurements.all())
+        if not rows:
+            return None
+        latest = rows[0]
+        return {
+            "weight_kg": str(latest.weight_kg),
+            "length_cm": str(latest.length_cm),
+            "width_cm": str(latest.width_cm),
+            "height_cm": str(latest.height_cm),
+            "volume_m3": str(latest.volume_m3),
+            "dimensional_weight_kg": str(latest.dimensional_weight_kg),
+            "measured_at": latest.measured_at,
+            "measured_by": latest.worker.get_full_name() or latest.worker.get_username(),
+        }
 
     def validate(self, attrs):
         """Refuse the edit here as well as in the model.

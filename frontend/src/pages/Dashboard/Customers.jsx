@@ -38,6 +38,8 @@ function whyRoleIsFixed(customer, isSelf) {
   if (isSelf) return 'Your own account';
   if (customer.is_superuser) return 'Superuser — managed in the Django admin';
   if (customer.is_erased) return 'Erased account';
+  // The server only lets admins hand out roles.
+  if (!customer.can_change_role) return 'Only an admin can change roles';
   return '';
 }
 

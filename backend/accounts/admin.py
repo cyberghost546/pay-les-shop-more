@@ -21,13 +21,18 @@ class UserAdmin(BaseUserAdmin):
     """
 
     inlines = [AddressInline]
-    list_display = ("username", "first_name", "last_name", "email", "phone_number")
+    list_display = ("username", "first_name", "last_name", "email", "role")
+    list_filter = BaseUserAdmin.list_filter + ("role",)
     search_fields = ("username", "first_name", "last_name", "email", "phone_number")
 
     # Add the custom fields to the stock fieldsets rather than replacing them.
+    # The role sets is_staff and is_warehouse (User.save), so it is the field
+    # to change here; the flags are shown read-only for what they now say.
     fieldsets = BaseUserAdmin.fieldsets + (
         ("Contact", {"fields": ("phone_number",)}),
+        ("Role", {"fields": ("role", "is_warehouse")}),
     )
+    readonly_fields = ("is_warehouse",)
     add_fieldsets = BaseUserAdmin.add_fieldsets + (
         ("Contact", {"fields": ("email", "phone_number")}),
     )

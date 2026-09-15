@@ -289,7 +289,7 @@ class PackageViewSet(StaffViewSet):
         # owner and 25 more to find out whether each has an invoice;
         # prefetch, or another 25 for the files attached to them.
         Package.objects.select_related("user", "invoice")
-        .prefetch_related("documents__uploaded_by")
+        .prefetch_related("documents__uploaded_by", "warehouse_measurements__worker")
         .all()
     )
 
@@ -953,6 +953,12 @@ class CustomerViewSet(
         """
         writer = self.get_serializer(data=request.data)
         writer.is_valid(raise_exception=True)
+
+        # Opening a customer account is office work; opening one that carries
+        # a staff role is handing out access, which only an admin may do.
+        if writer.validated_data.get("role") != User.Role.CUSTOMER and not request.user.is_admin:
+            raise PermissionDenied("Only an admin can create accounts with a staff role.")
+
         self.perform_create(writer)
 
         row = self.get_queryset().get(pk=writer.instance.pk)
@@ -1167,6 +1173,8 @@ class CustomerViewSet(
         """
         target = self.get_object()
 
+        if not request.user.is_admin:
+            raise PermissionDenied("Only an admin can change roles.")
         if target.pk == request.user.pk:
             raise PermissionDenied("You cannot change your own role.")
         if target.is_superuser:
@@ -1179,19 +1187,13 @@ class CustomerViewSet(
         body = StaffRoleSerializer(data=request.data)
         body.is_valid(raise_exception=True)
 
-        # Only these two columns, and only when the pair actually moves: a
-        # repeated press should not rewrite the row or count as a change.
-        # Written together because a role is the pair - setting one and
-        # leaving the other is how an account ends up being both, or neither.
-        if (
-            target.is_staff != body.grants_staff
-            or target.is_warehouse != body.grants_warehouse
-        ):
-            target.is_staff = body.grants_staff
-            target.is_warehouse = body.grants_warehouse
-            target.save(
-                update_fields=["is_staff", "is_warehouse", "updated_at"]
-            )
+        # The role is written and User.save() sets both flags from it, always
+        # together - setting one and leaving the other is how an account ends
+        # up being both, or neither. A repeated press changes nothing.
+        role = body.validated_data["role"]
+        if target.role != role:
+            target.role = role
+            target.save(update_fields=["role", "is_staff", "is_warehouse", "updated_at"])
 
         # Back through the list queryset, so the row the table swaps in carries
         # the same package_count and addresses the rest of them do.

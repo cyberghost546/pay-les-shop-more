@@ -104,18 +104,25 @@ class StageTests(ShipmentTestCase):
         self.assertEqual(event.actor, self.floor)
 
     def test_it_does_not_touch_the_customer_status(self):
-        self.client.post(self.url("stage", self.package.pk), {"stage": "shipped"}, format="json")
+        self.client.post(self.url("stage", self.package.pk), {"stage": "packed"}, format="json")
         self.package.refresh_from_db()
         self.assertEqual(self.package.status, Package.Status.PAID)
 
     def test_a_stage_can_be_moved_back(self):
         self.client.post(self.url("stage", self.package.pk), {"stage": "packed"}, format="json")
         response = self.client.post(
-            self.url("stage", self.package.pk), {"stage": "processing"}, format="json"
+            self.url("stage", self.package.pk), {"stage": "awaiting_measurement"}, format="json"
         )
-        self.assertEqual(response.data["warehouse_stage"], "processing")
+        self.assertEqual(response.data["warehouse_stage"], "awaiting_measurement")
 
-    def test_a_locked_shipment_can_still_be_moved(self):
+    def test_the_office_can_still_move_a_locked_shipment(self):
+        office = User.objects.create_user(
+            username="kantoor@example.com",
+            email="kantoor@example.com",
+            password="a-long-enough-password",
+            is_staff=True,
+        )
+        self.client.force_authenticate(office)
         self.package.status = Package.Status.IN_TRANSIT
         self.package.save()
         response = self.client.post(

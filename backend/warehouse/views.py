@@ -24,7 +24,7 @@ from rest_framework.decorators import action
 from rest_framework.exceptions import APIException, ValidationError
 from rest_framework.response import Response
 
-from staff.permissions import IsWarehouseOrStaff
+from staff.permissions import IsWarehouseOrStaff, WarehouseRateThrottle
 from staff.views import StaffViewSet
 
 from . import scanning, shipments
@@ -72,6 +72,7 @@ class IntakeSheetViewSet(mixins.CreateModelMixin, StaffViewSet):
     # dashboard - invoices, customers, quotes, shipments - still refuses it,
     # and so does Django's own /admin/.
     permission_classes = [IsWarehouseOrStaff]
+    throttle_classes = [WarehouseRateThrottle]
 
     serializer_class = IntakeSheetSerializer
 
@@ -294,7 +295,8 @@ class IntakeSheetViewSet(mixins.CreateModelMixin, StaffViewSet):
             package = shipments.find_shipment(found["code"])
         shipment = (
             shipments.ShipmentDetailSerializer(
-                shipments.detail_queryset().get(pk=package.pk)
+                shipments.detail_queryset().get(pk=package.pk),
+                context={"request": request},
             ).data
             if package is not None
             else None

@@ -66,14 +66,16 @@ class UserSerializer(serializers.ModelSerializer):
             # every request.
             "is_staff",
             "is_warehouse",
+            "role",
         ]
-        # Username, join date and the two role flags are not editable here.
+        # Username, join date and the role are not editable here.
         read_only_fields = [
             "id",
             "username",
             "date_joined",
             "is_staff",
             "is_warehouse",
+            "role",
         ]
 
 

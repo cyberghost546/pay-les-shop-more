@@ -6,7 +6,8 @@ every write.
 """
 
 from django.contrib.auth import login, logout, update_session_auth_hash
-from django.db.models import Q
+from django.db import transaction
+from django.db.models import ProtectedError, Q
 from django.http import FileResponse, Http404
 from django.middleware.csrf import get_token
 from django.views.decorators.csrf import ensure_csrf_cookie
@@ -267,13 +268,22 @@ class AccountDeleteView(APIView):
         # survives the change.
         logout(request)
 
+        anonymised = had_packages
         if had_packages:
             user.anonymise()
         else:
-            user.delete()
+            try:
+                with transaction.atomic():
+                    user.delete()
+            except ProtectedError:
+                # A staff account that has signed audit records (warehouse
+                # activity, measurements, invoice reviews) cannot vanish from
+                # them; it is anonymised instead, like a customer with orders.
+                user.anonymise()
+                anonymised = True
 
         return Response(
-            {"anonymised": had_packages},
+            {"anonymised": anonymised},
             status=status.HTTP_200_OK,
         )
 

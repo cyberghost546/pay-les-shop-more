@@ -1,5 +1,5 @@
 import { Suspense, lazy } from 'react';
-import { Navigate, Routes, Route, useLocation } from 'react-router-dom';
+import { Navigate, Routes, Route, useLocation, useParams } from 'react-router-dom';
 import Header from './components/Header/Header';
 import Loading from './components/Loading/Loading';
 import ErrorBoundary from './components/ErrorBoundary/ErrorBoundary';
@@ -45,12 +45,16 @@ const Invoices = lazy(() => import('./pages/Dashboard/Invoices'));
 const Documents = lazy(() => import('./pages/Dashboard/Documents'));
 const MeasurementsList = lazy(() => import('./pages/Dashboard/MeasurementsList'));
 
-// The warehouse floor's dashboard. Scan and Intake above are shared with it.
+// The warehouse dashboard. Scan and Intake above are shared with it.
 const WarehouseLayout = lazy(() => import('./pages/Warehouse/WarehouseLayout'));
 const WarehouseHome = lazy(() => import('./pages/Warehouse/WarehouseHome'));
 const WarehouseProfile = lazy(() => import('./pages/Warehouse/WarehouseProfile'));
 const ShipmentList = lazy(() => import('./pages/Warehouse/ShipmentList'));
-const ShipmentPage = lazy(() => import('./pages/Warehouse/ShipmentPage'));
+const PackagePage = lazy(() => import('./pages/Warehouse/PackagePage'));
+const MeasurementsPage = lazy(() => import('./pages/Warehouse/MeasurementsPage'));
+const PackagingPage = lazy(() => import('./pages/Warehouse/PackagingPage'));
+const DamagePage = lazy(() => import('./pages/Warehouse/DamagePage'));
+const ActivityPage = lazy(() => import('./pages/Warehouse/ActivityPage'));
 const ShipmentLabel = lazy(() => import('./pages/Warehouse/ShipmentLabel'));
 
 /**
@@ -61,6 +65,13 @@ const ShipmentLabel = lazy(() => import('./pages/Warehouse/ShipmentLabel'));
 function MovedToWarehouse({ page }) {
   const { search } = useLocation();
   return <Navigate to={`/warehouse/${page}${search}`} replace />;
+}
+
+/** The warehouse's shipment pages moved to /warehouse/packages. */
+function MovedToPackages() {
+  const { id } = useParams();
+  const { search } = useLocation();
+  return <Navigate to={`/warehouse/packages${id ? `/${id}` : ''}${search}`} replace />;
 }
 
 /**
@@ -150,8 +161,9 @@ export default function App() {
               <Route path="customers" element={<Customers />} />
             </Route>
 
-            {/* The warehouse floor. Office staff are let in as well; the
-                intake API answers both. */}
+            {/* The warehouse dashboard: warehouse workers, and office staff
+                who need it. Drivers and customers are sent away here and
+                refused by every API route behind it. */}
             <Route
               path="/warehouse"
               element={
@@ -162,10 +174,16 @@ export default function App() {
             >
               <Route index element={<WarehouseHome />} />
               <Route path="scan" element={<Scan />} />
-              <Route path="intake" element={<Intake />} />
+              <Route path="packages" element={<ShipmentList />} />
+              <Route path="packages/:id" element={<PackagePage />} />
+              <Route path="measurements" element={<MeasurementsPage />} />
+              <Route path="packaging" element={<PackagingPage />} />
+              <Route path="damage" element={<DamagePage />} />
+              <Route path="activity" element={<ActivityPage />} />
               <Route path="profile" element={<WarehouseProfile />} />
-              <Route path="shipments" element={<ShipmentList />} />
-              <Route path="shipments/:id" element={<ShipmentPage />} />
+              <Route path="intake" element={<Intake />} />
+              <Route path="shipments" element={<MovedToPackages />} />
+              <Route path="shipments/:id" element={<MovedToPackages />} />
             </Route>
 
             {/* The label prints without the warehouse shell around it. */}

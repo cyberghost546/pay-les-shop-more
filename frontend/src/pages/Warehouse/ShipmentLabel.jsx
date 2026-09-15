@@ -61,7 +61,7 @@ export default function ShipmentLabel() {
   return (
     <div className={styles.labelPage}>
       <div className={styles.labelToolbar}>
-        <Link to={`/warehouse/shipments/${shipment.id}`} className={styles.plainButton}>
+        <Link to={`/warehouse/packages/${shipment.id}`} className={styles.plainButton}>
           ← Back
         </Link>
         <button type="button" className={styles.printButton} onClick={() => window.print()}>

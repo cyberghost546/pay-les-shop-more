@@ -99,21 +99,29 @@ export default function StatsBand() {
           <p className={styles.loading}>{t('home.stats.loading')}</p>
         ) : (
           <>
-            <Stat
-              value={stats.packages_delivered}
-              label={t('home.stats.delivered')}
-              run={seen}
-            />
-            <Stat
-              value={stats.destinations}
-              label={t('home.stats.destinations')}
-              run={seen}
-            />
-            <Stat
-              value={stats.customers}
-              label={t('home.stats.customers')}
-              run={seen}
-            />
+            {/* A zero is left out rather than shown: "0 packages delivered"
+                on a new site says the opposite of what the band is for. */}
+            {stats.packages_delivered > 0 && (
+              <Stat
+                value={stats.packages_delivered}
+                label={t('home.stats.delivered')}
+                run={seen}
+              />
+            )}
+            {stats.destinations > 0 && (
+              <Stat
+                value={stats.destinations}
+                label={t('home.stats.destinations')}
+                run={seen}
+              />
+            )}
+            {stats.customers > 0 && (
+              <Stat
+                value={stats.customers}
+                label={t('home.stats.customers')}
+                run={seen}
+              />
+            )}
             {/* Not a count: a statement about the service that is true on day
                 one and does not need a database behind it. */}
             <Stat literal="24/7" label={t('home.stats.tracking')} run={seen} />

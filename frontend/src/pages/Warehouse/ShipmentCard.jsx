@@ -16,6 +16,7 @@ import {
   resolveShipmentProblem,
   setWarehouseStage,
 } from '../../api/staff';
+import { errorMessage } from '../../api/warehouse';
 import { Banner, StatusBadge } from '../Dashboard/ui';
 import { formatDateTime, formatWeight } from '../Dashboard/format';
 import StagePill from './StagePill';
@@ -56,8 +57,8 @@ export default function ShipmentCard({ shipment, onChange }) {
     try {
       onChange(await call());
       return true;
-    } catch {
-      setError('That could not be saved. Check the connection and try again.');
+    } catch (caught) {
+      setError(errorMessage(caught, 'That could not be saved. Check the connection and try again.'));
       return false;
     } finally {
       setBusy('');
@@ -92,7 +93,7 @@ export default function ShipmentCard({ shipment, onChange }) {
     <article className={styles.shipment}>
       <header className={styles.shipmentHead}>
         <div>
-          <p className={styles.shipmentKicker}>Order number</p>
+          <p className={styles.shipmentKicker}>Tracking number</p>
           <h2 className={styles.shipmentNumber}>{shipment.tracking_number}</h2>
         </div>
         <div className={styles.shipmentBadges}>
@@ -185,7 +186,12 @@ export default function ShipmentCard({ shipment, onChange }) {
       <section>
         <h3 className={styles.productsTitle}>Move to</h3>
         <div className={styles.stageButtons}>
-          {WAREHOUSE_STAGES.map((stage) => {
+          {/* Only the stages this account may set; the server refuses the rest. */}
+          {WAREHOUSE_STAGES.filter(
+            (stage) =>
+              stage.value === shipment.warehouse_stage ||
+              (shipment.allowed_stages ?? []).includes(stage.value),
+          ).map((stage) => {
             const current = stage.value === shipment.warehouse_stage;
             return (
               <button

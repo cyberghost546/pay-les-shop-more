@@ -58,12 +58,6 @@
   text-transform: uppercase;
 }
 
-.topTabs {
-  display: flex;
-  gap: 0.25rem;
-  margin: 0 auto;
-}
-
 .topRight {
   display: flex;
   align-items: center;
@@ -103,49 +97,85 @@ a.who:hover {
   color: var(--navy);
 }
 
-/* -------------------------------------------------------------------- tabs */
+/* -------------------------------------------------------------- navigation */
 
-.tab {
+.body {
+  display: flex;
+  align-items: flex-start;
+}
+
+.sidebar {
+  position: sticky;
+  top: var(--topbar-height);
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  gap: 0.25rem;
+  width: 15rem;
+  height: calc(100vh - var(--topbar-height));
+  box-sizing: border-box;
+  padding: 1rem 0.75rem;
+  overflow-y: auto;
+  background: #ffffff;
+  border-right: 1px solid var(--line);
+}
+
+.navItem {
   display: flex;
   align-items: center;
-  gap: 0.45rem;
-  padding: 0.5rem 0.85rem;
-  border-radius: 10px;
-  color: #475569;
-  font-size: 0.9rem;
-  font-weight: 600;
+  gap: 0.8rem;
+  min-height: 3.25rem;
+  padding: 0 0.9rem;
+  border: 0;
+  border-radius: 12px;
+  background: none;
+  color: #334155;
+  font: inherit;
+  font-size: 1.02rem;
+  font-weight: 700;
+  text-align: left;
   text-decoration: none;
+  cursor: pointer;
+  touch-action: manipulation;
 }
 
-.tab svg {
-  width: 18px;
-  height: 18px;
+.navItem svg {
+  flex-shrink: 0;
 }
 
-.tab:hover {
+.navItem:hover {
   background: var(--ground);
   color: var(--navy);
 }
 
-.tab:focus-visible {
-  outline: 2px solid var(--cyan);
-  outline-offset: 2px;
+.navItem:focus-visible {
+  outline: 3px solid var(--cyan);
+  outline-offset: 1px;
 }
 
-.tabActive,
-.tabActive:hover {
-  background: rgba(14, 165, 233, 0.12);
-  color: var(--navy);
+.navItemActive,
+.navItemActive:hover {
+  background: var(--navy);
+  color: #ffffff;
 }
 
-.bottomTabs {
+.navDivider {
+  margin: 0.5rem 0.6rem;
+  border-top: 1px solid var(--line);
+}
+
+.bottomTabs,
+.moreSheet,
+.moreBackdrop {
   display: none;
 }
 
 /* ----------------------------------------------------------------- content */
 
 .main {
-  max-width: 1100px;
+  flex: 1;
+  min-width: 0;
+  max-width: 1200px;
   margin: 0 auto;
   padding: 1.5rem 2rem 4rem;
 }
@@ -363,8 +393,12 @@ a.stat:hover {
 .boardCard_awaiting_pickup { --stage: #64748b; --stage-soft: #f1f5f9; }
 .stage_received,
 .boardCard_received { --stage: #0284c7; --stage-soft: #e0f2fe; }
-.stage_processing,
-.boardCard_processing { --stage: #7c3aed; --stage-soft: #ede9fe; }
+.stage_awaiting_measurement,
+.boardCard_awaiting_measurement { --stage: #7c3aed; --stage-soft: #ede9fe; }
+.stage_measured,
+.boardCard_measured { --stage: #4f46e5; --stage-soft: #e0e7ff; }
+.stage_awaiting_packaging,
+.boardCard_awaiting_packaging { --stage: #b45309; --stage-soft: #fef3c7; }
 .stage_packed,
 .boardCard_packed { --stage: #c2410c; --stage-soft: #ffedd5; }
 .stage_ready,
@@ -849,18 +883,18 @@ a.boardCard:focus-visible {
 
 /* ------------------------------------------------------------------ phones */
 
-@media (max-width: 720px) {
-  .topTabs,
-  .who {
+/* Portrait tablets and phones: the sidebar becomes a bottom bar. */
+@media (max-width: 960px) {
+  .shell {
+    --tabbar-height: 72px;
+  }
+
+  .sidebar {
     display: none;
   }
 
-  .topbar {
-    padding: 0 1rem;
-  }
-
   .main {
-    padding: 1.25rem 1rem calc(var(--tabbar-height) + 2rem + env(safe-area-inset-bottom));
+    padding: 1.25rem 1.25rem calc(var(--tabbar-height) + 2rem + env(safe-area-inset-bottom));
   }
 
   .bottomTabs {
@@ -878,32 +912,66 @@ a.boardCard:focus-visible {
     box-shadow: 0 -4px 16px rgba(11, 37, 69, 0.06);
   }
 
-  .bottomTabs .tab {
+  .bottomTabs .navItem {
     flex-direction: column;
     justify-content: center;
-    gap: 0.2rem;
-    border-radius: 0;
-    font-size: 0.75rem;
-  }
-
-  .bottomTabs .tab svg {
-    width: 22px;
-    height: 22px;
-  }
-
-  /* Four tabs across a phone: "Intake sheets" wraps at the default padding. */
-  .bottomTabs .tab {
+    gap: 0.25rem;
+    min-height: 0;
     padding: 0.4rem 0.2rem;
-  }
-
-  .bottomTabs .tab span {
-    font-size: 0.7rem;
+    border-radius: 0;
+    font-size: 0.8rem;
+    text-align: center;
     white-space: nowrap;
   }
 
-  .bottomTabs .tabActive {
+  .bottomTabs .navItemActive,
+  .bottomTabs .navItemActive:hover {
     background: none;
     color: var(--cyan);
+  }
+
+  .moreBackdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 40;
+    display: block;
+    border: 0;
+    background: rgba(11, 37, 69, 0.4);
+  }
+
+  .moreSheet {
+    position: fixed;
+    right: 0;
+    bottom: calc(var(--tabbar-height) + env(safe-area-inset-bottom));
+    left: 0;
+    z-index: 41;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding: 1rem;
+    border-radius: 20px 20px 0 0;
+    background: #ffffff;
+    box-shadow: 0 -10px 30px rgba(11, 37, 69, 0.2);
+  }
+
+  .moreSheet .navItem {
+    min-height: 3.75rem;
+    font-size: 1.1rem;
+  }
+}
+
+@media (max-width: 720px) {
+  .who {
+    display: none;
+  }
+
+  .topbar {
+    padding: 0 1rem;
+  }
+
+  .main {
+    padding-right: 1rem;
+    padding-left: 1rem;
   }
 }
 

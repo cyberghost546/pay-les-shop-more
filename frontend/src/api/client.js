@@ -30,6 +30,17 @@ const BASE_URL = configuredBase
   ? stripTrailingSlash(configuredBase)
   : '/api';
 
+/**
+ * The full address of an API path, for the few places the browser fetches it
+ * itself rather than through request() - an <img> showing a damage photo.
+ * Same origin, so the session cookie goes with it.
+ *
+ * @param {string} path e.g. '/staff/warehouse/damage/4/photos/9/'
+ */
+export function apiUrl(path) {
+  return `${BASE_URL}${path}`;
+}
+
 export const API_ERRORS = {
   INVALID_CREDENTIALS: 'INVALID_CREDENTIALS',
   EMAIL_TAKEN: 'EMAIL_TAKEN',

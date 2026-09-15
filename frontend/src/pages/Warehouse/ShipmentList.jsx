@@ -17,24 +17,25 @@ import { waitedFor } from './waited';
 import styles from './Warehouse.module.css';
 
 const SHOW = [
+  { value: 'attention', label: 'Requiring attention' },
+  { value: 'damaged', label: 'Open damage' },
   { value: 'problem', label: 'With a problem' },
   { value: 'overdue', label: 'Waiting too long' },
 ];
 
 // Module scope, so useCollection sees one stable function. The page's single
-// "show" choice becomes the API's two separate flags here.
+// "show" choice becomes one of the API's separate flags here.
 const fetchShipments = ({ show, ...filters }) =>
   listWarehouseShipments({
     ...filters,
-    problem: show === 'problem' ? 'true' : '',
-    overdue: show === 'overdue' ? 'true' : '',
+    ...(show ? { [show]: 'true' } : {}),
   });
 
 function titleFor(filters) {
-  if (filters.show === 'problem') return 'Shipments with a problem';
-  if (filters.show === 'overdue') return 'Waiting too long';
+  const shown = SHOW.find((option) => option.value === filters.show);
+  if (shown) return shown.label;
   const stage = WAREHOUSE_STAGES.find((option) => option.value === filters.stage);
-  return stage ? stage.label : 'All shipments';
+  return stage ? stage.label : 'Packages';
 }
 
 export default function ShipmentList() {
@@ -44,30 +45,24 @@ export default function ShipmentList() {
     fetchShipments,
     {
       stage: params.get('stage') ?? '',
-      show: params.get('problem') === 'true' ? 'problem' : params.get('overdue') === 'true' ? 'overdue' : '',
+      show: SHOW.find((option) => params.get(option.value) === 'true')?.value ?? '',
     },
     params.get('search') ?? '',
   );
 
   return (
     <>
-      <p>
-        <Link to="/warehouse" className={dashboard.sectionLink}>
-          ← Warehouse board
-        </Link>
-      </p>
-
       <header className={dashboard.head}>
         <h1 className={dashboard.title}>{titleFor(list.filters)}</h1>
-        <p className={dashboard.subtitle}>Oldest first. Tap a shipment to see it and move it along.</p>
+        <p className={dashboard.subtitle}>Oldest first. Tap a package to work on it.</p>
       </header>
 
       <Toolbar>
         <SearchInput
           value={list.searchInput}
           onChange={list.setSearchInput}
-          label="Search shipments"
-          placeholder="Order number, customer or product"
+          label="Search packages"
+          placeholder="Tracking number, customer, product or location"
         />
         <FilterSelect
           label="Stage"
@@ -95,13 +90,15 @@ export default function ShipmentList() {
           <ul className={`${dashboard.card} ${styles.recent}`}>
             {list.rows.map((row) => (
               <li key={row.id}>
-                <Link to={`/warehouse/shipments/${row.id}`} className={styles.recentRow}>
+                <Link to={`/warehouse/packages/${row.id}`} className={styles.recentRow}>
                   <span className={styles.recentMain}>
                     <span className={styles.recentLabel}>{row.tracking_number}</span>
                     <span className={styles.recentDetail}>
                       {row.customer} · {row.destination || 'No destination'}
+                      {row.warehouse_location ? ` · ${row.warehouse_location}` : ''}
                       {row.weight_kg ? ` · ${formatWeight(row.weight_kg)}` : ''}
                     </span>
+                    {row.has_open_damage && <span className={styles.rowProblem}>Open damage report</span>}
                     <span className={styles.recentDetail}>
                       {waitedFor(row.warehouse_stage_at)} in this stage
                     </span>

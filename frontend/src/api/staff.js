@@ -194,10 +194,13 @@ export async function setCustomerRole(id, role) {
 }
 
 // Widest first, which is the order somebody reads them in when deciding how
-// much to give an account.
+// much to give an account. Only an admin may set any of them but Customer;
+// the server refuses the rest.
 export const CUSTOMER_ROLES = [
   { value: 'admin', label: 'Admin' },
-  { value: 'warehouse', label: 'Warehouse' },
+  { value: 'office', label: 'Office worker' },
+  { value: 'warehouse', label: 'Warehouse worker' },
+  { value: 'driver', label: 'Driver' },
   { value: 'customer', label: 'Customer' },
 ];
 
@@ -607,13 +610,16 @@ export const PACKAGE_FREIGHT = [
   { value: 'air', label: 'Air freight' },
 ];
 
-// In the order the floor works through them.
+// In the order the floor works through them. A warehouse worker may only set
+// the ones each shipment lists in `allowed_stages`; the server enforces it.
 export const WAREHOUSE_STAGES = [
-  { value: 'awaiting_pickup', label: 'Waiting for pickup' },
-  { value: 'received', label: 'Received' },
-  { value: 'processing', label: 'Being processed' },
-  { value: 'packed', label: 'Packed' },
-  { value: 'ready', label: 'Ready for shipment' },
+  { value: 'awaiting_pickup', label: 'Package expected' },
+  { value: 'received', label: 'Package received' },
+  { value: 'awaiting_measurement', label: 'Waiting for measurement' },
+  { value: 'measured', label: 'Measured' },
+  { value: 'awaiting_packaging', label: 'Waiting for packaging' },
+  { value: 'packed', label: 'Packaged' },
+  { value: 'ready', label: 'Ready for shipping' },
   { value: 'shipped', label: 'Shipped' },
 ];
 

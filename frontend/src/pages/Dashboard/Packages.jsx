@@ -197,7 +197,7 @@ export default function Packages() {
                       {/* The warehouse view: stage, problems and the printable
                           QR label. Office staff are let into /warehouse. */}
                       <div className={styles.mutedCell}>
-                        <Link className={styles.link} to={`/warehouse/shipments/${pkg.id}`}>
+                        <Link className={styles.link} to={`/warehouse/packages/${pkg.id}`}>
                           Warehouse
                         </Link>
                         {' · '}
@@ -274,6 +274,19 @@ export default function Packages() {
                     <td className={styles.numberCell}>
                       <div>{formatWeight(pkg.weight_kg)}</div>
                       <div className={styles.mutedCell}>{formatMoney(pkg.value_eur)}</div>
+                      {/* What the warehouse measured, from the same database
+                          row the floor wrote - no refresh or sync involved. */}
+                      {pkg.measurement && (
+                        <div
+                          className={styles.mutedCell}
+                          title={`Measured by ${pkg.measurement.measured_by}, ${formatDateTime(pkg.measurement.measured_at)}`}
+                        >
+                          Measured {formatWeight(pkg.measurement.weight_kg)} ·{' '}
+                          {Number(pkg.measurement.length_cm)}×{Number(pkg.measurement.width_cm)}×
+                          {Number(pkg.measurement.height_cm)} cm · dim.{' '}
+                          {formatWeight(pkg.measurement.dimensional_weight_kg)}
+                        </div>
+                      )}
                       <select
                         className={styles.rowSelect}
                         aria-label={`Shipping method for ${pkg.tracking_number}`}
@@ -315,6 +328,12 @@ export default function Packages() {
                           {pkg.status_display}
                         </StatusBadge>
                       </div>
+                      {pkg.workflow_status_display && (
+                        <div className={styles.mutedCell}>
+                          Warehouse: {pkg.warehouse_stage_display}
+                          {pkg.warehouse_location && ` · ${pkg.warehouse_location}`}
+                        </div>
+                      )}
 
                       {/* Why the row is read-only, in the server's own words.
                           Said rather than left to be inferred from a greyed
