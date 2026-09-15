@@ -44,6 +44,22 @@ class IsAdmin(BasePermission):
         return bool(user and user.is_authenticated and user.is_admin)
 
 
+class IsDriverOrStaff(BasePermission):
+    """Drivers, and the office - which may need to record a delivery itself.
+
+    A warehouse account is not a driver: goods at the destination are not the
+    floor's in the Netherlands.
+    """
+
+    message = "This area is for drivers and office accounts only."
+
+    def has_permission(self, request, view):
+        user = request.user
+        if not (user and user.is_authenticated and user.is_active):
+            return False
+        return bool(user.role == user.Role.DRIVER or user.is_staff)
+
+
 class IsWarehouseOrStaff(BasePermission):
     """The floor as well as the office.
 

@@ -3,9 +3,11 @@
 from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
-from . import public, views
+from . import driver, public, views
 
 router = DefaultRouter()
+# The driver's deliveries: what has arrived and is waiting to be handed over.
+router.register("driver/deliveries", driver.DeliveryViewSet, basename="driver-delivery")
 router.register("addresses", views.AddressViewSet, basename="address")
 router.register("packages", views.PackageViewSet, basename="package")
 # The paperwork customers send in — receipts, shop invoices, customs

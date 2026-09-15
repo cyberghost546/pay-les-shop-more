@@ -93,7 +93,9 @@ export default function Login() {
       // goes straight to the floor's dashboard instead; the office lands on
       // its own profile, not the customer one.
       // replace: the login page should not sit in history behind them.
-      const home = profile?.isWarehouse && !profile?.isStaff
+      const home = profile?.role === 'driver'
+        ? '/driver'
+        : profile?.isWarehouse && !profile?.isStaff
         ? '/warehouse'
         : profile?.isStaff
           ? '/warehouse/profile'

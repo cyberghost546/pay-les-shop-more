@@ -1,10 +1,12 @@
 """Roles, and the warehouse's package operations: measure, pack, damage, activity."""
 
+import io
 import shutil
 import tempfile
 from decimal import Decimal
 
 from django.contrib.auth import get_user_model
+from django.core import mail
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase, override_settings
 from django.urls import reverse
@@ -270,6 +272,33 @@ class DamageTests(OperationsTestCase):
         self.assertEqual(served.status_code, status.HTTP_200_OK)
         self.assertEqual(served["Content-Type"], "image/png")
 
+    def test_the_office_is_emailed_once_with_the_photo(self):
+        with self.captureOnCommitCallbacks(execute=True):
+            response = self.report(photos=[SimpleUploadedFile("x.png", PNG, content_type="image/png")])
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        self.assertEqual(len(mail.outbox), 1)
+        sent = mail.outbox[0]
+        # The office account, and not the warehouse worker who reported it.
+        self.assertEqual(sent.to, ["kantoor@example.com"])
+        self.assertIn("PLS-2001", sent.subject)
+        self.assertIn("Corner crushed", sent.body)
+        self.assertEqual(len(sent.attachments), 1)
+        self.assertEqual(sent.attachments[0][2], "image/png")
+
+        # A retry of the same job sends nothing more.
+        from .tasks import send_damage_report_email
+
+        send_damage_report_email.apply(args=[PackageDamageReport.objects.get().pk])
+        self.assertEqual(len(mail.outbox), 1)
+
+    def test_an_office_member_who_turned_warehouse_mail_off_is_not_emailed(self):
+        self.office.notify_warehouse = False
+        self.office.save()
+        with self.captureOnCommitCallbacks(execute=True):
+            self.report()
+        self.assertEqual(mail.outbox, [])
+
     def test_a_file_that_is_not_an_image_is_refused(self):
         fake = SimpleUploadedFile("x.jpg", b"<html>not a photo</html>", content_type="image/jpeg")
         response = self.report(photos=[fake])
@@ -344,6 +373,37 @@ class StageRuleTests(OperationsTestCase):
                 "package_marked_ready",
             ],
         )
+
+
+class ReportTests(OperationsTestCase):
+    def test_the_day_is_counted_per_worker(self):
+        self.measure()
+        self.client.post(self.url("packaging", self.package.pk), {"packaging_type": "tape"}, format="json")
+        self.client.force_authenticate(self.office)
+
+        data = self.client.get(reverse("staff-warehouse-report")).data
+        self.assertEqual(data["totals"]["measured"], 1)
+        self.assertEqual(data["totals"]["packaging"], 1)
+        self.assertEqual([row["name"] for row in data["workers"]], ["Wim"])
+
+        csv_response = self.client.get(reverse("staff-warehouse-report"), {"export": "csv"})
+        self.assertEqual(csv_response["Content-Type"], "text/csv; charset=utf-8")
+        self.assertIn("Wim,0,0,1,1,0,0,0", csv_response.content.decode())
+
+    def test_the_floor_cannot_read_the_report_and_bad_dates_are_refused(self):
+        self.assertEqual(self.client.get(reverse("staff-warehouse-report")).status_code, 403)
+        self.client.force_authenticate(self.office)
+        response = self.client.get(reverse("staff-warehouse-report"), {"date": "yesterday"})
+        self.assertEqual(response.status_code, 400)
+
+    def test_the_command_mails_the_office(self):
+        from django.core.management import call_command
+
+        self.measure()
+        call_command("send_warehouse_report", stdout=io.StringIO())
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(mail.outbox[0].to, ["kantoor@example.com"])
+        self.assertTrue(mail.outbox[0].attachments[0][0].endswith(".csv"))
 
 
 class ActivityTests(OperationsTestCase):

@@ -92,6 +92,28 @@ class TrackingTests(ApiTestCase):
         stages = [stage["value"] for stage in data["stages"]]
         self.assertEqual(stages.index("in_transit"), data["stage_index"])
 
+    def test_the_warehouse_steps_show_on_the_timeline(self):
+        """A paid package the warehouse has packed shows as packed, not paid."""
+        Package.objects.filter(pk=self.package.pk).force_update(
+            status=Package.Status.PAID,
+            warehouse_stage=Package.WarehouseStage.PACKED,
+        )
+
+        data = self.client.get(self.url()).data
+        stages = [stage["value"] for stage in data["stages"]]
+        self.assertEqual(stages[data["stage_index"]], "packed")
+        # Progress only: nothing about damage, location or workers.
+        for private in ("warehouse_location", "problem_note", "warehouse_stage"):
+            self.assertNotIn(private, data)
+
+    def test_the_office_status_wins_when_it_is_further_along(self):
+        Package.objects.filter(pk=self.package.pk).force_update(
+            warehouse_stage=Package.WarehouseStage.MEASURED
+        )
+        data = self.client.get(self.url()).data
+        stages = [stage["value"] for stage in data["stages"]]
+        self.assertEqual(stages[data["stage_index"]], "in_transit")
+
     def test_a_quoted_shipment_is_not_yet_on_the_timeline(self):
         # Written straight onto the row rather than saved through the model.
         # A shipment cannot travel back from in transit to quoted - see

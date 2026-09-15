@@ -10,6 +10,7 @@ The checks are made here on the server. The React app hides buttons a worker
 cannot use, but that is only tidiness; this is what holds.
 """
 
+import logging
 from decimal import Decimal, InvalidOperation
 
 from django.db import transaction
@@ -32,6 +33,8 @@ from .models import (
     PackageMeasurement,
     PackagePackaging,
 )
+
+logger = logging.getLogger(__name__)
 
 Stage = Package.WarehouseStage
 Action = PackageActivity.Action
@@ -342,6 +345,10 @@ def report_damage(package, user, data, photos=()):
             stored.image.save(name, photo, save=False)
             stored.save()
 
+        # The office hears about it once the report is really saved: queued on
+        # commit, so a rolled-back report never mails anybody.
+        transaction.on_commit(lambda: _queue_damage_email(report.pk))
+
         record_activity(
             package,
             user,
@@ -353,6 +360,18 @@ def report_damage(package, user, data, photos=()):
             damage_type=damage_type,
         )
     return report
+
+
+def _queue_damage_email(report_id):
+    """Hand the damage e-mail to the worker. Never fails the report."""
+    from .tasks import send_damage_report_email
+
+    try:
+        send_damage_report_email.delay(report_id)
+    except Exception:
+        logger.exception(
+            "Damage report %s was saved but its e-mail could not be queued.", report_id
+        )
 
 
 def resolve_damage(report, user, note=""):

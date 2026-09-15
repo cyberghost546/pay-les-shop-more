@@ -718,6 +718,11 @@ class PackageDamageReport(models.Model):
     )
     resolved_at = models.DateTimeField(null=True, blank=True)
 
+    # When the office was e-mailed about it. Claimed with a conditional UPDATE
+    # before sending, like IntakeSheet.emailed_at, so a worker retry cannot
+    # send a second copy.
+    emailed_at = models.DateTimeField(null=True, blank=True)
+
     created_at = models.DateTimeField(default=timezone.now, db_index=True)
 
     class Meta:

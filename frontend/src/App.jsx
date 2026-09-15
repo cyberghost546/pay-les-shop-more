@@ -6,6 +6,7 @@ import ErrorBoundary from './components/ErrorBoundary/ErrorBoundary';
 import RequireAuth from './components/RequireAuth/RequireAuth';
 import RequireStaff from './components/RequireStaff/RequireStaff';
 import RequireWarehouse from './components/RequireWarehouse/RequireWarehouse';
+import RequireDriver from './components/RequireDriver/RequireDriver';
 import LanguageSwitcher from './components/LanguageSwitcher/LanguageSwitcher';
 import Footer from './components/Footer/Footer';
 import { useAuth } from './auth/useAuth';
@@ -57,6 +58,9 @@ const DamagePage = lazy(() => import('./pages/Warehouse/DamagePage'));
 const ActivityPage = lazy(() => import('./pages/Warehouse/ActivityPage'));
 const ShipmentLabel = lazy(() => import('./pages/Warehouse/ShipmentLabel'));
 
+// The driver's app: deliveries waiting to be handed over.
+const DriverPage = lazy(() => import('./pages/Driver/DriverPage'));
+
 /**
  * The old office addresses of the two warehouse pages, sent on to their new
  * home with the query string intact - /dashboard/intake?sheet=41 is the link
@@ -98,7 +102,7 @@ export default function App() {
   // bars stacked on top of each other, and the marketing footer under a table
   // of shipments reads as a mistake.
   // The same goes for the warehouse's.
-  const isDashboard = ['/dashboard', '/warehouse'].some(
+  const isDashboard = ['/dashboard', '/warehouse', '/driver'].some(
     (root) => pathname === root || pathname.startsWith(`${root}/`),
   );
 
@@ -193,6 +197,15 @@ export default function App() {
                 <RequireWarehouse>
                   <ShipmentLabel />
                 </RequireWarehouse>
+              }
+            />
+
+            <Route
+              path="/driver"
+              element={
+                <RequireDriver>
+                  <DriverPage />
+                </RequireDriver>
               }
             />
 

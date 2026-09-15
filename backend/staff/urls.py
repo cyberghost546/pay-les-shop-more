@@ -46,5 +46,10 @@ router.register(
 
 urlpatterns = [
     path("overview/", views.OverviewView.as_view(), name="staff-overview"),
+    path(
+        "warehouse/report/",
+        warehouse_records.WarehouseReportView.as_view(),
+        name="staff-warehouse-report",
+    ),
     path("", include(router.urls)),
 ]

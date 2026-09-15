@@ -1257,3 +1257,41 @@ class PackageEvent(models.Model):
                 "Record a new event instead."
             )
         return super().save(*args, **kwargs)
+
+
+def delivery_photo_path(instance, filename):
+    """Stored per shipment. The uploader's own filename is never used."""
+    return f"deliveries/{timezone.localtime():%Y/%m}/{instance.package.tracking_number}/{filename}"
+
+
+class DeliveryConfirmation(models.Model):
+    """Proof that a driver handed a shipment over: who took it, and a photo.
+
+    One per package, written once, by accounts/driver.py at the moment the
+    driver marks the shipment delivered. The shipment's own status and
+    delivered_at are changed in the same transaction.
+    """
+
+    package = models.OneToOneField(
+        Package, on_delete=models.CASCADE, related_name="delivery_confirmation"
+    )
+    # PROTECT: the record of who delivered must outlive a deleted account.
+    driver = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="deliveries"
+    )
+    recipient_name = models.CharField(max_length=150)
+    note = models.CharField(max_length=500, blank=True)
+    photo = models.FileField(upload_to=delivery_photo_path, blank=True)
+    photo_content_type = models.CharField(max_length=20, blank=True)
+    delivered_at = models.DateTimeField(default=timezone.now, db_index=True)
+
+    class Meta:
+        ordering = ["-delivered_at"]
+
+    def __str__(self):
+        return f"{self.package.tracking_number} delivered to {self.recipient_name}"
+
+    def save(self, *args, **kwargs):
+        if not self._state.adding:
+            raise ValueError("A delivery confirmation cannot be changed.")
+        return super().save(*args, **kwargs)

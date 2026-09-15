@@ -12,12 +12,13 @@ have to work the other out from scratch.
 import logging
 
 from celery import shared_task
-from django.core.mail import send_mail
+from django.conf import settings
+from django.core.mail import EmailMessage, send_mail
 from django.utils import timezone
 
 from .messages import body_for, subject_for
-from .models import IntakeSheet
-from .recipients import handover_recipients
+from .models import IntakeSheet, PackageDamagePhoto, PackageDamageReport
+from .recipients import handover_recipients, office_recipients
 
 logger = logging.getLogger(__name__)
 
@@ -113,3 +114,105 @@ def send_intake_release_email(self, sheet_id, exclude_user_id=None):
     logger.info(
         "Intake sheet %s e-mailed to %d staff address(es).", sheet_id, len(addresses)
     )
+
+
+# Photos are attached up to this much in total; beyond it the e-mail links to
+# the package instead. Most mail servers refuse messages over 20-25 MB.
+DAMAGE_ATTACHMENT_LIMIT = 15 * 1024 * 1024
+
+
+def damage_subject(report):
+    package = report.package
+    return f"Damage reported: {package.tracking_number} - {report.get_damage_type_display()}"
+
+
+def damage_body(report):
+    package = report.package
+    worker = report.worker
+    when = timezone.localtime(report.created_at)
+    customer = package.user
+    lines = [
+        "The warehouse has reported damage on a package.",
+        "",
+        f"Package:      {package.package_number} ({package.tracking_number})",
+        f"Customer:     {(customer.get_full_name() or customer.email) if customer else '-'}",
+        f"Destination:  {package.destination_label or '-'}",
+        f"Damage:       {report.get_damage_type_display()}",
+        f"Reported by:  {(worker.get_full_name() or worker.email) if worker else '-'}",
+        f"When:         {when:%d-%m-%Y %H:%M}",
+        "",
+        "Description:",
+        report.description or "(none given)",
+        "",
+        f"Photos: {report.photos.count()}",
+        "",
+        f"Open the package: {settings.FRONTEND_URL}/dashboard/packages"
+        f"?search={package.tracking_number}&open={package.pk}",
+        "",
+        "Mark the report resolved in the warehouse dashboard once it has been dealt with.",
+    ]
+    return "\n".join(lines)
+
+
+@shared_task(
+    bind=True,
+    autoretry_for=(OSError,),
+    retry_backoff=True,
+    retry_kwargs={"max_retries": 3},
+)
+def send_damage_report_email(self, report_id):
+    """Tell the office about one damage report, with its photos attached."""
+    report = (
+        PackageDamageReport.objects.select_related("package__user", "package__delivery_address", "worker")
+        .prefetch_related("photos")
+        .filter(pk=report_id)
+        .first()
+    )
+    if report is None:
+        logger.info("Damage report %s no longer exists.", report_id)
+        return
+
+    addresses = office_recipients(exclude=report.worker)
+    if not addresses:
+        logger.warning(
+            "Damage report %s has nobody in the office to tell. Check that office "
+            "accounts have e-mail addresses and warehouse e-mails turned on.",
+            report_id,
+        )
+        return
+
+    claimed = PackageDamageReport.objects.filter(pk=report.pk, emailed_at__isnull=True).update(
+        emailed_at=timezone.now()
+    )
+    if not claimed:
+        logger.info("Damage report %s has already been e-mailed.", report_id)
+        return
+
+    message = EmailMessage(
+        subject=damage_subject(report),
+        body=damage_body(report),
+        to=addresses,
+    )
+
+    attached = 0
+    for photo in report.photos.all():
+        if attached + photo.size_bytes > DAMAGE_ATTACHMENT_LIMIT:
+            break
+        try:
+            with photo.image.open("rb") as handle:
+                content = handle.read()
+        except (FileNotFoundError, OSError):
+            logger.warning("Photo %s of damage report %s is missing.", photo.pk, report_id)
+            continue
+        extension = PackageDamagePhoto.EXTENSIONS.get(photo.content_type, "")
+        message.attach(f"damage-{report.pk}-{photo.pk}{extension}", content, photo.content_type)
+        attached += len(content)
+
+    try:
+        message.send(fail_silently=False)
+    except Exception:
+        PackageDamageReport.objects.filter(pk=report.pk).update(emailed_at=None)
+        raise
+
+    logger.info("Damage report %s e-mailed to %d office address(es).", report_id, len(addresses))
+

@@ -1,0 +1,333 @@
+/* src/pages/Driver/Driver.module.css
+ *
+ * The driver's app: one column, built for a phone held in one hand outside a
+ * customer's door. Big type, big buttons, nothing else.
+ */
+
+.shell {
+  --navy: #0b2545;
+  --cyan: #0ea5e9;
+  --ink: #0f172a;
+  --muted: #64748b;
+  --line: #e2e8f0;
+  --ground: #f3f6fb;
+
+  min-height: 100vh;
+  background: var(--ground);
+  color: var(--ink);
+}
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  height: 64px;
+  padding: 0 1rem;
+  border-bottom: 1px solid var(--line);
+  background: #ffffff;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-width: 0;
+}
+
+.brandMark {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 2.2rem;
+  height: 2.2rem;
+  border-radius: 10px;
+  background: linear-gradient(135deg, var(--cyan), #2563eb);
+  color: #ffffff;
+  font-weight: 800;
+}
+
+.brandText {
+  display: flex;
+  flex-direction: column;
+  color: var(--navy);
+  font-weight: 800;
+  line-height: 1.15;
+  white-space: nowrap;
+}
+
+.brandTag {
+  color: var(--muted);
+  font-size: 0.68rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.topRight {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.main {
+  max-width: 44rem;
+  margin: 0 auto;
+  padding: 1.25rem 1rem 4rem;
+  box-sizing: border-box;
+}
+
+.title {
+  margin: 0;
+  font-size: 1.8rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.lead {
+  margin: 0.25rem 0 1rem;
+  color: var(--muted);
+}
+
+.tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.35rem;
+  padding: 0.3rem;
+  margin-bottom: 0.75rem;
+  border-radius: 14px;
+  background: #e2e8f0;
+}
+
+.tab {
+  min-height: 2.9rem;
+  border: 0;
+  border-radius: 11px;
+  background: none;
+  color: var(--navy);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.tabOn {
+  background: #ffffff;
+  box-shadow: 0 2px 6px rgba(11, 37, 69, 0.12);
+}
+
+.search {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 3rem;
+  margin-bottom: 1rem;
+  padding: 0 1rem;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #ffffff;
+  font: inherit;
+  font-size: 16px;
+}
+
+.list {
+  display: grid;
+  gap: 0.9rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.card {
+  padding: 1.1rem;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: #ffffff;
+  box-shadow: 0 6px 18px rgba(11, 37, 69, 0.06);
+}
+
+.cardDone {
+  border-left: 5px solid #16a34a;
+}
+
+.cardHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.25rem 0.75rem;
+}
+
+.tracking {
+  color: var(--navy);
+  font-size: 1.25rem;
+  font-weight: 800;
+  overflow-wrap: anywhere;
+}
+
+.eta {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.customer {
+  margin: 0.35rem 0 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.address {
+  margin: 0.15rem 0 0;
+  color: #334155;
+  white-space: pre-line;
+}
+
+.doneLine {
+  margin: 0.6rem 0 0;
+  color: #15803d;
+  font-weight: 700;
+}
+
+.actions,
+.formButtons {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(7.5rem, 1fr));
+  gap: 0.5rem;
+  margin-top: 0.9rem;
+}
+
+.primary,
+.secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  min-height: 3.2rem;
+  padding: 0 1rem;
+  border-radius: 12px;
+  font: inherit;
+  font-weight: 800;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.primary {
+  border: 0;
+  background: #15803d;
+  color: #ffffff;
+}
+
+.primary:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.secondary {
+  border: 1px solid var(--line);
+  background: #ffffff;
+  color: var(--navy);
+}
+
+.form {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--line);
+}
+
+.formTitle {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.field {
+  display: grid;
+  gap: 0.3rem;
+}
+
+.label {
+  color: var(--navy);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.input {
+  min-height: 3rem;
+  padding: 0 0.9rem;
+  border: 2px solid var(--line);
+  border-radius: 12px;
+  font: inherit;
+  font-size: 16px;
+}
+
+.input:focus {
+  border-color: var(--cyan);
+  outline: none;
+}
+
+.fileInput {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+
+.photoRow {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.photo {
+  width: 5rem;
+  height: 5rem;
+  border-radius: 10px;
+  object-fit: cover;
+}
+
+.linkButton {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: #0369a1;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.success,
+.error {
+  margin: 0 0 1rem;
+  padding: 0.85rem 1rem;
+  border-radius: 12px;
+  font-weight: 700;
+}
+
+.success {
+  border: 2px solid #16a34a;
+  background: #f0fdf4;
+  color: #14532d;
+}
+
+.error {
+  border: 2px solid #dc2626;
+  background: #fef2f2;
+  color: #7f1d1d;
+}
+
+.empty {
+  padding: 2rem 1rem;
+  border: 1px dashed #cbd5e1;
+  border-radius: 14px;
+  background: #ffffff;
+  color: var(--muted);
+  text-align: center;
+}
+
+@media (max-width: 400px) {
+  .brandText {
+    display: none;
+  }
+}

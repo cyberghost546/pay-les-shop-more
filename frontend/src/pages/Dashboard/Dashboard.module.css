@@ -2990,3 +2990,111 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* ---------------------------------------------------- package history row */
+
+.historyRow td {
+  padding: 0 1rem 1.25rem;
+  background: #f8fafc;
+}
+
+.history {
+  display: grid;
+  gap: 1.25rem;
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #ffffff;
+}
+
+.historyTitle {
+  margin: 0 0 0.6rem;
+  color: var(--navy);
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.historyList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.historyItem {
+  display: grid;
+  grid-template-columns: 9.5rem minmax(0, 1fr) auto;
+  gap: 0.75rem;
+  padding: 0.45rem 0 0.45rem 0.75rem;
+  border-left: 3px solid var(--cyan);
+  font-size: 0.86rem;
+}
+
+.historyItem + .historyItem {
+  margin-top: 0.2rem;
+}
+
+.historyItemOffice {
+  border-left-color: #7c3aed;
+}
+
+.historyWhen {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.historyWhat {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.historyWho {
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.historyDamage + .historyDamage {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--line);
+}
+
+.historyNote {
+  margin: 0.35rem 0 0;
+  font-size: 0.88rem;
+}
+
+.historyPhotos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.historyPhotos img {
+  width: 5rem;
+  height: 5rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  object-fit: cover;
+}
+
+.historyFoot {
+  margin: 0;
+  font-size: 0.86rem;
+}
+
+@media (max-width: 720px) {
+  .historyItem {
+    grid-template-columns: 1fr;
+    gap: 0.1rem;
+  }
+}
+
+.panelFoot {
+  margin: 0.75rem 0 0;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--line);
+}

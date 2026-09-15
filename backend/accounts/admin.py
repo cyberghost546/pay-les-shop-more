@@ -3,7 +3,26 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 
-from .models import Address, Package, PackageEvent, User
+from .models import Address, DeliveryConfirmation, Package, PackageEvent, User
+
+
+@admin.register(DeliveryConfirmation)
+class DeliveryConfirmationAdmin(admin.ModelAdmin):
+    """Proof of delivery, read-only: written once by the driver's app."""
+
+    list_display = ("delivered_at", "package", "recipient_name", "driver")
+    search_fields = ("package__tracking_number", "recipient_name", "driver__email")
+    list_select_related = ("package", "driver")
+    date_hierarchy = "delivered_at"
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
 
 
 class AddressInline(admin.TabularInline):

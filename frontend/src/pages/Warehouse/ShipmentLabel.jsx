@@ -93,6 +93,15 @@ export default function ShipmentLabel() {
               <dd>{shipment.freight_display || shipment.intake.freight_display}</dd>
             </div>
           )}
+          {shipment.measurement && (
+            <div>
+              <dt>Weight</dt>
+              <dd>
+                {Number(shipment.measurement.weight_kg)} kg · {Number(shipment.measurement.length_cm)} ×{' '}
+                {Number(shipment.measurement.width_cm)} × {Number(shipment.measurement.height_cm)} cm
+              </dd>
+            </div>
+          )}
           {colli ? (
             <div>
               <dt>Colli</dt>

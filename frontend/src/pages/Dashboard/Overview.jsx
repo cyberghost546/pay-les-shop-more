@@ -10,6 +10,7 @@
 
 import { useEffect, useState } from 'react';
 import { Link, useOutletContext } from 'react-router-dom';
+import { apiUrl } from '../../api/client';
 import { getWarehouseBoard } from '../../api/staff';
 import { useAuth } from '../../auth/useAuth';
 import { fill } from '../../i18n/fill';
@@ -145,6 +146,13 @@ function WarehousePanel() {
               </li>
             ))}
           </ul>
+          {/* A plain link: same origin, so the session cookie goes with it
+              and the browser saves the file itself. */}
+          <p className={styles.panelFoot}>
+            <a className={styles.sectionLink} href={apiUrl('/staff/warehouse/report/?export=csv')}>
+              {t('dashboard.office.overview.warehouse.report')}
+            </a>
+          </p>
         </>
       )}
     </section>

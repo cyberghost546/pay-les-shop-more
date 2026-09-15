@@ -11,17 +11,18 @@ go through the package they belong to (warehouse/shipments.py), which is
 where the rules are checked, via warehouse/operations.py.
 """
 
-from django.http import FileResponse, Http404
+from django.http import FileResponse, Http404, HttpResponse
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from rest_framework import mixins, serializers, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
-from staff.permissions import IsWarehouseOrStaff, WarehouseRateThrottle
+from staff.permissions import IsStaff, IsWarehouseOrStaff, WarehouseRateThrottle
 
-from . import operations
+from . import operations, report
 from .models import (
     PackageActivity,
     PackageDamagePhoto,
@@ -341,3 +342,26 @@ class DamageReportViewSet(mixins.RetrieveModelMixin, _RecordViewSet):
         response = FileResponse(handle, content_type=photo.content_type)
         response["Cache-Control"] = "private, max-age=3600"
         return response
+
+
+class WarehouseReportView(APIView):
+    """GET /api/staff/warehouse/report/?date=YYYY-MM-DD[&export=csv]
+
+    The day's warehouse work per worker. Office only: it compares colleagues,
+    which is a manager's view rather than something for the floor.
+    """
+
+    permission_classes = [IsStaff]
+
+    def get(self, request):
+        try:
+            day = report.parse_date(request.query_params.get("date", ""))
+        except ValueError:
+            raise ValidationError({"date": ["Use the form YYYY-MM-DD."]})
+
+        data = report.build(day)
+        if request.query_params.get("export") == "csv":
+            response = HttpResponse(report.to_csv(data), content_type="text/csv; charset=utf-8")
+            response["Content-Disposition"] = f'attachment; filename="warehouse-report-{data["date"]}.csv"'
+            return response
+        return Response(data)

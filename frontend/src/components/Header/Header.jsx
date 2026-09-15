@@ -166,11 +166,11 @@ export default function Header() {
                 {/* Staff only, and only a shortcut — the dashboard's own
                     guard and the API both check the flag again. Untranslated
                     on purpose: the back office is English throughout. */}
-                {(user?.isStaff || user?.isWarehouse) && (
+                {(user?.isStaff || user?.isWarehouse || user?.role === 'driver') && (
                   <Link
                     // The office's dashboard for anyone who has it; the
                     // floor's own for a warehouse account.
-                    to={user?.isStaff ? '/dashboard' : '/warehouse'}
+                    to={user?.isStaff ? '/dashboard' : user?.isWarehouse ? '/warehouse' : '/driver'}
                     className={styles.dashboard}
                     onClick={close}
                   >

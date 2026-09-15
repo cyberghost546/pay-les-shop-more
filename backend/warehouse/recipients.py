@@ -42,12 +42,24 @@ def handover_recipients(exclude=None):
         .values_list("email", flat=True)
     )
 
-    skip = (exclude.email or "").casefold() if exclude is not None else None
+    return _addresses(addresses, exclude)
 
-    return sorted(
-        {
-            address
-            for address in addresses
-            if address and address.casefold() != skip
-        }
+
+def _addresses(values, exclude):
+    skip = (exclude.email or "").casefold() if exclude is not None else None
+    return sorted({address for address in values if address and address.casefold() != skip})
+
+
+def office_recipients(exclude=None):
+    """The office staff to tell about damage: is_staff, active, with an address.
+
+    Office only, unlike handover_recipients: the floor reported the damage and
+    already knows; the office is who contacts the customer and the carrier.
+    Honours `notify_warehouse`, the same "warehouse e-mails" preference.
+    """
+    addresses = (
+        User.objects.filter(is_active=True, is_staff=True, notify_warehouse=True)
+        .exclude(email="")
+        .values_list("email", flat=True)
     )
+    return _addresses(addresses, exclude)

@@ -362,9 +362,15 @@ export default function PackagePage() {
                 {shipment.warehouse_stage === 'shipped' ? 'This package has shipped' : 'Ready for shipping'}
               </p>
               <p className={styles.doneText}>Nothing more to do on this package.</p>
-              <button type="button" className={`${styles.primary} ${styles.wide}`} onClick={nextPackage} autoFocus>
-                Next Package
-              </button>
+              <div className={styles.buttonRow}>
+                {/* The label goes on the box before it leaves the floor. */}
+                <Link to={`/warehouse/shipments/${shipment.id}/label`} className={styles.secondary}>
+                  Print label
+                </Link>
+                <button type="button" className={styles.primary} onClick={nextPackage} autoFocus>
+                  Next Package
+                </button>
+              </div>
             </section>
           )}
 

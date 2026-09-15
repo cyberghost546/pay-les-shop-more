@@ -9,7 +9,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { getOverview } from '../../api/staff';
+import { getOverview, lookupWarehouseShipment } from '../../api/staff';
 import { useAuth } from '../../auth/useAuth';
 import AccountMenu from '../../components/AccountMenu/AccountMenu';
 import LanguageMenu from '../../components/LanguageSwitcher/LanguageMenu';
@@ -131,7 +131,7 @@ function NavItem({ link, overview, onNavigate }) {
 export default function DashboardLayout() {
   const { user, signOut } = useAuth();
   const { t } = useLanguage();
-  const { pathname } = useLocation();
+  const { pathname, search } = useLocation();
   const navigate = useNavigate();
 
   const [attempt, setAttempt] = useState(0);
@@ -168,14 +168,30 @@ export default function DashboardLayout() {
   const reload = useCallback(() => setAttempt((n) => n + 1), []);
   const closeNav = () => setNavOpen(false);
 
-  function handleSearch(event) {
+  async function handleSearch(event) {
     event.preventDefault();
     const term = query.trim();
     if (!term) return;
+    closeNav();
+
+    // A handheld scanner types a whole code and presses Enter. When that code
+    // is exactly a package's tracking number, open that package with its
+    // history showing instead of a list of partial matches.
+    if (!/\s/.test(term)) {
+      try {
+        const found = await lookupWarehouseShipment(term);
+        setQuery('');
+        navigate(
+          `/dashboard/packages?search=${encodeURIComponent(found.tracking_number)}&open=${found.id}`,
+        );
+        return;
+      } catch {
+        // No exact match (or no connection): an ordinary search below.
+      }
+    }
 
     const target = SEARCHABLE.includes(pathname) ? pathname : DEFAULT_SEARCH_TARGET;
     navigate(`${target}?search=${encodeURIComponent(term)}`);
-    closeNav();
   }
 
   async function handleSignOut() {
@@ -310,7 +326,10 @@ export default function DashboardLayout() {
         </header>
 
         <main className={styles.main}>
-          <Outlet context={{ overview, state, reload, days, setDays }} />
+          {/* Keyed by the query string: the list pages read ?search= and
+              friends when they mount, so a search from the top bar while
+              already on that page has to start the page afresh. */}
+          <Outlet key={search} context={{ overview, state, reload, days, setDays }} />
         </main>
       </div>
     </div>

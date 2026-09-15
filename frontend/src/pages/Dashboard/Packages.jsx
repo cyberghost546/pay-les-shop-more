@@ -1,5 +1,5 @@
 // src/pages/Dashboard/Packages.jsx
-import { useState } from 'react';
+import { Fragment, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import Loading from '../../components/Loading/Loading';
 import ConnectionError from '../../components/ConnectionError/ConnectionError';
@@ -10,6 +10,7 @@ import {
   raiseInvoice,
   updatePackage,
 } from '../../api/staff';
+import PackageHistory from './PackageHistory';
 import { useCollection } from './useCollection';
 import { PACKAGE_TONES } from './statuses';
 import { formatDate, formatDateTime, formatMoney, formatWeight } from './format';
@@ -57,6 +58,20 @@ export default function Packages() {
   );
 
   const [savingId, setSavingId] = useState(null);
+  // Which rows have their warehouse history open. ?open=<id> opens one on
+  // arrival - the top bar's search does that for an exact tracking number.
+  const [openIds, setOpenIds] = useState(
+    () => new Set([Number(params.get('open'))].filter(Boolean)),
+  );
+
+  function toggleHistory(id) {
+    setOpenIds((current) => {
+      const next = new Set(current);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
   const [error, setError] = useState('');
   const [done, setDone] = useState('');
 
@@ -188,10 +203,8 @@ export default function Packages() {
               </thead>
               <tbody>
                 {list.rows.map((pkg) => (
-                  <tr
-                    key={pkg.id}
-                    className={AWAITING.has(pkg.status) ? styles.rowUnhandled : undefined}
-                  >
+                  <Fragment key={pkg.id}>
+                  <tr className={AWAITING.has(pkg.status) ? styles.rowUnhandled : undefined}>
                     <td>
                       <div className={styles.primaryCell}>{pkg.tracking_number}</div>
                       {/* The warehouse view: stage, problems and the printable
@@ -204,6 +217,15 @@ export default function Packages() {
                         <Link className={styles.link} to={`/warehouse/shipments/${pkg.id}/label`}>
                           Label
                         </Link>
+                        {' · '}
+                        <button
+                          type="button"
+                          className={styles.linkButton}
+                          aria-expanded={openIds.has(pkg.id)}
+                          onClick={() => toggleHistory(pkg.id)}
+                        >
+                          {openIds.has(pkg.id) ? 'Hide history' : 'History'}
+                        </button>
                       </div>
                       {pkg.description && (
                         <div className={`${styles.mutedCell} ${styles.excerpt}`}>
@@ -374,6 +396,14 @@ export default function Packages() {
                       )}
                     </td>
                   </tr>
+                  {openIds.has(pkg.id) && (
+                    <tr className={styles.historyRow}>
+                      <td colSpan={6}>
+                        <PackageHistory packageId={pkg.id} />
+                      </td>
+                    </tr>
+                  )}
+                  </Fragment>
                 ))}
               </tbody>
             </table>

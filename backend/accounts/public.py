@@ -28,14 +28,50 @@ User = get_user_model()
 # The stages a customer is shown, in order, so the tracking page can draw the
 # timeline with everything before the current stage marked done. Cancelled is
 # not here: it is not a stage on the way to anywhere.
+# The journey as a customer sees it: the office's statuses, with the warehouse's
+# own steps filled in between "purchased" and "in transit". Only progress is
+# shown - never damage, problems, locations or who did the work.
 PUBLIC_STAGES = [
-    Package.Status.PAID,
-    Package.Status.PURCHASED,
-    Package.Status.READY_FOR_SHIPPING,
-    Package.Status.IN_TRANSIT,
-    Package.Status.ARRIVED,
-    Package.Status.DELIVERED,
+    (Package.Status.PAID, "Paid"),
+    (Package.Status.PURCHASED, "Products purchased"),
+    ("received", "Received at our warehouse"),
+    ("measured", "Weighed and measured"),
+    ("packed", "Packed"),
+    (Package.Status.READY_FOR_SHIPPING, "Ready for shipping"),
+    (Package.Status.IN_TRANSIT, "In transit"),
+    (Package.Status.ARRIVED, "Arrived at destination"),
+    (Package.Status.DELIVERED, "Delivered"),
 ]
+_STAGE_VALUES = [value for value, _ in PUBLIC_STAGES]
+
+_Stage = Package.WarehouseStage
+# Where each warehouse stage puts a package on the public timeline.
+_WAREHOUSE_TO_PUBLIC = {
+    _Stage.RECEIVED: "received",
+    _Stage.AWAITING_MEASUREMENT: "received",
+    _Stage.MEASURED: "measured",
+    _Stage.AWAITING_PACKAGING: "measured",
+    _Stage.PACKED: "packed",
+    _Stage.READY: Package.Status.READY_FOR_SHIPPING,
+    _Stage.SHIPPED: Package.Status.IN_TRANSIT,
+}
+
+
+def public_stage_index(package):
+    """How far along the public timeline a package is, or -1 if not on it.
+
+    The furthest of what the office's status says and what the warehouse's
+    stage says: the two are updated by different people, and whichever has
+    moved on is the truth about where the package is. Quoted and cancelled
+    are not on the timeline at all.
+    """
+    if package.status not in _STAGE_VALUES:
+        return -1
+    index = _STAGE_VALUES.index(package.status)
+    step = _WAREHOUSE_TO_PUBLIC.get(package.warehouse_stage)
+    if step is not None:
+        index = max(index, _STAGE_VALUES.index(step))
+    return index
 
 
 class PublicPackageSerializer(serializers.ModelSerializer):
@@ -75,10 +111,7 @@ class PublicPackageSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
     def get_stages(self, obj):
-        return [
-            {"value": value, "label": Package.Status(value).label}
-            for value in PUBLIC_STAGES
-        ]
+        return [{"value": value, "label": label} for value, label in PUBLIC_STAGES]
 
     def get_stage_index(self, obj):
         """Which stage the shipment is at, or -1 when it is not on the list.
@@ -86,10 +119,7 @@ class PublicPackageSerializer(serializers.ModelSerializer):
         Quoted and cancelled both land on -1: one has not started, the other
         stopped, and neither is a point on the timeline.
         """
-        try:
-            return PUBLIC_STAGES.index(obj.status)
-        except ValueError:
-            return -1
+        return public_stage_index(obj)
 
 
 class TrackingView(APIView):
