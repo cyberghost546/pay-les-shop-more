@@ -16,7 +16,7 @@ const STORAGE_KEY = 'dashboard:sidebar-width';
 // a navigation column stops being a column and starts eating the table.
 export const SIDEBAR_MIN = 210;
 export const SIDEBAR_MAX = 420;
-export const SIDEBAR_DEFAULT = 240;
+export const SIDEBAR_DEFAULT = 256;
 
 const clamp = (value) =>
   Math.min(SIDEBAR_MAX, Math.max(SIDEBAR_MIN, Math.round(value)));

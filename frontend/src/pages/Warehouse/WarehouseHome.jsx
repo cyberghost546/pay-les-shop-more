@@ -10,6 +10,8 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { getWarehouseBoard, listWarehouseShipments } from '../../api/staff';
 import { useAuth } from '../../auth/useAuth';
+import { fill } from '../../i18n/fill';
+import { useLanguage } from '../../i18n/useLanguage';
 import ConnectionError from '../../components/ConnectionError/ConnectionError';
 import Loading from '../../components/Loading/Loading';
 import { ScanIcon } from './icons';
@@ -29,15 +31,16 @@ function Tile({ to, value, label, hint, tone, alert }) {
   );
 }
 
-function reasonFor(row) {
-  if (row.has_open_damage) return 'Damage reported';
-  if (row.has_problem) return `Problem: ${row.problem_note}`;
-  if (row.overdue) return 'Waiting too long in this step';
+function reasonFor(row, t) {
+  if (row.has_open_damage) return t('dashboard.warehouse.home.reasons.damage');
+  if (row.has_problem) return fill(t('dashboard.warehouse.home.reasons.problem'), { note: row.problem_note });
+  if (row.overdue) return t('dashboard.warehouse.home.reasons.overdue');
   return '';
 }
 
 export default function WarehouseHome() {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const [attempt, setAttempt] = useState(0);
   const [answer, setAnswer] = useState({ status: 'loading', data: null });
 
@@ -71,22 +74,26 @@ export default function WarehouseHome() {
     <div className={styles.page}>
       <div className={styles.pageHead}>
         <div>
-          <h1 className={styles.pageTitle}>{firstName ? `Hello, ${firstName}` : 'Warehouse'}</h1>
+          <h1 className={styles.pageTitle}>{firstName ? fill(t('dashboard.warehouse.home.hello'), { name: firstName }) : t('dashboard.warehouse.home.fallbackTitle')}</h1>
           <p className={styles.pageLead}>
-            {board ? `You have logged ${board.activity_today} action${board.activity_today === 1 ? '' : 's'} today.` : ' '}
+            {board
+              ? board.activity_today === 1
+                ? t('dashboard.warehouse.home.actionsOne')
+                : fill(t('dashboard.warehouse.home.actionsMany'), { count: board.activity_today })
+              : ' '}
           </p>
         </div>
       </div>
 
       <Link to="/warehouse/scan" className={styles.scanHero}>
         <ScanIcon />
-        Scan Package
+        {t('dashboard.warehouse.home.scanPackage')}
       </Link>
 
       {!answer.data && answer.status === 'loading' && <Loading inline />}
       {!answer.data && answer.status === 'error' && <ConnectionError inline onRetry={reload} />}
       {answer.data && answer.status === 'error' && (
-        <Message tone="error">The numbers could not refresh. They may be out of date.</Message>
+        <Message tone="error">{t('dashboard.warehouse.home.refreshError')}</Message>
       )}
 
       {board && (
@@ -95,39 +102,39 @@ export default function WarehouseHome() {
             <Tile
               to="/warehouse/measurements"
               value={board.waiting_measurement}
-              label="Waiting for measurement"
+              label={t('dashboard.warehouse.home.tiles.waitingMeasurement')}
               tone={styles.tonePurple}
             />
             <Tile
               to="/warehouse/measurements#today"
               value={board.measured_today}
-              label="Measured today"
+              label={t('dashboard.warehouse.home.tiles.measuredToday')}
               tone={styles.toneBlue}
             />
             <Tile
               to="/warehouse/packaging"
               value={board.waiting_packaging}
-              label="Waiting for packaging"
+              label={t('dashboard.warehouse.home.tiles.waitingPackaging')}
               tone={styles.toneOrange}
             />
             <Tile
               to="/warehouse/packages?stage=ready"
               value={board.ready_for_shipment}
-              label="Ready for shipment"
+              label={t('dashboard.warehouse.home.tiles.ready')}
               tone={styles.toneGreen}
             />
             <Tile
               to="/warehouse/damage"
               value={board.damaged}
-              label="Damaged packages"
+              label={t('dashboard.warehouse.home.tiles.damaged')}
               tone={styles.toneRed}
               alert
             />
             <Tile
               to="/warehouse/packages?attention=true"
               value={board.attention}
-              label="Requiring attention"
-              hint="Damage, problems, or waiting too long"
+              label={t('dashboard.warehouse.home.tiles.attention')}
+              hint={t('dashboard.warehouse.home.tiles.attentionHint')}
               tone={styles.toneAmber}
               alert
             />
@@ -135,13 +142,13 @@ export default function WarehouseHome() {
 
           <section className={styles.card}>
             <div className={styles.cardHead}>
-              <h2 className={styles.cardTitle}>Requiring attention</h2>
+              <h2 className={styles.cardTitle}>{t('dashboard.warehouse.home.attentionTitle')}</h2>
               <Link to="/warehouse/packages?attention=true" className={styles.backLink}>
-                See all
+                {t('dashboard.warehouse.home.seeAll')}
               </Link>
             </div>
             {attention.results.length === 0 ? (
-              <p className={styles.empty}>Nothing needs attention right now.</p>
+              <p className={styles.empty}>{t('dashboard.warehouse.home.nothingAttention')}</p>
             ) : (
               <ul className={styles.rows}>
                 {attention.results.map((row) => (
@@ -153,7 +160,7 @@ export default function WarehouseHome() {
                           {row.customer}
                           {row.warehouse_location && ` · ${row.warehouse_location}`}
                         </span>
-                        <span className={styles.fieldError}>{reasonFor(row)}</span>
+                        <span className={styles.fieldError}>{reasonFor(row, t)}</span>
                       </span>
                       <span className={styles.rowSide}>
                         <StagePill stage={row.warehouse_stage} label={row.warehouse_stage_display} />

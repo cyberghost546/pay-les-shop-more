@@ -1,14 +1,18 @@
 // src/pages/Dashboard/DashboardLayout.jsx
+//
+// The office dashboard's shell: a dark navy sidebar holding the brand, the
+// sections and the signed-in account, and a light top bar with search. The
+// page itself sits on a pale ground to the right.
+//
+// On tablets and phones the sidebar slides in over the page from a menu
+// button in the top bar.
+
 import { useCallback, useEffect, useState } from 'react';
-import {
-  Link,
-  NavLink,
-  Outlet,
-  useLocation,
-  useNavigate,
-} from 'react-router-dom';
+import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { getOverview } from '../../api/staff';
 import { useAuth } from '../../auth/useAuth';
+import LanguageMenu from '../../components/LanguageSwitcher/LanguageMenu';
+import { useLanguage } from '../../i18n/useLanguage';
 import { CountPill } from './ui';
 import { useSidebarWidth } from './useSidebarWidth';
 import {
@@ -23,119 +27,61 @@ import {
 } from './icons';
 import styles from './Dashboard.module.css';
 
-// The navigation, in labelled groups. One flat list of seven links reads as
-// seven equally important things; grouped, it reads as "the work", "the
-// money", "the people", which is how somebody actually decides where to go.
-//
-// Dashboard sits above the groups with no heading of its own — it is the way
-// back, not a category.
-const SECTIONS = [
-  { to: '/dashboard', label: 'Dashboard', icon: HouseIcon, end: true },
-];
-
+// Grouped by the job somebody opens the dashboard to do.
 const GROUPS = [
   {
-    heading: 'Operations',
+    heading: null,
+    links: [{ to: '/dashboard', labelKey: 'dashboard.office.nav.overview', icon: HouseIcon, end: true }],
+  },
+  {
+    heading: 'dashboard.office.groups.sales',
     links: [
-      {
-        to: '/dashboard/quotes',
-        label: 'Quote requests',
-        icon: FileIcon,
-        pill: (o) => o?.quotes.new,
-      },
-      {
-        to: '/dashboard/messages',
-        label: 'Messages',
-        icon: MailIcon,
-        pill: (o) => o?.messages.unhandled,
-      },
-      {
-        to: '/dashboard/bookings',
-        label: 'Bookings',
-        icon: FileIcon,
-        pill: (o) => o?.bookings?.new,
-      },
+      { to: '/dashboard/quotes', labelKey: 'dashboard.office.nav.quotes', icon: FileIcon, pill: (o) => o?.quotes.new },
+      { to: '/dashboard/bookings', labelKey: 'dashboard.office.nav.bookings', icon: BookmarkIcon, pill: (o) => o?.bookings?.new },
+      { to: '/dashboard/messages', labelKey: 'dashboard.office.nav.messages', icon: MailIcon, pill: (o) => o?.messages.unhandled },
     ],
   },
   {
-    heading: 'Shipments',
+    heading: 'dashboard.office.groups.shipments',
     links: [
-      {
-        to: '/dashboard/packages',
-        label: 'Packages',
-        icon: BoxIcon,
-        pill: (o) => o?.packages.awaiting_action,
-      },
+      { to: '/dashboard/packages', labelKey: 'dashboard.office.nav.packages', icon: BoxIcon, pill: (o) => o?.packages.awaiting_action },
+      { to: '/dashboard/measurements', labelKey: 'dashboard.office.nav.measurements', icon: BoxIcon },
     ],
   },
   {
-    heading: 'Warehouse',
-    // Links out to the warehouse dashboard, which has its own shell. Office
-    // staff are let in there; the floor never sees this sidebar at all.
-    links: [
-      { to: '/warehouse', label: 'Warehouse home', icon: HouseIcon, end: true },
-      { to: '/warehouse/scan', label: 'Scan a package', icon: BoxIcon },
-      {
-        to: '/warehouse/intake',
-        label: 'Intake sheets',
-        icon: BoxIcon,
-        // No pill. The number that would belong here is "drafts open in the
-        // warehouse", and a draft is somebody's work in progress rather than
-        // a queue anybody else should be nagged about - the badge would sit
-        // at three all day and mean nothing.
-      },
-      { to: '/dashboard/measurements', label: 'Measurements', icon: BoxIcon },
-    ],
-  },
-  {
-    heading: 'Billing',
+    heading: 'dashboard.office.groups.billing',
     links: [
       {
         to: '/dashboard/invoices',
-        label: 'Invoices',
+        labelKey: 'dashboard.office.nav.invoices',
         icon: ReceiptIcon,
-        // What is waiting for a person. An invoice sits here unseen by the
-        // customer until somebody approves it, so an unattended queue is a
-        // customer with no invoice.
         pill: (o) => o?.invoices?.pending_review,
       },
-    ],
-  },
-  {
-    heading: 'Paperwork',
-    links: [
       {
         to: '/dashboard/documents',
-        label: 'Documents',
-        icon: ReceiptIcon,
-        // What customers have sent in that nobody has filed against a
-        // shipment yet. The only number here that is work.
+        labelKey: 'dashboard.office.nav.documents',
+        icon: FileIcon,
         pill: (o) => o?.documents?.unattached,
       },
     ],
   },
   {
-    heading: 'People',
-    links: [{ to: '/dashboard/customers', label: 'Customers', icon: UsersIcon }],
+    heading: 'dashboard.office.groups.people',
+    links: [{ to: '/dashboard/customers', labelKey: 'dashboard.office.nav.customers', icon: UsersIcon }],
+  },
+  {
+    heading: 'dashboard.office.groups.warehouse',
+    // The warehouse has its own dashboard and shell; these leave this one.
+    links: [
+      { to: '/warehouse', labelKey: 'dashboard.office.nav.warehouseDashboard', icon: HouseIcon, end: true },
+      { to: '/warehouse/scan', labelKey: 'dashboard.office.nav.scan', icon: BoxIcon },
+      { to: '/warehouse/intake', labelKey: 'dashboard.office.nav.intake', icon: FileIcon },
+    ],
   },
 ];
 
-// The standing questions someone opens this dashboard to answer. Each is just
-// a section with a filter already applied — the work is in choosing which few
-// are worth a permanent place, not in the mechanism.
-const QUICK_VIEWS = [
-  { to: '/dashboard/quotes?status=new', label: 'New quote requests' },
-  { to: '/dashboard/messages?handled=false', label: 'Unhandled messages' },
-  { to: '/dashboard/packages?status=in_transit', label: 'In transit' },
-  { to: '/warehouse/intake?status=draft', label: 'Unreleased intake sheets' },
-  { to: '/dashboard/invoices', label: 'Invoices to review' },
-  { to: '/dashboard/documents?unattached=true', label: 'Unfiled documents' },
-  { to: '/dashboard/packages?status=quoted', label: 'Awaiting payment' },
-];
-
-// Which list a search from the top bar should land in. On the overview there
-// is no list to search, so packages stands in — it is the biggest table and
-// the one a tracking number belongs to.
+// Which list a search from the top bar lands in. On any other page, packages:
+// the biggest table, and the one a tracking number belongs to.
 const SEARCHABLE = [
   '/dashboard/quotes',
   '/dashboard/messages',
@@ -146,56 +92,53 @@ const SEARCHABLE = [
 ];
 const DEFAULT_SEARCH_TARGET = '/dashboard/packages';
 
-/** One sidebar link: icon, label, and the count pill when it has one. */
+function initialsOf(user) {
+  const source = user?.name?.trim() || user?.email || '?';
+  return (
+    source
+      .split(/[\s@.]+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part) => part[0].toUpperCase())
+      .join('') || '?'
+  );
+}
+
 function NavItem({ link, overview, onNavigate }) {
-  const { to, label, icon: Icon, end, pill } = link;
+  const { t } = useLanguage();
+  const { to, labelKey, icon: Icon, end, pill } = link;
 
   return (
     <NavLink
       to={to}
-      // Without `end`, /dashboard would stay highlighted on every child
-      // route, since they all start with it.
       end={end}
       onClick={onNavigate}
-      className={({ isActive }) =>
-        isActive ? `${styles.navLink} ${styles.navLinkActive}` : styles.navLink
-      }
+      className={({ isActive }) => (isActive ? `${styles.navLink} ${styles.navLinkActive}` : styles.navLink)}
     >
       <Icon />
-      <span className={styles.navLabel}>{label}</span>
+      <span className={styles.navLabel}>{t(labelKey)}</span>
       <CountPill value={pill?.(overview)} />
     </NavLink>
   );
 }
 
 /**
- * The frame every dashboard page sits in: a dark bar across the top, a
- * navigation column on the left, the page on the right.
- *
- * The overview request lives here rather than on the overview page because
- * the sidebar wants the same numbers for its badges. It is re-fetched on each
- * section change, which is also what keeps a badge honest after someone has
- * just marked five messages handled.
+ * The overview request lives here rather than on the Overview page because
+ * the sidebar's count pills need the same numbers. It is re-fetched on each
+ * page change, which keeps a pill honest after somebody handles a message.
  */
 export default function DashboardLayout() {
   const { user, signOut } = useAuth();
-  const { pathname, search } = useLocation();
+  const { t } = useLanguage();
+  const { pathname } = useLocation();
   const navigate = useNavigate();
 
   const [attempt, setAttempt] = useState(0);
   const [query, setQuery] = useState('');
-  // How far back the overview's chart reaches. Owned here because the request
-  // that answers it is: one round trip feeds both the chart and the badges.
   const [days, setDays] = useState(30);
-  // Closed on phones until the menu button is pressed; irrelevant on a wide
-  // screen, where the sidebar is always visible.
   const [navOpen, setNavOpen] = useState(false);
-  // How wide the navigation column is, dragged by the divider on its right
-  // edge and remembered between visits.
   const { width: sidebarWidth, resizing, handleProps } = useSidebarWidth();
 
-  // Which request this is, so the render below can tell a fresh answer from a
-  // stale one without the effect having to set a loading flag itself.
   const key = `${pathname}#${days}#${attempt}`;
   const [answer, setAnswer] = useState({ key: null, status: 'loading', data: null });
 
@@ -213,20 +156,15 @@ export default function DashboardLayout() {
     return () => {
       cancelled = true;
     };
-    // `key` already encodes the path, the range and the retry counter, so
-    // listing `days` again would only re-run the effect for the same request.
+    // `key` already encodes the path, the range and the retry counter.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key]);
 
   const state = answer.key === key ? answer.status : 'loading';
-  // The previous numbers are kept while a refetch is in flight, so the
-  // sidebar badges hold steady instead of blinking out on every page change.
+  // The previous numbers are kept while a refetch is in flight, so the pills
+  // hold steady instead of blinking out on every page change.
   const overview = answer.data;
-
   const reload = useCallback(() => setAttempt((n) => n + 1), []);
-
-  // Navigating anywhere closes the mobile sheet: leaving it open would cover
-  // the page it just moved to.
   const closeNav = () => setNavOpen(false);
 
   function handleSearch(event) {
@@ -241,75 +179,35 @@ export default function DashboardLayout() {
 
   async function handleSignOut() {
     await signOut();
-    // Out to the public site: every route in here needs a staff session, so
-    // staying put would only hit the guard.
     navigate('/', { replace: true });
   }
 
   return (
     <div
       className={resizing ? `${styles.app} ${styles.resizing}` : styles.app}
-      // Only the user's chosen width is set here. The stylesheet derives
-      // --sidebar-width from it, which lets the narrow-screen media query
-      // override that to 0 — an inline --sidebar-width would outrank the
-      // media query and leave a phone with a 240px margin and no sidebar.
+      // Only the chosen width is set inline; the stylesheet derives
+      // --sidebar-width from it so a media query can still collapse it.
       style={{ '--sidebar-user-width': `${sidebarWidth}px` }}
     >
-      <header className={styles.topbar}>
+      <nav
+        id="dashboard-nav"
+        className={navOpen ? `${styles.sidebar} ${styles.sidebarOpen}` : styles.sidebar}
+        aria-label={t('dashboard.office.sectionsLabel')}
+      >
         <Link to="/dashboard" className={styles.brand} onClick={closeNav}>
-          PayLesShopMore<span className={styles.brandDot}>.com</span>
+          <span className={styles.brandMark} aria-hidden="true">
+            P
+          </span>
+          <span className={styles.brandText}>
+            PayLesShopMore<span className={styles.brandDot}>.com</span>
+            <span className={styles.brandSub}>{t('dashboard.office.brandSub')}</span>
+          </span>
         </Link>
 
-        <button
-          type="button"
-          className={styles.navToggle}
-          aria-expanded={navOpen}
-          aria-controls="dashboard-nav"
-          aria-label={navOpen ? 'Close menu' : 'Open menu'}
-          onClick={() => setNavOpen((open) => !open)}
-        >
-          <span className={styles.navToggleBars} aria-hidden="true" />
-        </button>
-
-        <form className={styles.searchForm} onSubmit={handleSearch} role="search">
-          <span className={styles.searchIcon}>
-            <SearchIcon />
-          </span>
-          <input
-            type="search"
-            className={styles.topSearch}
-            placeholder="Search"
-            aria-label="Search the dashboard"
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-          />
-        </form>
-
-        <div className={styles.topRight}>
-          <span className={styles.who}>{user?.name?.trim() || user?.email}</span>
-          <button type="button" className={styles.signOut} onClick={handleSignOut}>
-            Sign out
-          </button>
-        </div>
-      </header>
-
-      <div className={styles.body}>
-        <nav
-          id="dashboard-nav"
-          className={navOpen ? `${styles.sidebar} ${styles.sidebarOpen}` : styles.sidebar}
-          aria-label="Dashboard sections"
-        >
-          <ul className={styles.navList}>
-            {SECTIONS.map((link) => (
-              <li key={link.to}>
-                <NavItem link={link} overview={overview} onNavigate={closeNav} />
-              </li>
-            ))}
-          </ul>
-
+        <div className={styles.navScroll}>
           {GROUPS.map((group) => (
-            <div key={group.heading}>
-              <p className={styles.navHeading}>{group.heading}</p>
+            <div key={group.heading ?? 'top'} className={styles.navGroup}>
+              {group.heading && <p className={styles.navHeading}>{t(group.heading)}</p>}
               <ul className={styles.navList}>
                 {group.links.map((link) => (
                   <li key={link.to}>
@@ -319,65 +217,89 @@ export default function DashboardLayout() {
               </ul>
             </div>
           ))}
+        </div>
 
-          <p className={styles.navHeading}>Quick views</p>
-          <ul className={styles.navList}>
-            {QUICK_VIEWS.map(({ to, label }) => (
-              <li key={to}>
-                <NavLink
-                  to={to}
-                  onClick={closeNav}
-                  // NavLink matches on path alone, so every quick view on
-                  // the same section would light up together. The query
-                  // string is the whole difference between them, so the
-                  // active state is decided on the full URL instead.
-                  className={
-                    to === `${pathname}${search}`
-                      ? `${styles.navLink} ${styles.navLinkActive}`
-                      : styles.navLink
-                  }
-                >
-                  <BookmarkIcon />
-                  <span className={styles.navLabel}>{label}</span>
-                </NavLink>
-              </li>
-            ))}
-          </ul>
-
-          <div className={styles.navFoot}>
-            {/* Everything the dashboard does not cover — editing a customer,
-                creating a package — still lives in Django's own admin. */}
-            <a
-              className={styles.navFootLink}
-              href="/admin/"
-              target="_blank"
-              rel="noreferrer"
-            >
-              Django admin ↗
+        <div className={styles.navFoot}>
+          <div className={styles.account}>
+            <span className={styles.avatar} aria-hidden="true">
+              {initialsOf(user)}
+            </span>
+            <span className={styles.accountText}>
+              <span className={styles.accountName}>{user?.name?.trim() || user?.email}</span>
+              <span className={styles.accountRole}>{t(`dashboard.roles.${user?.role ?? 'customer'}`)}</span>
+            </span>
+          </div>
+          <div className={styles.navFootLinks}>
+            <a className={styles.navFootLink} href="/admin/" target="_blank" rel="noreferrer">
+              {t('dashboard.office.djangoAdmin')}
             </a>
             <Link className={styles.navFootLink} to="/" onClick={closeNav}>
-              Back to the site
+              {t('dashboard.office.backToSite')}
             </Link>
+            {/* The top bar hides Sign out on phones; this is where it is then. */}
+            <button type="button" className={`${styles.navFootLink} ${styles.navFootButton}`} onClick={handleSignOut}>
+              {t('dashboard.office.signOut')}
+            </button>
           </div>
-        </nav>
+        </div>
+      </nav>
 
-        {/* The divider between the sidebar and the page. A sibling of the
-            sidebar rather than a child of it: the sidebar scrolls its own
-            contents, and a handle inside would scroll away with them.
-            Hidden on narrow screens, where the sidebar is an overlay and
-            has no edge to drag. */}
-        <div className={styles.resizer} {...handleProps} />
+      {/* The divider between sidebar and page; drag to resize. Hidden on
+          narrow screens, where the sidebar is an overlay. */}
+      <div className={styles.resizer} {...handleProps} />
 
-        {/* Tap-anywhere-else backdrop, mobile only */}
-        {navOpen && (
+      {navOpen && (
+        <button
+          type="button"
+          className={styles.backdrop}
+          aria-label={t('dashboard.office.closeMenu')}
+          tabIndex={-1}
+          onClick={closeNav}
+        />
+      )}
+
+      <div className={styles.body}>
+        <header className={styles.topbar}>
           <button
             type="button"
-            className={styles.backdrop}
-            aria-label="Close menu"
-            tabIndex={-1}
-            onClick={closeNav}
-          />
-        )}
+            className={styles.navToggle}
+            aria-expanded={navOpen}
+            aria-controls="dashboard-nav"
+            aria-label={t(navOpen ? 'dashboard.office.closeMenu' : 'dashboard.office.openMenu')}
+            onClick={() => setNavOpen((open) => !open)}
+          >
+            <span className={styles.navToggleBars} aria-hidden="true" />
+          </button>
+
+          <Link to="/dashboard" className={styles.topBrand}>
+            PayLesShopMore
+          </Link>
+
+          <form className={styles.searchForm} onSubmit={handleSearch} role="search">
+            <span className={styles.searchIcon}>
+              <SearchIcon />
+            </span>
+            <input
+              type="search"
+              className={styles.topSearch}
+              placeholder={t('dashboard.office.searchPlaceholder')}
+              aria-label={t('dashboard.office.searchLabel')}
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+            />
+          </form>
+
+          <LanguageMenu />
+
+          <div className={styles.topRight}>
+            <Link to="/warehouse" className={styles.topLink}>
+              {t('dashboard.office.warehouse')}
+            </Link>
+            <button type="button" className={styles.signOut} onClick={handleSignOut}>
+              {t('dashboard.office.signOut')}
+            </button>
+          </div>
+        </header>
 
         <main className={styles.main}>
           <Outlet context={{ overview, state, reload, days, setDays }} />

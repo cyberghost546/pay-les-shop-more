@@ -6,6 +6,8 @@
 // Dutch is the source language: it is the copy the site was written in, so when
 // wording changes, change `nl` first and bring the other two in line.
 
+import { dashboardTranslations } from './dashboardTranslations';
+
 export const LANGUAGES = [
   { code: 'nl', label: 'Nederlands', short: 'NL' },
   { code: 'en', label: 'English', short: 'EN' },
@@ -16,6 +18,8 @@ export const DEFAULT_LANGUAGE = 'nl';
 
 export const translations = {
   nl: {
+    // The office and warehouse dashboards; see dashboardTranslations.js.
+    dashboard: dashboardTranslations.nl,
     nav: {
       home: 'Home',
       services: 'Diensten',
@@ -823,6 +827,8 @@ export const translations = {
   },
 
   en: {
+    // The office and warehouse dashboards; see dashboardTranslations.js.
+    dashboard: dashboardTranslations.en,
     nav: {
       home: 'Home',
       services: 'Services',
@@ -1632,6 +1638,8 @@ export const translations = {
   // NOTE: the Papiamentu below needs review by a native speaker before launch.
   // See the spelling note at the bottom of this file.
   pap: {
+    // The office and warehouse dashboards; see dashboardTranslations.js.
+    dashboard: dashboardTranslations.pap,
     nav: {
       home: 'Home',
       services: 'Servisionan',

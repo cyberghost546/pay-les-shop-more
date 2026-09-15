@@ -11,7 +11,7 @@ import ShipmentTimeline from '../../components/ShipmentTimeline/ShipmentTimeline
 import StatsBand from '../../components/StatsBand/StatsBand';
 import Steps from '../../components/Steps/Steps';
 import ShopAndShip from '../../components/ShopAndShip/ShopAndShip';
-import ShopSlideshow from './ShopSlideshow';
+import SpinningWheel from '../../components/SpinningWheel/SpinningWheel';
 import RouteMap from './RouteMap';
 import { useAuth } from '../../auth/useAuth';
 import { useInViewport } from '../../hooks/useInViewport';
@@ -162,7 +162,12 @@ export default function Home() {
             </div>
           </div>
 
-          <ShopSlideshow />
+          {/* The shops customers order from, on a wheel that turns to the
+              next one every 2 seconds. Names are in SpinningWheel/segments.js. */}
+          <div className={styles.visual}>
+            <p className={styles.shopsCaption}>{t('home.hero.shops')}</p>
+            <SpinningWheel label={t('home.hero.shops')} intervalMs={2000} />
+          </div>
         </div>
 
         {/* 3. Tracking, for signed-in customers only - it is the most common

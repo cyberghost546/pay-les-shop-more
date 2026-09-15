@@ -12,6 +12,8 @@
 import { useState } from 'react';
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../auth/useAuth';
+import LanguageMenu from '../../components/LanguageSwitcher/LanguageMenu';
+import { useLanguage } from '../../i18n/useLanguage';
 import dashboard from '../Dashboard/Dashboard.module.css';
 import {
   AlertIcon,
@@ -28,34 +30,36 @@ import {
 import styles from './Warehouse.module.css';
 
 const NAV = [
-  { to: '/warehouse', label: 'Dashboard', icon: HomeIcon, end: true, primary: true },
-  { to: '/warehouse/scan', label: 'Scan Package', short: 'Scan', icon: ScanIcon, primary: true },
-  { to: '/warehouse/packages', label: 'Packages', icon: PackageIcon, primary: true },
-  { to: '/warehouse/measurements', label: 'Measurements', icon: RulerIcon },
-  { to: '/warehouse/packaging', label: 'Packaging', icon: TapeIcon },
-  { to: '/warehouse/damage', label: 'Damaged Packages', short: 'Damage', icon: AlertIcon },
-  { to: '/warehouse/activity', label: 'Activity', icon: ClockIcon },
-  { to: '/warehouse/profile', label: 'Profile', icon: UserIcon },
+  { to: '/warehouse', labelKey: 'dashboard', icon: HomeIcon, end: true, primary: true },
+  { to: '/warehouse/scan', labelKey: 'scan', shortKey: 'scanShort', icon: ScanIcon, primary: true },
+  { to: '/warehouse/packages', labelKey: 'packages', icon: PackageIcon, primary: true },
+  { to: '/warehouse/measurements', labelKey: 'measurements', icon: RulerIcon },
+  { to: '/warehouse/packaging', labelKey: 'packaging', icon: TapeIcon },
+  { to: '/warehouse/damage', labelKey: 'damage', shortKey: 'damageShort', icon: AlertIcon },
+  { to: '/warehouse/activity', labelKey: 'activity', icon: ClockIcon },
+  { to: '/warehouse/profile', labelKey: 'profile', icon: UserIcon },
 ];
 
 // Still reachable: handover e-mails link to intake sheets.
-const SECONDARY = [{ to: '/warehouse/intake', label: 'Intake sheets', icon: SheetIcon }];
+const SECONDARY = [{ to: '/warehouse/intake', labelKey: 'intake', icon: SheetIcon }];
 
 function navClass({ isActive }) {
   return isActive ? `${styles.navItem} ${styles.navItemActive}` : styles.navItem;
 }
 
 function NavList({ items, onPick }) {
-  return items.map(({ to, label, icon: Icon, end }) => (
+  const { t } = useLanguage();
+  return items.map(({ to, labelKey, icon: Icon, end }) => (
     <NavLink key={to} to={to} end={end} className={navClass} onClick={onPick}>
       <Icon />
-      <span>{label}</span>
+      <span>{t(`dashboard.warehouse.nav.${labelKey}`)}</span>
     </NavLink>
   ));
 }
 
 export default function WarehouseLayout() {
   const { user, signOut } = useAuth();
+  const { t } = useLanguage();
   const navigate = useNavigate();
   // Closed by its own links (onPick) and by the backdrop.
   const [moreOpen, setMoreOpen] = useState(false);
@@ -70,8 +74,12 @@ export default function WarehouseLayout() {
       <header className={styles.topbar}>
         <Link to="/warehouse" className={styles.brand}>
           PayLesShopMore<span className={styles.brandDot}>.com</span>
-          <span className={styles.brandTag}>Warehouse</span>
+          <span className={styles.brandTag}>{t('dashboard.warehouse.tag')}</span>
         </Link>
+
+        <div className={styles.languageSlot}>
+          <LanguageMenu />
+        </div>
 
         <div className={styles.topRight}>
           <Link to="/warehouse/profile" className={styles.who}>
@@ -80,17 +88,17 @@ export default function WarehouseLayout() {
           {/* Office accounts can switch; warehouse workers have no office. */}
           {user?.isStaff && (
             <Link to="/dashboard" className={styles.officeLink}>
-              Office
+              {t('dashboard.warehouse.office')}
             </Link>
           )}
           <button type="button" className={styles.signOut} onClick={handleSignOut}>
-            Sign out
+            {t('dashboard.warehouse.signOut')}
           </button>
         </div>
       </header>
 
       <div className={styles.body}>
-        <nav className={styles.sidebar} aria-label="Warehouse sections">
+        <nav className={styles.sidebar} aria-label={t('dashboard.warehouse.sectionsLabel')}>
           <NavList items={NAV} />
           <div className={styles.navDivider} />
           <NavList items={SECONDARY} />
@@ -101,11 +109,11 @@ export default function WarehouseLayout() {
         </main>
       </div>
 
-      <nav className={styles.bottomTabs} aria-label="Warehouse sections">
-        {NAV.filter((item) => item.primary).map(({ to, label, short, icon: Icon, end }) => (
+      <nav className={styles.bottomTabs} aria-label={t('dashboard.warehouse.sectionsLabel')}>
+        {NAV.filter((item) => item.primary).map(({ to, labelKey, shortKey, icon: Icon, end }) => (
           <NavLink key={to} to={to} end={end} className={navClass}>
             <Icon />
-            <span>{short ?? label}</span>
+            <span>{t(`dashboard.warehouse.nav.${shortKey ?? labelKey}`)}</span>
           </NavLink>
         ))}
         <button
@@ -116,7 +124,7 @@ export default function WarehouseLayout() {
           onClick={() => setMoreOpen((open) => !open)}
         >
           <MenuIcon />
-          <span>More</span>
+          <span>{t('dashboard.warehouse.nav.more')}</span>
         </button>
       </nav>
 
@@ -125,10 +133,10 @@ export default function WarehouseLayout() {
           <button
             type="button"
             className={styles.moreBackdrop}
-            aria-label="Close menu"
+            aria-label={t('dashboard.warehouse.closeMenu')}
             onClick={() => setMoreOpen(false)}
           />
-          <nav id="warehouse-more" className={styles.moreSheet} aria-label="More warehouse sections">
+          <nav id="warehouse-more" className={styles.moreSheet} aria-label={t('dashboard.warehouse.moreLabel')}>
             <NavList
               items={[...NAV.filter((item) => !item.primary), ...SECONDARY]}
               onPick={() => setMoreOpen(false)}
@@ -137,7 +145,7 @@ export default function WarehouseLayout() {
             {user?.isStaff && (
               <Link to="/dashboard" className={styles.navItem}>
                 <HomeIcon />
-                <span>Office dashboard</span>
+                <span>{t('dashboard.warehouse.nav.officeDashboard')}</span>
               </Link>
             )}
             <button
@@ -146,7 +154,7 @@ export default function WarehouseLayout() {
               onClick={handleSignOut}
             >
               <UserIcon />
-              <span>Sign out</span>
+              <span>{t('dashboard.warehouse.signOut')}</span>
             </button>
           </nav>
         </>

@@ -58,11 +58,24 @@
   text-transform: uppercase;
 }
 
+/* The flags sit at the right, just before the account buttons - and at the
+   far right on phones, where those buttons are hidden. */
+.languageSlot {
+  margin-left: auto;
+}
+
 .topRight {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  margin-left: auto;
+}
+
+/* Logo, WAREHOUSE tag and three flags do not fit across the narrowest
+   phones; the tag goes first. */
+@media (max-width: 400px) {
+  .brandTag {
+    display: none;
+  }
 }
 
 .who {

@@ -20,18 +20,18 @@
 
 /* --------------------------------------------------------------- app shell */
 
+/* A dark navy sidebar running the full height of the window, and to its right
+   a light top bar over a pale ground. The sidebar carries the brand, the
+   sections and the account; the top bar carries search and quick exits. */
+
 .app {
-  --topbar-height: 56px;
+  --topbar-height: 64px;
 
-  /* The width the user has dragged the divider to. DashboardLayout sets this
-     one inline; everything else reads --sidebar-width below, which is what
-     lets the narrow-screen media query collapse the column to 0 without
-     fighting an inline style it could never outrank. The fallback is what
-     renders if the shell is ever mounted without the hook. */
-  --sidebar-width: var(--sidebar-user-width, 240px);
+  /* The width the user has dragged the divider to, set inline by the layout.
+     Everything reads --sidebar-width, so the narrow-screen query can take it
+     to 0 without fighting an inline style. */
+  --sidebar-width: var(--sidebar-user-width, 256px);
 
-  /* The homepage's palette, stated once here rather than spelled out forty
-     times down the file. Same values as Home.module.css. */
   --navy: #0b2545;
   --navy-deep: #071a30;
   --navy-soft: #123a63;
@@ -40,28 +40,20 @@
   --ink: #0f172a;
   --muted: #64748b;
   --line: #e2e8f0;
-  --ground: #f4f7fb;
+  --ground: #f3f6fb;
 
-  /* The homepage's shadow: tinted navy rather than neutral grey, which is what
-     stops a white card on a blue-grey ground looking like it is floating in
-     smoke. Two depths — a resting one and a lifted one. */
-  --shadow: 0 10px 30px rgba(11, 37, 69, 0.07);
+  --shadow: 0 1px 2px rgba(11, 37, 69, 0.04), 0 8px 24px rgba(11, 37, 69, 0.06);
   --shadow-lift: 0 16px 36px rgba(11, 37, 69, 0.12);
 
-  /* The gradient the homepage hero and its closing CTA are both built from,
-     reused by the topbar and every page banner so the three read as one
-     surface. */
   --band: radial-gradient(700px 300px at 80% 0%, rgba(56, 189, 248, 0.22), transparent 62%),
     linear-gradient(160deg, var(--navy-deep) 0%, var(--navy) 55%, var(--navy-soft) 100%);
 
-  /* The site's photographic backdrop is switched off behind the dashboard:
-     staff read dense tables here for an hour at a time. */
   position: relative;
   min-height: 100vh;
   background: var(--ground);
 }
 
-/* Covers the page's own background, including the body::before photograph. */
+/* Covers the site's photographic page background behind the dashboard. */
 .app::before {
   content: '';
   position: fixed;
@@ -70,67 +62,327 @@
   background: var(--ground);
 }
 
-.topbar {
+/* ------------------------------------------------------------------ sidebar */
+
+.sidebar {
   position: fixed;
   top: 0;
+  bottom: 0;
   left: 0;
-  right: 0;
-  z-index: 30;
+  z-index: 40;
   display: flex;
-  align-items: center;
-  height: var(--topbar-height);
-  /* White rather than the homepage's navy band. The dashboard's chrome sits
-     around dense white cards all day; a dark bar above them reads as a lid,
-     and the eye keeps returning to it instead of to the work. The sidebar
-     below is already white, so this also makes the two read as one surface
-     with the content floating on it. */
-  background: #ffffff;
-  border-bottom: 1px solid var(--line);
-  box-shadow: 0 1px 2px rgba(11, 37, 69, 0.04);
+  flex-direction: column;
+  width: var(--sidebar-width);
+  box-sizing: border-box;
+  background: linear-gradient(180deg, var(--navy-deep) 0%, var(--navy) 100%);
+  color: #cbd5e1;
 }
 
 .brand {
-  flex-shrink: 0;
   display: flex;
+  flex-shrink: 0;
   align-items: center;
-  width: var(--sidebar-width);
-  height: 100%;
-  padding: 0 1.15rem;
-  box-sizing: border-box;
-  color: var(--navy);
-  font-size: 1rem;
-  font-weight: 800;
-  letter-spacing: -0.01em;
+  gap: 0.7rem;
+  height: var(--topbar-height);
+  padding: 0 1.1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  color: #ffffff;
   text-decoration: none;
-  white-space: nowrap;
-  /* The column follows the sidebar's width, so at the narrow end of the
-     resize range the wordmark can run out of room. Clipped rather than
-     allowed to spill into the search field. */
   overflow: hidden;
-  /* No black wash any more: the wordmark sits on the gradient like the
-     homepage header's does, separated by a hairline instead. */
-  box-shadow: inset -1px 0 0 rgba(255, 255, 255, 0.1);
 }
 
-/* The .com is part of the name, dimmed rather than dropped — the same
-   treatment the site footer gives it. */
+.brandMark {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 2.1rem;
+  height: 2.1rem;
+  border-radius: 10px;
+  background: linear-gradient(135deg, var(--cyan), #2563eb);
+  color: #ffffff;
+  font-size: 1.05rem;
+  font-weight: 800;
+}
+
+.brandText {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  font-size: 0.98rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  line-height: 1.15;
+  white-space: nowrap;
+}
+
 .brandDot {
-  color: var(--cyan);
+  color: var(--cyan-bright);
   font-weight: 500;
+}
+
+.brandSub {
+  color: #94a3b8;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.navScroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 0.9rem 0.75rem 1rem;
+  overflow-y: auto;
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+}
+
+.navGroup + .navGroup {
+  margin-top: 1rem;
+}
+
+.navList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.navLink {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-height: 2.5rem;
+  padding: 0 0.8rem;
+  border-radius: 10px;
+  color: #cbd5e1;
+  font-size: 0.92rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.navLink > svg {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  opacity: 0.85;
+}
+
+.navLink:hover {
+  background: rgba(255, 255, 255, 0.07);
+  color: #ffffff;
+}
+
+.navLink:focus-visible {
+  outline: 2px solid var(--cyan-bright);
+  outline-offset: -2px;
+}
+
+.navLinkActive,
+.navLinkActive:hover {
+  background: rgba(56, 189, 248, 0.16);
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.navLinkActive > svg {
+  color: var(--cyan-bright);
+  opacity: 1;
+}
+
+.navLinkActive::before {
+  content: '';
+  position: absolute;
+  top: 22%;
+  bottom: 22%;
+  left: -0.75rem;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: var(--cyan-bright);
+}
+
+.navLabel {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.navHeading {
+  margin: 0 0 0.35rem;
+  padding: 0 0.8rem;
+  color: #7c8ba1;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.navFoot {
+  flex-shrink: 0;
+  padding: 0.9rem 1rem 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.account {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  min-width: 0;
+}
+
+.avatar {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 50%;
+  background: rgba(56, 189, 248, 0.2);
+  color: #e0f2fe;
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.accountText {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.accountName {
+  overflow: hidden;
+  color: #ffffff;
+  font-size: 0.88rem;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.accountRole {
+  color: #94a3b8;
+  font-size: 0.76rem;
+}
+
+.navFootLinks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 1rem;
+  margin-top: 0.75rem;
+}
+
+.navFootLink {
+  color: #94a3b8;
+  font-size: 0.8rem;
+  text-decoration: none;
+}
+
+.navFootLink:hover {
+  color: #ffffff;
+  text-decoration: underline;
+}
+
+.navFootButton {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.backdrop {
+  display: none;
+}
+
+/* ----------------------------------------------------------- resize handle */
+
+.resizer {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: var(--sidebar-width);
+  z-index: 45;
+  width: 9px;
+  margin-left: -5px;
+  cursor: col-resize;
+  touch-action: none;
+}
+
+.resizer::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 2px;
+  transform: translateX(-50%);
+  background: var(--cyan);
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.resizer:hover::before,
+.resizer:focus-visible::before,
+.resizing .resizer::before {
+  opacity: 1;
+}
+
+.resizer:focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: -2px;
+}
+
+.resizing {
+  cursor: col-resize;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* ------------------------------------------------------------------ topbar */
+
+.body {
+  min-width: 0;
+  margin-left: var(--sidebar-width);
+}
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  height: var(--topbar-height);
+  padding: 0 1.5rem;
+  box-sizing: border-box;
+  border-bottom: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.92);
+  -webkit-backdrop-filter: saturate(1.4) blur(10px);
+  backdrop-filter: saturate(1.4) blur(10px);
+}
+
+/* The brand in the top bar only shows when the sidebar is hidden. */
+.topBrand {
+  display: none;
+  color: var(--navy);
+  font-weight: 800;
+  text-decoration: none;
+  white-space: nowrap;
 }
 
 .searchForm {
   position: relative;
-  flex: 1 1 auto;
-  min-width: 0;
   display: flex;
+  flex: 1 1 auto;
   align-items: center;
-  padding: 0 1rem;
+  min-width: 0;
 }
 
 .searchIcon {
   position: absolute;
-  left: 1.75rem;
+  left: 0.85rem;
   display: flex;
   color: #94a3b8;
   pointer-events: none;
@@ -138,17 +390,17 @@
 
 .topSearch {
   width: 100%;
-  max-width: 460px;
-  padding: 0.45rem 1rem 0.45rem 2.4rem;
-  /* Rounded and inset rather than a full-bleed slot, which is what makes it
-     read as a control on the bar instead of a hole cut through it. */
+  max-width: 520px;
+  height: 2.5rem;
+  padding: 0 1rem 0 2.5rem;
+  box-sizing: border-box;
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: 999px;
   background: var(--ground);
   color: var(--ink);
   font: inherit;
   font-size: 0.9rem;
-  transition: background 0.15s ease, border-color 0.15s ease;
+  transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .topSearch::placeholder {
@@ -156,7 +408,7 @@
 }
 
 .topSearch:hover {
-  background: #eef4fb;
+  background: #eef3fa;
 }
 
 .topSearch:focus {
@@ -168,58 +420,68 @@
 
 .topRight {
   display: flex;
-  align-items: center;
-  gap: 0.9rem;
-  padding: 0 1.15rem;
   flex-shrink: 0;
+  align-items: center;
+  gap: 0.5rem;
 }
 
-.who {
-  color: var(--ink);
-  font-weight: 600;
-  font-size: 0.85rem;
-  white-space: nowrap;
-  /* Hidden on narrow screens, where the bar has no room to spare. */
-}
-
-/* A quiet outline button now that the bar is white. */
+.topLink,
 .signOut {
-  padding: 0.35rem 0.9rem;
+  display: inline-flex;
+  align-items: center;
+  height: 2.4rem;
+  padding: 0 1rem;
   border: 1px solid var(--line);
-  border-radius: 8px;
-  background: none;
-  color: #475569;
+  border-radius: 999px;
+  background: #ffffff;
+  color: var(--navy);
   font: inherit;
   font-size: 0.86rem;
   font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
   cursor: pointer;
-  transition: background 0.15s ease, border-color 0.15s ease;
+  transition: border-color 0.15s ease, background 0.15s ease;
 }
 
+.topLink:hover,
 .signOut:hover {
-  border-color: #ffffff;
-  background: rgba(255, 255, 255, 0.1);
+  border-color: var(--cyan);
+  background: #f0f9ff;
 }
 
-/* The hamburger, phones only. */
+.topLink:focus-visible,
+.signOut:focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: 2px;
+}
+
+/* The menu button, narrow screens only. Navy on the white bar. */
 .navToggle {
   display: none;
+  flex-shrink: 0;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 100%;
+  width: 2.75rem;
+  height: 2.75rem;
+  margin-left: -0.5rem;
   padding: 0;
   border: 0;
+  border-radius: 10px;
   background: none;
-  color: #ffffff;
+  color: var(--navy);
   cursor: pointer;
+}
+
+.navToggle:hover {
+  background: var(--ground);
 }
 
 .navToggleBars,
 .navToggleBars::before,
 .navToggleBars::after {
   display: block;
-  width: 18px;
+  width: 20px;
   height: 2px;
   border-radius: 1px;
   background: currentColor;
@@ -244,203 +506,14 @@
   top: 6px;
 }
 
-.body {
-  display: flex;
-  padding-top: var(--topbar-height);
-}
-
-/* ------------------------------------------------------------------ sidebar */
-
-.sidebar {
-  position: fixed;
-  top: var(--topbar-height);
-  bottom: 0;
-  left: 0;
-  z-index: 20;
-  width: var(--sidebar-width);
-  padding: 1.25rem 0.85rem 1.5rem;
-  box-sizing: border-box;
-  background: #ffffff;
-  border-right: 1px solid var(--line);
-  /* Its own scrollbar: a long list of quick views must not push the page. */
-  overflow-y: auto;
-}
-
-.navList {
-  margin: 0 0 1.5rem;
-  padding: 0;
-  list-style: none;
-}
-
-.navLink {
-  position: relative;
-  display: flex;
-  align-items: center;
-  gap: 0.7rem;
-  padding: 0.55rem 0.8rem;
-  border-radius: 10px;
-  color: #475569;
-  font-size: 0.92rem;
-  text-decoration: none;
-  /* Clips the active marker below to the pill's rounded corners. Without it
-     the square bar pokes out past the top-left curve as a small nub. */
-  overflow: hidden;
-  transition: background 0.15s ease, color 0.15s ease;
-}
-
-/* The icon is a flex item like the label is, so by default it shrinks when a
-   row runs tight — and "New quote requests" in a 240px column is tight. A few
-   icons losing a pixel or two is enough to leave the labels starting at
-   different offsets, which is what makes the column look ragged rather than
-   aligned. It has a fixed size and keeps it; the label has min-width: 0 and
-   absorbs the shortfall by ellipsis instead. */
-.navLink > svg {
-  flex-shrink: 0;
-}
-
-.navLink:hover {
-  background: #eff6fd;
-  color: var(--navy);
-}
-
-/* Keyboard focus. The pill's own hover tint is not a focus indicator, and the
-   browser default ring is easy to lose against the active item's cyan. */
-.navLink:focus-visible {
-  outline: 2px solid var(--cyan);
-  outline-offset: -2px;
-}
-
-.navLinkActive,
-.navLinkActive:hover {
-  /* The homepage's pale cyan card tint, with a solid cyan edge — the same
-     accent the service cards take on hover, here meaning "you are here". */
-  background: linear-gradient(90deg, #e0f2fe, #f0f9ff);
-  color: #075985;
-  font-weight: 700;
-}
-
-.navLinkActive::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 20%;
-  bottom: 20%;
-  width: 3px;
-  border-radius: 0 3px 3px 0;
-  background: var(--cyan);
-}
-
-/* The label takes the slack, which pushes any count pill to the right edge. */
-.navLabel {
-  flex: 1 1 auto;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-/* The homepage's eyebrow: uppercase, heavily tracked, cyan.
- *
- * The darker sky rather than --cyan itself. The homepage puts its eyebrow on
- * navy, where #0ea5e9 is bright enough to carry; here the ground is white and
- * the same colour falls to about 2.9:1, under the 4.5:1 small text needs. This
- * shade is the same hue at about 5.9:1. */
-.navHeading {
-  margin: 1.35rem 0 0.5rem;
-  padding: 0 0.8rem;
-  font-size: 0.7rem;
-  font-weight: 700;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: #0369a1;
-}
-
-.navFoot {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  padding: 1rem 0.8rem 0;
-  border-top: 1px solid var(--line);
-}
-
-.navFootLink {
-  color: #4b5563;
-  font-size: 0.85rem;
-  text-decoration: none;
-}
-
-.navFootLink:hover {
-  /* Same reason as .navHeading: --cyan is a navy-ground colour. */
-  color: #0369a1;
-  text-decoration: underline;
-}
-
-.backdrop {
-  display: none;
-}
-
-/* ----------------------------------------------------------- resize handle */
-
-/* The divider between the sidebar and the page. Sits on the sidebar's border
-   rather than beside it, so nothing shifts when it appears — the visible line
-   is drawn by ::before and the rest of the width is grab area. 9px is roughly
-   the smallest target a pointer finds reliably without hunting. */
-.resizer {
-  position: fixed;
-  top: var(--topbar-height);
-  bottom: 0;
-  left: var(--sidebar-width);
-  z-index: 25;
-  width: 9px;
-  margin-left: -5px;
-  cursor: col-resize;
-  /* Without this a touch drag scrolls the page instead of reaching the
-     pointermove handler. */
-  touch-action: none;
-}
-
-.resizer::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 50%;
-  width: 2px;
-  transform: translateX(-50%);
-  background: var(--cyan);
-  opacity: 0;
-  transition: opacity 0.15s ease;
-}
-
-/* The handle is invisible until it is wanted: a permanent line down the page
-   would read as a border with an opinion. */
-.resizer:hover::before,
-.resizer:focus-visible::before,
-.resizing .resizer::before {
-  opacity: 1;
-}
-
-.resizer:focus-visible {
-  outline: 2px solid var(--cyan);
-  outline-offset: -2px;
-}
-
-/* While a drag is in progress the cursor and the no-select apply to the whole
-   shell, not just the 9px strip — the pointer spends the entire drag outside
-   the handle it is captured by. */
-.resizing {
-  cursor: col-resize;
-  -webkit-user-select: none;
-  user-select: none;
-}
-
 /* --------------------------------------------------------------- content */
 
 .main {
-  flex: 1 1 auto;
-  min-width: 0; /* lets a wide table scroll instead of stretching the flex row */
-  margin-left: var(--sidebar-width);
-  padding: 1.5rem 2rem 4rem;
+  box-sizing: border-box;
+  max-width: 1440px;
+  min-width: 0;
+  margin: 0 auto;
+  padding: 1.75rem 2rem 4rem;
 }
 
 /* ------------------------------------------------------------ page banner */
@@ -1582,42 +1655,18 @@
 
 /* ---------------------------------------------------------- narrow screens */
 
-@media (max-width: 900px) {
+/* Tablets and phones: the sidebar becomes a drawer over the page, opened
+   from the menu button in the top bar. */
+@media (max-width: 1024px) {
   .app {
     --sidebar-width: 0px;
   }
 
-  .brand {
-    width: auto;
-    padding-right: 0.6rem;
-    box-shadow: none;
-  }
-
-  .navToggle {
-    display: flex;
-  }
-
-  .who {
-    display: none;
-  }
-
-  .searchForm {
-    padding: 0 0.5rem;
-  }
-
-  /* Nothing to drag: the sidebar is an overlay at a fixed width here, and its
-     edge is not a boundary between two panes. */
-  .resizer {
-    display: none;
-  }
-
-  /* The sidebar slides in over the content rather than pushing it, so the
-     tables keep the whole width on a phone. */
   .sidebar {
-    width: 240px;
+    width: min(280px, 85vw);
     transform: translateX(-100%);
-    transition: transform 0.18s ease;
-    box-shadow: 0 10px 30px rgba(11, 37, 69, 0.18);
+    transition: transform 0.2s ease;
+    box-shadow: 0 20px 50px rgba(7, 26, 48, 0.35);
   }
 
   .sidebarOpen {
@@ -1627,21 +1676,32 @@
   .backdrop {
     display: block;
     position: fixed;
-    inset: var(--topbar-height) 0 0;
-    z-index: 15;
-    border: 0;
+    inset: 0;
+    z-index: 35;
     padding: 0;
-    background: rgba(7, 26, 48, 0.4);
+    border: 0;
+    background: rgba(7, 26, 48, 0.45);
+  }
+
+  .resizer {
+    display: none;
+  }
+
+  .navToggle {
+    display: flex;
+  }
+
+  .topbar {
+    padding: 0 1rem;
   }
 
   .main {
-    margin-left: 0;
     padding: 1.25rem 1rem 3rem;
   }
 
   .pageHead,
   .head {
-    padding: 1.25rem 1.25rem;
+    padding: 1.25rem;
     border-radius: 14px;
   }
 
@@ -1652,6 +1712,29 @@
 
   .toolbar {
     padding: 0.9rem 1rem;
+  }
+}
+
+@media (max-width: 640px) {
+  /* Search gets the bar; the brand is in the drawer and Sign out is too. */
+  .topRight {
+    display: none;
+  }
+
+  .topbar {
+    gap: 0.4rem;
+  }
+}
+
+@media (min-width: 641px) and (max-width: 1024px) {
+  .topBrand {
+    display: block;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sidebar {
+    transition: none;
   }
 }
 
@@ -2597,5 +2680,313 @@
   .searchInput,
   .select {
     font-size: 16px;
+  }
+}
+
+/* ============================================================ overview (v2)
+ *
+ * The office home page: a greeting, the work queues, the headline numbers,
+ * the chart beside a live warehouse panel, and the latest items.
+ */
+
+.hero {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem 1.5rem;
+  margin-bottom: 1.75rem;
+}
+
+.heroDate {
+  margin: 0 0 0.25rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.heroTitle {
+  margin: 0;
+  color: var(--ink);
+  font-size: clamp(1.6rem, 3vw, 2.2rem);
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  line-height: 1.15;
+}
+
+.heroLead {
+  margin: 0.35rem 0 0;
+  color: var(--muted);
+  font-size: 0.98rem;
+}
+
+.overlineHeading {
+  margin: 0 0 0.75rem;
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+/* ---- work queues ---- */
+
+.queues {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 0.9rem;
+}
+
+.queue {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  min-height: 4.75rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: #ffffff;
+  box-shadow: var(--shadow);
+  color: inherit;
+  text-decoration: none;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.queue:hover {
+  border-color: #bae6fd;
+  box-shadow: var(--shadow-lift);
+  transform: translateY(-1px);
+}
+
+.queue:focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: 2px;
+}
+
+.queueCount {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  min-width: 2.75rem;
+  height: 2.75rem;
+  padding: 0 0.4rem;
+  box-sizing: border-box;
+  border-radius: 12px;
+  background: #f1f5f9;
+  color: #94a3b8;
+  font-size: 1.25rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.queueBusy .queueCount {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.queueText {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.queueLabel {
+  color: var(--ink);
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
+.queueHint {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.queueBusy .queueHint {
+  color: #b45309;
+  font-weight: 600;
+}
+
+.queueArrow {
+  color: #cbd5e1;
+  font-size: 1.1rem;
+  transition: transform 0.15s ease, color 0.15s ease;
+}
+
+.queue:hover .queueArrow {
+  color: var(--cyan);
+  transform: translateX(2px);
+}
+
+/* ---- headline numbers ---- */
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.9rem;
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding: 1.1rem 1.2rem;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: #ffffff;
+  box-shadow: var(--shadow);
+  color: inherit;
+  text-decoration: none;
+  transition: border-color 0.15s ease;
+}
+
+.stat:hover {
+  border-color: #bae6fd;
+}
+
+.stat:focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: 2px;
+}
+
+.statLabel {
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.statValue {
+  color: var(--ink);
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+
+.statDelta,
+.statNote {
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.statNote {
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.statDeltaNote {
+  color: #94a3b8;
+  font-weight: 500;
+}
+
+/* ---- panels: the white cards on the overview ---- */
+
+.panel {
+  padding: 1.25rem 1.35rem;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: #ffffff;
+  box-shadow: var(--shadow);
+  min-width: 0;
+}
+
+.panelHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.85rem;
+}
+
+.panelTitle {
+  margin: 0;
+  color: var(--ink);
+  font-size: 1.02rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
+.panelLead {
+  margin: 0 0 0.6rem;
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+
+.panelLead strong {
+  color: var(--ink);
+  font-size: 1.1rem;
+}
+
+.panelList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.panelRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  min-height: 2.6rem;
+  padding: 0 0.6rem;
+  margin: 0 -0.6rem;
+  border-radius: 10px;
+  color: #334155;
+  font-size: 0.9rem;
+  text-decoration: none;
+}
+
+.panelRow:hover {
+  background: var(--ground);
+}
+
+.panelValue {
+  min-width: 2rem;
+  padding: 0.1rem 0.55rem;
+  border-radius: 999px;
+  background: #f1f5f9;
+  color: var(--ink);
+  font-weight: 800;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.panelRowAlert .panelValue {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.columns .panel {
+  margin: 0;
+}
+
+@media (max-width: 640px) {
+  .hero {
+    align-items: flex-start;
+  }
+
+  .queues,
+  .stats {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .queue {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .queueArrow {
+    display: none;
+  }
+
+  .statValue {
+    font-size: 1.6rem;
+  }
+
+  .columns {
+    grid-template-columns: 1fr;
   }
 }

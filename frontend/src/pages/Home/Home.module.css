@@ -158,7 +158,7 @@
   scroll-margin-top: 130px;
 }
 
-/* ------------------------------------------------------- shop slideshow */
+/* ----------------------------------------------------------- shop wheel */
 
 .visual {
   position: relative;
@@ -172,105 +172,6 @@
   font-weight: 700;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-}
-
-/* Every slide stacked in one grid cell, so the box keeps its size whichever
-   logo is showing and nothing jumps between slides. */
-.slides {
-  display: grid;
-  /* minmax(0, 1fr): without it a large image grows the row past the card and
-     the logo ends up off-centre, clipped by overflow. */
-  grid-template-columns: minmax(0, 1fr);
-  grid-template-rows: minmax(0, 1fr);
-  max-width: 440px;
-  margin: 0 auto;
-  aspect-ratio: 4 / 3;
-  overflow: hidden;
-  border-radius: 24px;
-  background: #ffffff;
-  box-shadow: 0 24px 60px rgba(3, 12, 26, 0.5);
-}
-
-.slide {
-  grid-area: 1 / 1;
-  min-width: 0;
-  min-height: 0;
-  visibility: hidden;
-}
-
-.slideCurrent {
-  visibility: visible;
-}
-
-.slideLogo {
-  display: block;
-  width: 100%;
-  height: 100%;
-}
-
-/* Coloured background to the edge: crop to the card. */
-.slideLogo_fill {
-  object-fit: cover;
-}
-
-/* A logo on white: shrink to fit, never crop. */
-.slideLogo_fit {
-  box-sizing: border-box;
-  padding: 2.5rem;
-  object-fit: contain;
-}
-
-.slideControls {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 1rem;
-  margin-top: 1.1rem;
-}
-
-.slideArrow {
-  display: grid;
-  place-items: center;
-  width: 2.5rem;
-  height: 2.5rem;
-  border: 1px solid rgba(255, 255, 255, 0.28);
-  border-radius: 50%;
-  background: transparent;
-  color: #ffffff;
-  font: inherit;
-  font-size: 1.5rem;
-  line-height: 1;
-  cursor: pointer;
-}
-
-.slideArrow:hover {
-  border-color: #7dd3fc;
-  color: #7dd3fc;
-}
-
-.slideDots {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.slideDot {
-  width: 0.65rem;
-  height: 0.65rem;
-  padding: 0;
-  border: 0;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.3);
-  cursor: pointer;
-}
-
-.slideDotCurrent {
-  background: #7dd3fc;
-}
-
-.slideArrow:focus-visible,
-.slideDot:focus-visible {
-  outline: 2px solid #7dd3fc;
-  outline-offset: 3px;
 }
 
 /* Used by the routes map further down the page. */
