@@ -4,6 +4,7 @@
 .banner {
   display: grid;
   grid-template-columns: 1fr 1fr;
+  align-items: stretch;
   gap: 1rem;
   max-width: 1400px;
   margin: 0 auto;
@@ -70,7 +71,12 @@
 }
 
 .bannerImage {
+  display: block;
   width: 100%;
+  /* The <img> carries width/height attributes (to reserve space while it
+     loads), and the height attribute would otherwise win over aspect-ratio,
+     leaving the photo at its natural height beside a much shorter panel. */
+  height: auto;
   aspect-ratio: 16 / 6;
   object-fit: cover;
 }

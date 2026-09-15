@@ -976,11 +976,22 @@ a.boardCard:focus-visible {
 }
 
 @media (max-width: 480px) {
-  /* Brand, Office and Sign out do not fit side by side on a phone. The way to
-     the office stays one tap away on the Me tab. */
-  .officeLink {
+  /* Brand, Office and Sign out do not fit side by side on a phone - Sign out
+     was pushed off the right edge and made the whole page wider than the
+     screen. Both move into the More sheet (and the Profile page) instead. */
+  .topRight {
     display: none;
   }
+}
+
+.moreSignOut {
+  color: #b91c1c;
+}
+
+/* A guard: nothing in the shell may make the page scroll sideways. `clip`
+   rather than `hidden`, which would break the sticky top bar. */
+.shell {
+  overflow-x: clip;
 }
 
 /* Brand, the Warehouse tag and Sign out come to about 420px together, so the

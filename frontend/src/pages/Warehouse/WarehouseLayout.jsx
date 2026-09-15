@@ -133,6 +133,21 @@ export default function WarehouseLayout() {
               items={[...NAV.filter((item) => !item.primary), ...SECONDARY]}
               onPick={() => setMoreOpen(false)}
             />
+            {/* The top bar has no room for these on a phone. */}
+            {user?.isStaff && (
+              <Link to="/dashboard" className={styles.navItem}>
+                <HomeIcon />
+                <span>Office dashboard</span>
+              </Link>
+            )}
+            <button
+              type="button"
+              className={`${styles.navItem} ${styles.moreSignOut}`}
+              onClick={handleSignOut}
+            >
+              <UserIcon />
+              <span>Sign out</span>
+            </button>
           </nav>
         </>
       )}

@@ -87,8 +87,12 @@ describe('the services page', () => {
     // under an island above it.
     const strip = screen.getByRole('group', { name: 'Our brands' });
 
+    // Each brand is named: by its logo's alt text, or in type without one.
     for (const brand of BRANDS) {
-      expect(within(strip).getByText(brand.name)).toBeInTheDocument();
+      const named = brand.logo
+        ? within(strip).getByRole('img', { name: brand.name })
+        : within(strip).getByText(brand.name);
+      expect(named).toBeInTheDocument();
     }
   });
 

@@ -685,6 +685,7 @@ a.row:hover .rowTitle {
   align-items: flex-end;
   gap: 0.3rem;
   flex-shrink: 0;
+  max-width: 45%;
   text-align: right;
 }
 
