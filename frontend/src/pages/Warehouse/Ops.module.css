@@ -963,3 +963,32 @@ a.row:hover .rowTitle {
     padding: 1rem;
   }
 }
+
+/* A list row that does something here instead of opening a page. */
+.rowButton {
+  width: 100%;
+  border: 0;
+  background: none;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.rowButton:hover .rowTitle {
+  color: var(--cyan);
+}
+
+.rowButton:focus-visible {
+  outline: 3px solid var(--cyan);
+  outline-offset: -3px;
+}
+
+/* The main part of a row can be the link, when the row also holds a button. */
+a.rowMain {
+  color: inherit;
+  text-decoration: none;
+}
+
+a.rowMain:hover .rowTitle {
+  color: var(--cyan);
+}

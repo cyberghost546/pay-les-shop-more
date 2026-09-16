@@ -17,14 +17,16 @@ import styles from './Ops.module.css';
 const PAGE_SIZE = 50;
 
 /**
- * @param {{ title: string, stages: string[], empty: string }} props
+ * @param {{ title: string, stages: string[], empty: string, reloadKey?: string|number }} props
+ *   reloadKey: change it to fetch the queue again, after work elsewhere on
+ *   the page has moved a package out of it.
  */
-export default function PackageQueue({ title, stages, empty }) {
+export default function PackageQueue({ title, stages, empty, reloadKey = '' }) {
   const { t } = useLanguage();
   const stage = stages.join(',');
   const { state, data, reload } = useLoad(
     () => listWarehouseShipments({ stage, page_size: PAGE_SIZE }),
-    stage,
+    `${stage}#${reloadKey}`,
   );
 
   return (

@@ -16,6 +16,18 @@ import styles from './Ops.module.css';
 
 const EMPTY = { weight_kg: '', length_cm: '', width_cm: '', height_cm: '' };
 
+/** An existing measurement as text in the four boxes, so it can be corrected. */
+function startingValues(initial) {
+  if (!initial) return EMPTY;
+  return Object.fromEntries(
+    MEASUREMENT_FIELDS.map((field) => {
+      const value = initial[field];
+      const blank = value === null || value === undefined || value === '';
+      return [field, blank ? '' : String(Number(value))];
+    }),
+  );
+}
+
 function formatNumber(value, digits) {
   if (value === null) return '—';
   return value.toLocaleString('nl-NL', { maximumFractionDigits: digits });
@@ -23,11 +35,17 @@ function formatNumber(value, digits) {
 
 /**
  * @param {{ shipment: object, onSaved: (answer: {measurement: object, shipment: object}) => void,
- *   autoFocus?: boolean }} props
+ *   autoFocus?: boolean, initial?: object|null, onCancel?: (() => void)|null }} props
  */
-export default function MeasurementForm({ shipment, onSaved, autoFocus = true }) {
+export default function MeasurementForm({
+  shipment,
+  onSaved,
+  autoFocus = true,
+  initial = null,
+  onCancel = null,
+}) {
   const { t } = useLanguage();
-  const [values, setValues] = useState(EMPTY);
+  const [values, setValues] = useState(() => startingValues(initial));
   const [touched, setTouched] = useState({});
   const [serverError, setServerError] = useState(null);
   const [busy, setBusy] = useState(false);
@@ -151,9 +169,20 @@ export default function MeasurementForm({ shipment, onSaved, autoFocus = true })
         </div>
       </dl>
 
-      <button type="submit" className={`${styles.primary} ${styles.wide}`} disabled={busy}>
-        {busy ? t('dashboard.flow.common.saving') : current ? t('dashboard.flow.measure.saveUpdate') : t('dashboard.flow.measure.save')}
-      </button>
+      <div className={styles.buttonRow}>
+        <button type="submit" className={styles.primary} disabled={busy}>
+          {busy
+            ? t('dashboard.flow.common.saving')
+            : current
+              ? t('dashboard.flow.measure.saveUpdate')
+              : t('dashboard.flow.measure.save')}
+        </button>
+        {onCancel && (
+          <button type="button" className={styles.secondary} disabled={busy} onClick={onCancel}>
+            {t('dashboard.flow.common.cancel')}
+          </button>
+        )}
+      </div>
     </form>
   );
 }

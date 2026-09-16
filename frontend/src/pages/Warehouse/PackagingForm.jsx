@@ -10,13 +10,16 @@ import { Message } from './opsUi';
 import styles from './Ops.module.css';
 
 /**
- * @param {{ shipment: object, onSaved: (answer: {packaging: object, shipment: object}) => void }} props
+ * @param {{ shipment: object, onSaved: (answer: {packaging: object, shipment: object}) => void,
+ *   initial?: object|null, onCancel?: (() => void)|null }} props
+ *   initial: a record to start from, so adding to what is already on a
+ *   package does not mean typing the same material out again
  */
-export default function PackagingForm({ shipment, onSaved }) {
+export default function PackagingForm({ shipment, onSaved, initial = null, onCancel = null }) {
   const { t } = useLanguage();
-  const [type, setType] = useState('');
+  const [type, setType] = useState(initial?.packaging_type ?? '');
   const [quantity, setQuantity] = useState(1);
-  const [notes, setNotes] = useState('');
+  const [notes, setNotes] = useState(initial?.notes ?? '');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
   const [clientError, setClientError] = useState('');
@@ -131,9 +134,16 @@ export default function PackagingForm({ shipment, onSaved }) {
         </label>
       </div>
 
-      <button type="submit" className={`${styles.secondary} ${styles.wide}`} disabled={busy}>
-        {busy ? t('dashboard.flow.common.saving') : t('dashboard.flow.packaging.add')}
-      </button>
+      <div className={styles.buttonRow}>
+        <button type="submit" className={styles.secondary} disabled={busy}>
+          {busy ? t('dashboard.flow.common.saving') : t('dashboard.flow.packaging.add')}
+        </button>
+        {onCancel && (
+          <button type="button" className={styles.secondary} disabled={busy} onClick={onCancel}>
+            {t('dashboard.flow.common.cancel')}
+          </button>
+        )}
+      </div>
     </form>
   );
 }
