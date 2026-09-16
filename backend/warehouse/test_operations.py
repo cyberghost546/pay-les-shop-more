@@ -38,7 +38,8 @@ class RoleModelTests(TestCase):
     def test_each_role_sets_its_flags(self):
         for role, staff, warehouse in (
             ("admin", True, False),
-            ("office", True, False),
+            # The office does the desk work and the floor: both flags.
+            ("office", True, True),
             ("warehouse", False, True),
             ("driver", False, False),
             ("customer", False, False),
@@ -52,16 +53,31 @@ class RoleModelTests(TestCase):
         self.assertEqual(make_user("w@example.com", is_warehouse=True).role, "warehouse")
 
     def test_changing_the_role_moves_both_flags(self):
+        """Both are written from the role, so neither is left behind.
+
+        Warehouse to admin moves each of them in a different direction, which
+        is the case a one-flag write would get wrong: a floor worker promoted
+        to admin must gain /admin/ and lose nothing quietly, and must not keep
+        being counted among the floor.
+        """
         user = make_user("x@example.com", role="warehouse")
-        user.role = User.Role.OFFICE
+        user.role = User.Role.ADMIN
         user.save(update_fields=["role"])
         user.refresh_from_db()
         self.assertTrue(user.is_staff)
         self.assertFalse(user.is_warehouse)
 
+    def test_the_office_is_promoted_onto_the_floor_as_well(self):
+        user = make_user("x@example.com", role="warehouse")
+        user.role = User.Role.OFFICE
+        user.save(update_fields=["role"])
+        user.refresh_from_db()
+        self.assertTrue(user.is_staff)
+        self.assertTrue(user.is_warehouse)
+
     def test_an_office_worker_stays_office_when_a_flag_moves(self):
         user = make_user("o@example.com", role="office")
-        user.is_warehouse = True
+        user.is_warehouse = False
         user.save()
         user.refresh_from_db()
         self.assertEqual(user.role, "office")

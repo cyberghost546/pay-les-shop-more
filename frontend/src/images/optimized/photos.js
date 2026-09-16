@@ -7,35 +7,45 @@
 //
 // Regenerate with `npm run images` after changing a source photograph.
 
-import arubaCentraal480 from './Aruba-Centraal-480.webp';
-import arubaCentraal540 from './Aruba-Centraal-540.webp';
+import arubaCentraal480 from './Aruba-centraal-480.webp';
+import arubaCentraal960 from './Aruba-centraal-960.webp';
+import arubaCentraal1600 from './Aruba-centraal-1600.webp';
 import bonaireCentraal480 from './Bonaire-centraal-480.webp';
 import bonaireCentraal960 from './Bonaire-centraal-960.webp';
 import bonaireCentraal1600 from './Bonaire-centraal-1600.webp';
+import boxCart480 from './box-cart-480.webp';
+import boxCart960 from './box-cart-960.webp';
+import boxCart1600 from './box-cart-1600.webp';
+import boxes480 from './boxes-480.webp';
+import boxes960 from './boxes-960.webp';
+import boxes1024 from './boxes-1024.webp';
 import containerShip480 from './container-ship-480.webp';
 import containerShip960 from './container-ship-960.webp';
 import containerShip1600 from './container-ship-1600.webp';
 import curacaoCentraal480 from './Curacao-centraal-480.webp';
-import curacaoCentraal959 from './Curacao-centraal-959.webp';
+import curacaoCentraal960 from './Curacao-centraal-960.webp';
+import curacaoCentraal1500 from './Curacao-centraal-1500.webp';
 import portHavenShip480 from './port-haven-ship-480.webp';
 import portHavenShip554 from './port-haven-ship-554.webp';
 import stMaartenCentraal480 from './St-Maarten-centraal-480.webp';
-import stMaartenCentraal768 from './St-Maarten-centraal-768.webp';
+import stMaartenCentraal960 from './St-Maarten-centraal-960.webp';
+import stMaartenCentraal1600 from './St-Maarten-centraal-1600.webp';
 import surinameCentraal480 from './Suriname-centraal-480.webp';
-import surinameCentraal738 from './Suriname-centraal-738.webp';
+import surinameCentraal960 from './Suriname-centraal-960.webp';
+import surinameCentraal1600 from './Suriname-centraal-1600.webp';
 
-/** Aruba-Centraal.jpeg — 540×360 at full size. */
+/** Aruba-centraal.avif — 1600×475 at full size. */
 export const arubaCentraal = {
-  src: arubaCentraal540,
-  srcSet: `${arubaCentraal480} 480w, ${arubaCentraal540} 540w`,
+  src: arubaCentraal1600,
+  srcSet: `${arubaCentraal480} 480w, ${arubaCentraal960} 960w, ${arubaCentraal1600} 1600w`,
   // For a CSS background, which cannot express a srcset. Use it
   // where the image is painted small, such as a card thumbnail.
   small: arubaCentraal480,
-  width: 540,
-  height: 360,
+  width: 1600,
+  height: 475,
 };
 
-/** Bonaire-centraal.webp — 1600×900 at full size. */
+/** Bonaire-centraal.jpg — 1600×440 at full size. */
 export const bonaireCentraal = {
   src: bonaireCentraal1600,
   srcSet: `${bonaireCentraal480} 480w, ${bonaireCentraal960} 960w, ${bonaireCentraal1600} 1600w`,
@@ -43,7 +53,29 @@ export const bonaireCentraal = {
   // where the image is painted small, such as a card thumbnail.
   small: bonaireCentraal480,
   width: 1600,
-  height: 900,
+  height: 440,
+};
+
+/** box-cart.jpg — 1600×1200 at full size. */
+export const boxCart = {
+  src: boxCart1600,
+  srcSet: `${boxCart480} 480w, ${boxCart960} 960w, ${boxCart1600} 1600w`,
+  // For a CSS background, which cannot express a srcset. Use it
+  // where the image is painted small, such as a card thumbnail.
+  small: boxCart480,
+  width: 1600,
+  height: 1200,
+};
+
+/** boxes.png — 1024×559 at full size. */
+export const boxes = {
+  src: boxes1024,
+  srcSet: `${boxes480} 480w, ${boxes960} 960w, ${boxes1024} 1024w`,
+  // For a CSS background, which cannot express a srcset. Use it
+  // where the image is painted small, such as a card thumbnail.
+  small: boxes480,
+  width: 1024,
+  height: 559,
 };
 
 /** container-ship.webp — 1600×900 at full size. */
@@ -57,14 +89,14 @@ export const containerShip = {
   height: 900,
 };
 
-/** Curacao-centraal.png — 959×500 at full size. */
+/** Curacao-centraal.webp — 1500×500 at full size. */
 export const curacaoCentraal = {
-  src: curacaoCentraal959,
-  srcSet: `${curacaoCentraal480} 480w, ${curacaoCentraal959} 959w`,
+  src: curacaoCentraal1500,
+  srcSet: `${curacaoCentraal480} 480w, ${curacaoCentraal960} 960w, ${curacaoCentraal1500} 1500w`,
   // For a CSS background, which cannot express a srcset. Use it
   // where the image is painted small, such as a card thumbnail.
   small: curacaoCentraal480,
-  width: 959,
+  width: 1500,
   height: 500,
 };
 
@@ -79,24 +111,24 @@ export const portHavenShip = {
   height: 361,
 };
 
-/** St.Maarten-centraal.webp — 768×576 at full size. */
+/** St.Maarten-centraal.avif — 1600×500 at full size. */
 export const stMaartenCentraal = {
-  src: stMaartenCentraal768,
-  srcSet: `${stMaartenCentraal480} 480w, ${stMaartenCentraal768} 768w`,
+  src: stMaartenCentraal1600,
+  srcSet: `${stMaartenCentraal480} 480w, ${stMaartenCentraal960} 960w, ${stMaartenCentraal1600} 1600w`,
   // For a CSS background, which cannot express a srcset. Use it
   // where the image is painted small, such as a card thumbnail.
   small: stMaartenCentraal480,
-  width: 768,
-  height: 576,
+  width: 1600,
+  height: 500,
 };
 
-/** Suriname-centraal.jpeg — 738×415 at full size. */
+/** Suriname-centraal.webp — 1600×533 at full size. */
 export const surinameCentraal = {
-  src: surinameCentraal738,
-  srcSet: `${surinameCentraal480} 480w, ${surinameCentraal738} 738w`,
+  src: surinameCentraal1600,
+  srcSet: `${surinameCentraal480} 480w, ${surinameCentraal960} 960w, ${surinameCentraal1600} 1600w`,
   // For a CSS background, which cannot express a srcset. Use it
   // where the image is painted small, such as a card thumbnail.
   small: surinameCentraal480,
-  width: 738,
-  height: 415,
+  width: 1600,
+  height: 533,
 };

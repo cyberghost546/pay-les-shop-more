@@ -68,7 +68,12 @@ const GROUPS = [
   },
   {
     heading: 'dashboard.office.groups.people',
-    links: [{ to: '/dashboard/customers', labelKey: 'dashboard.office.nav.customers', icon: UsersIcon }],
+    links: [
+      { to: '/dashboard/customers', labelKey: 'dashboard.office.nav.customers', icon: UsersIcon },
+      // The colleagues, kept off the customer list: same rows, different
+      // question - see Workers.jsx.
+      { to: '/dashboard/workers', labelKey: 'dashboard.office.nav.workers', icon: UsersIcon },
+    ],
   },
   {
     heading: 'dashboard.office.groups.warehouse',
@@ -85,6 +90,7 @@ const GROUPS = [
 // the biggest table, and the one a tracking number belongs to.
 const SEARCHABLE = [
   '/dashboard/quotes',
+  '/dashboard/workers',
   '/dashboard/messages',
   '/dashboard/packages',
   '/dashboard/customers',
@@ -212,9 +218,6 @@ export default function DashboardLayout() {
         aria-label={t('dashboard.office.sectionsLabel')}
       >
         <Link to="/dashboard" className={styles.brand} onClick={closeNav}>
-          <span className={styles.brandMark} aria-hidden="true">
-            P
-          </span>
           <span className={styles.brandText}>
             PayLesShopMore<span className={styles.brandDot}>.com</span>
             <span className={styles.brandSub}>{t('dashboard.office.brandSub')}</span>

@@ -20,11 +20,26 @@ import {
   surinameCentraal,
 } from '../images/optimized/photos';
 
+// `flagMap` is the island drawn in its own flag, on a transparent ground. A
+// flat-colour graphic rather than a photograph, so it is imported straight
+// from src/images the way the flags are, not put through `npm run images`:
+// re-encoding a drawing as WebP does not make it smaller.
+//
+// Every island has one. The services page still falls back to the hero
+// photograph for an island without one, so adding a destination before its
+// drawing exists leaves a mixed grid rather than a hole.
+import arubaFlagMap from '../images/Flag_map_of_Aruba.webp';
+import bonaireFlagMap from '../images/Flag_map_of_Bonaire.png';
+import curacaoFlagMap from '../images/Flag_map_of_Curacao.webp';
+import stMaartenFlagMap from '../images/Flag_map_of_Sint_Maarten.webp';
+import surinameFlagMap from '../images/Flag_map_of_Suriname.webp';
+
 export const DESTINATIONS = [
   {
     slug: 'aruba',
     nameKey: 'destinations.aruba',
     hero: arubaCentraal,
+    flagMap: arubaFlagMap,
     port: 'Oranjestad',
     transitDays: 21,
     mapX: 208,
@@ -34,6 +49,7 @@ export const DESTINATIONS = [
     slug: 'bonaire',
     nameKey: 'destinations.bonaire',
     hero: bonaireCentraal,
+    flagMap: bonaireFlagMap,
     port: 'Kralendijk',
     transitDays: 24,
     mapX: 258,
@@ -43,6 +59,7 @@ export const DESTINATIONS = [
     slug: 'curacao',
     nameKey: 'destinations.curacao',
     hero: curacaoCentraal,
+    flagMap: curacaoFlagMap,
     port: 'Willemstad',
     transitDays: 21,
     mapX: 232,
@@ -52,6 +69,7 @@ export const DESTINATIONS = [
     slug: 'sint-maarten',
     nameKey: 'destinations.saintMartin',
     hero: stMaartenCentraal,
+    flagMap: stMaartenFlagMap,
     port: 'Philipsburg',
     transitDays: 18,
     mapX: 268,
@@ -61,6 +79,7 @@ export const DESTINATIONS = [
     slug: 'suriname',
     nameKey: 'destinations.suriname',
     hero: surinameCentraal,
+    flagMap: surinameFlagMap,
     port: 'Paramaribo',
     transitDays: 28,
     mapX: 300,

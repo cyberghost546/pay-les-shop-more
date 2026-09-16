@@ -1,6 +1,6 @@
 // src/components/ShopAndShip/ShopAndShip.jsx
 import { Link } from 'react-router-dom';
-import { containerShip } from '../../images/optimized/photos';
+import { boxCart, boxes, containerShip } from '../../images/optimized/photos';
 import { useLanguage } from '../../i18n/useLanguage';
 import styles from './ShopAndShip.module.css';
 
@@ -11,16 +11,16 @@ const CARDS = [
   {
     id: 'particulier',
     href: '/services',
-    image: null,
-    imageAlt: '',
-    slotLabel: 'Foto: pakketten in een winkelwagen',
+    image: boxCart,
+    imageAlt: 'Pakketten in een winkelwagen',
+    slotLabel: '',
   },
   {
     id: 'zakelijk',
     href: '/services',
-    image: null,
-    imageAlt: '',
-    slotLabel: 'Foto: cadeau-illustratie',
+    image: boxes,
+    imageAlt: 'Gewikkelde pallet met dozen in een magazijn',
+    slotLabel: '',
   },
   {
     id: 'payless',

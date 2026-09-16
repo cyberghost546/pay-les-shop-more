@@ -1,6 +1,6 @@
 // src/pages/Dashboard/Customers.jsx
 import { useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import Loading from '../../components/Loading/Loading';
 import ConnectionError from '../../components/ConnectionError/ConnectionError';
 import {
@@ -15,6 +15,8 @@ import {
 } from '../../api/staff';
 import { useAuth } from '../../auth/useAuth';
 import { useCollection } from './useCollection';
+import { AddressLines, ContactFields, Field } from './PeopleFields';
+import { initialsOf, whyRoleIsFixed } from './people';
 import { formatDate, formatMoney } from './format';
 import {
   Banner,
@@ -32,100 +34,6 @@ const ERASED_OPTIONS = [
   { value: 'false', label: 'Active accounts' },
   { value: 'true', label: 'Erased accounts' },
 ];
-
-/** Why the role select is fixed on this row, in the words that fit the case. */
-function whyRoleIsFixed(customer, isSelf) {
-  if (isSelf) return 'Your own account';
-  if (customer.is_superuser) return 'Superuser — managed in the Django admin';
-  if (customer.is_erased) return 'Erased account';
-  // The server only lets admins hand out roles.
-  if (!customer.can_change_role) return 'Only an admin can change roles';
-  return '';
-}
-
-/** "Voorbeeld Klant" becomes "VK". */
-function initialsOf(name) {
-  return (
-    name
-      .split(/\s+/)
-      .filter(Boolean)
-      .slice(0, 2)
-      .map((part) => part[0]?.toUpperCase() ?? '')
-      .join('') || '?'
-  );
-}
-
-/** One address on its own lines, the way it would be written on a label. */
-function AddressLines({ address }) {
-  return (
-    <div className={styles.address}>
-      {address.label && <span className={styles.addressLabel}>{address.label}</span>}
-      <div>
-        {address.street} {address.house_number}
-      </div>
-      <div className={styles.mutedCell}>
-        {[address.postal_code, address.city].filter(Boolean).join(' ')}
-        {address.city && ', '}
-        {address.country_display}
-      </div>
-    </div>
-  );
-}
-
-/**
- * The server's complaint about one field, if it made one.
- *
- * DRF answers a 400 with `{field: ["message", ...]}`, which the API client
- * hands over as `error.fields`. Showing it beside the input it belongs to is
- * the difference between "that change could not be saved" and "that e-mail
- * address is already in use".
- */
-function FieldError({ errors, name }) {
-  const message = errors?.[name];
-  if (!message) return null;
-
-  return (
-    <span className={styles.officeError}>
-      {Array.isArray(message) ? message.join(' ') : String(message)}
-    </span>
-  );
-}
-
-/**
- * One labelled input inside an office box.
- *
- * @param {{ label: string, name: string, value: string,
- *           onChange: (value: string) => void, errors?: object,
- *           type?: string, options?: {value: string, label: string}[] }} props
- */
-function Field({ label, name, value, onChange, errors, type = 'text', options }) {
-  return (
-    <label className={styles.officeField}>
-      <span className={styles.officeLabel}>{label}</span>
-      {options ? (
-        <select
-          className={styles.officeInput}
-          value={value}
-          onChange={(event) => onChange(event.target.value)}
-        >
-          {options.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
-      ) : (
-        <input
-          className={styles.officeInput}
-          type={type}
-          value={value}
-          onChange={(event) => onChange(event.target.value)}
-        />
-      )}
-      <FieldError errors={errors} name={name} />
-    </label>
-  );
-}
 
 /** An empty new-account form. Written out so a reset is one assignment. */
 const BLANK_CUSTOMER = {
@@ -215,77 +123,6 @@ function NewCustomerFields({ onCreate, busy, errors }) {
         {busy ? 'Creating…' : 'Create account and send the invitation'}
       </button>
     </form>
-  );
-}
-
-/**
- * The customer's contact details, as the office may correct them.
- *
- * These write to the same User row the customer sees on their own profile
- * page, so a fixed phone number is the one they read next time they open it.
- * The username is not here: it is what they type to sign in.
- */
-function ContactFields({ customer, onSave, busy, errors }) {
-  const [draft, setDraft] = useState({
-    first_name: customer.first_name ?? '',
-    last_name: customer.last_name ?? '',
-    email: customer.email ?? '',
-    phone_number: customer.phone_number ?? '',
-  });
-
-  const dirty = Object.entries(draft).some(
-    ([field, value]) => String(customer[field] ?? '') !== String(value),
-  );
-
-  const set = (field) => (value) =>
-    setDraft((current) => ({ ...current, [field]: value }));
-
-  return (
-    <div className={styles.officeBox}>
-      <p className={styles.officeHead}>Contact details</p>
-
-      <div className={styles.officeGrid}>
-        <Field
-          label="First name"
-          name="first_name"
-          value={draft.first_name}
-          onChange={set('first_name')}
-          errors={errors}
-        />
-        <Field
-          label="Surname"
-          name="last_name"
-          value={draft.last_name}
-          onChange={set('last_name')}
-          errors={errors}
-        />
-        <Field
-          label="E-mail"
-          name="email"
-          type="email"
-          value={draft.email}
-          onChange={set('email')}
-          errors={errors}
-        />
-        <Field
-          label="Phone"
-          name="phone_number"
-          type="tel"
-          value={draft.phone_number}
-          onChange={set('phone_number')}
-          errors={errors}
-        />
-      </div>
-
-      <button
-        type="button"
-        className={styles.rowButton}
-        disabled={!dirty || busy}
-        onClick={() => onSave(draft)}
-      >
-        {busy ? 'Saving…' : 'Save details'}
-      </button>
-    </div>
   );
 }
 
@@ -401,9 +238,14 @@ export default function Customers() {
   // header renders from the same copy and would otherwise go stale.
   const { user, refreshUser } = useAuth();
 
+  // Customers only, unless the Role filter is widened. The people who work
+  // here have their own page — see Workers — so that this table is the
+  // customer base rather than the customer base with the office mixed into
+  // it. Both pages read the same rows from the same endpoint; only the
+  // question they ask it differs.
   const list = useCollection(
     listCustomers,
-    { erased: params.get('erased') ?? '', staff: params.get('staff') ?? '' },
+    { erased: params.get('erased') ?? '', role: params.get('role') ?? 'customer' },
     params.get('search') ?? '',
   );
 
@@ -517,12 +359,16 @@ export default function Customers() {
       <header className={styles.head}>
         <h1 className={styles.title}>Customers</h1>
         <p className={styles.subtitle}>
-          Everyone with an account, with their addresses and how many shipments
-          they have. These are the same records customers edit on their own
-          profile page, so a correction made here is what they read next time
-          they open it — and a change they make there shows up on the next
-          load. The role is separate: an admin can reach this dashboard and
-          everything in it.
+          The people who ship with us, with their addresses and how many
+          shipments they have. These are the same records customers edit on
+          their own profile page, so a correction made here is what they read
+          next time they open it — and a change they make there shows up on
+          the next load. Colleagues are not in this list: admins, office,
+          warehouse and drivers are on{' '}
+          <Link className={styles.link} to="/dashboard/workers">
+            Workers
+          </Link>
+          , and widening the Role filter is what brings them back into view.
         </p>
       </header>
 
@@ -542,10 +388,10 @@ export default function Customers() {
         />
         <FilterSelect
           label="Role"
-          value={list.filters.staff}
-          onChange={(value) => list.setFilter('staff', value)}
-          options={[{ value: 'true', label: 'Staff only' }]}
-          allLabel="Everyone"
+          value={list.filters.role}
+          onChange={(value) => list.setFilter('role', value)}
+          options={CUSTOMER_ROLES}
+          allLabel="Everyone with an account"
         />
         <button
           type="button"

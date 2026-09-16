@@ -99,10 +99,30 @@ export const BOOKING_STATUSES = [
  * reads next time they open their profile, and an edit they make there is
  * what the next load of this list shows.
  *
- * @param {{ search?: string, erased?: string, staff?: string, ordering?: string, page?: number }} filters
+ * @param {{ search?: string, erased?: string, staff?: string, role?: string,
+ *           ordering?: string, page?: number }} filters
  */
 export async function listCustomers(filters) {
   return toPage(await request(`/staff/customers/${query(filters)}`));
+}
+
+/**
+ * The people who work here: admins, office, warehouse and drivers.
+ *
+ * The same endpoint and the same rows as `listCustomers` — an account is one
+ * User record whichever page it is looked at from — narrowed to the four
+ * staff roles. `role=worker` is the server's name for that set, and it is not
+ * the same question as `staff=true`: a driver carries neither flag and a
+ * warehouse worker carries the other one, so asking by flag would miss both.
+ *
+ * A `role` passed in the filters names one role instead, which is how the
+ * Workers page's own filter narrows to, say, drivers only.
+ *
+ * @param {{ search?: string, erased?: string, role?: string,
+ *           ordering?: string, page?: number }} filters
+ */
+export async function listWorkers(filters) {
+  return listCustomers({ ...filters, role: filters?.role || 'worker' });
 }
 
 /**
@@ -170,13 +190,16 @@ export const ADDRESS_COUNTRIES = [
 ];
 
 /**
- * Moves an account between the three roles. Answers with the whole customer
+ * Moves an account between the five roles. Answers with the whole customer
  * row, so the table can swap it in without a refetch.
  *
  *   customer   no dashboard at all
+ *   driver     no dashboard either - a name on a delivery, deliberately
+ *              without warehouse or office access
  *   warehouse  the scanner and intake sheets, on a phone. Not the rest of the
  *              back office, and not Django's own /admin/
- *   admin      the whole back office
+ *   office     the back office and the warehouse screens, without roles
+ *   admin      the whole back office, roles included
  *
  * The server refuses your own account, a superuser and an erased one - each
  * row carries `can_change_role` saying so up front, which is what the select
@@ -203,6 +226,9 @@ export const CUSTOMER_ROLES = [
   { value: 'driver', label: 'Driver' },
   { value: 'customer', label: 'Customer' },
 ];
+
+/** The four roles that mean somebody works here, widest access first. */
+export const WORKER_ROLES = CUSTOMER_ROLES.filter((role) => role.value !== 'customer');
 
 /** The word for a role value, for a row whose role cannot be changed. */
 export function roleLabel(role) {

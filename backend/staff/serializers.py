@@ -249,7 +249,8 @@ class StaffRoleSerializer(serializers.Serializer):
         warehouse   is_warehouse only. Warehouse operations. Not Django's
                     /admin/, which is exactly why the floor does not get
                     is_staff.
-        office      is_staff. The back office, without role management.
+        office      both flags. The back office without role management, and
+                    the warehouse floor with it.
         admin       is_staff. The whole back office.
     """
 

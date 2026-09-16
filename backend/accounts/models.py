@@ -72,7 +72,10 @@ class User(AbstractUser):
     #   admin       is_staff. The whole back office, including who gets which
     #               role. Every account that had is_staff before roles existed
     #               became an admin, so nobody lost anything in the move.
-    #   office      is_staff. The whole back office except role management.
+    #   office      both flags. The whole back office except role management,
+    #               and the warehouse floor with it - an office worker does
+    #               intake and scans packages alongside the desk work, so the
+    #               floor is part of the job rather than a second job.
     #   warehouse   is_warehouse. Warehouse operations and nothing else.
     #   driver      neither flag. Deliberately no warehouse or office access.
     #   customer    neither flag.
@@ -87,7 +90,12 @@ class User(AbstractUser):
     ROLE_FLAGS = {
         Role.CUSTOMER: (False, False),
         Role.ADMIN: (True, False),
-        Role.OFFICE: (True, False),
+        # Both: the desk and the floor. is_staff alone already opened the
+        # warehouse screens - can_use_warehouse below reads either flag - so
+        # this changes no permission. What it changes is that the account now
+        # *says* warehouse, which is what every list of warehouse people is
+        # drawn from: the handover mails, the Workers page, the admin.
+        Role.OFFICE: (True, True),
         Role.WAREHOUSE: (False, True),
         Role.DRIVER: (False, False),
     }

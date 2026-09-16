@@ -9,7 +9,10 @@
 //          original in src/images by `npm run logos`
 //   fit    'cover' for a logo on a coloured background that may be cropped to
 //          the wheel's round badge; leave it out for a logo on white
-//   href   not used yet
+//   href   the shop's own site, linked from the services page. The Dutch
+//          storefront in each case: this is a forwarding service for parcels
+//          bought in the Netherlands, so a customer sent to the .com would
+//          land on a shop that will not deliver to the warehouse.
 //
 // To add a shop: put its logo in src/images, add it to LOGOS in
 // scripts/optimize-logos.js, run `npm run logos`, then add a line below.
@@ -24,12 +27,23 @@ import mediamarkt from '../images/optimized/logos/mediamarkt.webp';
 import zalando from '../images/optimized/logos/zalando.webp';
 
 export const SHOPS = [
-  { name: 'IKEA', logo: ikea },
-  { name: 'Bol.com', logo: bol, fit: 'cover' },
-  { name: 'AutoDoc', logo: autodoc },
-  { name: 'Coolblue', logo: coolblue, fit: 'cover' },
-  { name: 'H&M', logo: hm },
-  { name: 'MediaMarkt', logo: mediamarkt },
-  { name: 'Action', logo: action },
-  { name: 'Zalando', logo: zalando },
+  { name: 'IKEA', logo: ikea, href: 'https://www.ikea.com/nl/nl/' },
+  {
+    name: 'Bol.com',
+    logo: bol,
+    fit: 'cover',
+    // /nl/ redirects here, so link the destination and skip the hop.
+    href: 'https://www.bol.com/nl/nl/',
+  },
+  { name: 'AutoDoc', logo: autodoc, href: 'https://www.autodoc.nl/' },
+  {
+    name: 'Coolblue',
+    logo: coolblue,
+    fit: 'cover',
+    href: 'https://www.coolblue.nl/',
+  },
+  { name: 'H&M', logo: hm, href: 'https://www2.hm.com/nl_nl/index.html' },
+  { name: 'MediaMarkt', logo: mediamarkt, href: 'https://www.mediamarkt.nl/' },
+  { name: 'Action', logo: action, href: 'https://www.action.com/nl-nl/' },
+  { name: 'Zalando', logo: zalando, href: 'https://www.zalando.nl/' },
 ];

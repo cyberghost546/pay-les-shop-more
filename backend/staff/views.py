@@ -65,6 +65,17 @@ from .serializers import (
 
 User = get_user_model()
 
+# Everyone who works here, as opposed to everyone who ships with us. The four
+# roles that are not Customer, in the order somebody reads them when deciding
+# how much access an account has. The Workers page lists exactly these, and
+# ?role=worker on the customers list is the filter it asks for.
+WORKER_ROLES = (
+    User.Role.ADMIN,
+    User.Role.OFFICE,
+    User.Role.WAREHOUSE,
+    User.Role.DRIVER,
+)
+
 # How far back "recent" reaches on the overview, and what the range picker
 # above the chart offers. An allow-list rather than any number the caller
 # sends: ?days=100000 is one query that reads the whole table.
@@ -1070,6 +1081,27 @@ class CustomerViewSet(
         if params.get("staff") == "true":
             queryset = queryset.filter(is_staff=True)
 
+        # Which roles to show. One name, several separated by commas, or the
+        # word "worker" for everyone who works here - which is the filter the
+        # Workers page is built on, and the one that cannot be written as
+        # is_staff: a driver carries neither flag, and a warehouse worker
+        # carries the other one.
+        #
+        # An unknown name is dropped rather than refused, so a stale bookmark
+        # narrows the list instead of failing; a value naming no known role at
+        # all is ignored entirely, which is the same as asking for everyone.
+        role = params.get("role", "").strip()
+        if role:
+            wanted = set()
+            for name in role.split(","):
+                name = name.strip()
+                if name == "worker":
+                    wanted |= set(WORKER_ROLES)
+                elif name in User.Role.values:
+                    wanted.add(name)
+            if wanted:
+                queryset = queryset.filter(role__in=sorted(wanted))
+
         ordering = params.get("ordering", "").strip()
         if ordering.lstrip("-") in self.ordering_fields:
             queryset = queryset.order_by(ordering)
@@ -1151,11 +1183,14 @@ class CustomerViewSet(
     def role(self, request, pk=None):
         """Move an account between customer, warehouse and admin.
 
-        POST {"role": "admin"}, {"role": "warehouse"} or {"role": "customer"}.
-        Two flags are set together, and always both, so that the three roles
-        stay three rather than drifting into four: `is_staff` is the office and
-        the same flag that opens Django's own /admin/, `is_warehouse` is the
-        floor and opens the scanner and nothing else.
+        POST {"role": "admin"}, {"role": "office"}, {"role": "warehouse"},
+        {"role": "driver"} or {"role": "customer"}. The two flags are written
+        from the role and always together, so that a role never drifts into
+        meaning something the word does not: `is_staff` is the office and the
+        same flag that opens Django's own /admin/, `is_warehouse` is the floor
+        and opens the scanner. An office worker carries both - the desk and
+        the floor are one job here - and only a warehouse worker carries the
+        second without the first.
 
         Three accounts this refuses to touch, and the reasons are different:
 

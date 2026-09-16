@@ -372,6 +372,55 @@ class CustomerTests(StaffApiTestCase):
         results = self.rows(staff="true")
         self.assertEqual([row["username"] for row in results], ["agent@example.com"])
 
+    def test_one_role_can_be_asked_for_by_name(self):
+        results = self.rows(role="customer")
+        self.assertEqual([row["username"] for row in results], ["klant@example.com"])
+
+    def test_several_roles_can_be_asked_for_at_once(self):
+        driver = self._driver()
+
+        self.assertEqual(
+            sorted(row["username"] for row in self.rows(role="driver,customer")),
+            sorted([driver.username, "klant@example.com"]),
+        )
+
+    def test_worker_means_everyone_who_works_here(self):
+        """The filter the Workers page is built on.
+
+        Not the same question as staff="true": a driver carries neither flag
+        and a warehouse worker carries the other one, so a list built from
+        is_staff would leave both of them out.
+        """
+        driver = self._driver()
+        floor = User.objects.create_user(
+            username="magazijn@example.com",
+            email="magazijn@example.com",
+            password="a-long-enough-password",
+            role=User.Role.WAREHOUSE,
+        )
+
+        usernames = sorted(row["username"] for row in self.rows(role="worker"))
+
+        self.assertEqual(
+            usernames, sorted([driver.username, floor.username, "agent@example.com"])
+        )
+        self.assertNotIn("klant@example.com", usernames)
+
+    def test_an_unknown_role_narrows_rather_than_fails(self):
+        """A stale bookmark should show a short list, not an error page."""
+        self.assertEqual(self.rows(role="wizard,customer"), self.rows(role="customer"))
+
+    def test_a_role_naming_nothing_known_is_ignored(self):
+        self.assertEqual(len(self.rows(role="wizard")), len(self.rows()))
+
+    def _driver(self):
+        return User.objects.create_user(
+            username="chauffeur@example.com",
+            email="chauffeur@example.com",
+            password="a-long-enough-password",
+            role=User.Role.DRIVER,
+        )
+
     def test_customers_cannot_be_deleted(self):
         """Erasure is the customer's own action, on their profile page.
 

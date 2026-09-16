@@ -106,7 +106,7 @@ export default function Services() {
 
                   <ul className={styles.serviceList}>
                     {island.services.map((service) => (
-                      <li key={service} className={styles.serviceItem}>
+                      <li key={service.name} className={styles.serviceItem}>
                         {/* The arrow is drawn, not typed: an arrow character
                             is read out as "downwards arrow with tip
                             rightwards" by a screen reader, once per line. */}
@@ -119,36 +119,62 @@ export default function Services() {
                           <path d="m9 6.5 3.5 3L9 12.5" />
                         </svg>
 
-                        {/* Every item leads to the island's own page, which is
-                            where the quote form for it lives. The names are
-                            shops rather than pages of this site, so sending
-                            someone to bol.com from here would be sending them
-                            away from the order they came to place. */}
-                        <Link
-                          to={`/destinations/${island.slug}`}
-                          className={styles.serviceLink}
-                        >
-                          {service}
-                        </Link>
+                        {/* A shop goes to the shop, in a new tab so the order
+                            the visitor came here to place is still open behind
+                            it. An arrangement is ours and has no href, so it
+                            goes to the island's page, where its quote form
+                            lives. */}
+                        {service.href ? (
+                          <a
+                            href={service.href}
+                            className={styles.serviceLink}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            {service.name}
+                          </a>
+                        ) : (
+                          <Link
+                            to={`/destinations/${island.slug}`}
+                            className={styles.serviceLink}
+                          >
+                            {service.name}
+                          </Link>
+                        )}
                       </li>
                     ))}
                   </ul>
                 </div>
 
-                <img
-                  src={island.hero.src}
-                  srcSet={island.hero.srcSet}
-                  sizes="(max-width: 900px) 100vw, 340px"
-                  width={island.hero.width}
-                  height={island.hero.height}
-                  // Decorative: the panel is already titled with the island's
-                  // name, and repeating it here would have a screen reader
-                  // say it twice.
-                  alt=""
-                  className={styles.islandImage}
-                  loading="lazy"
-                  decoding="async"
-                />
+                {/* The island in its own flag where there is one, and the
+                    photograph where there is not. The flag map is a single
+                    file rather than a srcset: it is a drawing, so one copy at
+                    full size costs less than a photograph would and scales
+                    without going soft. */}
+                {island.flagMap ? (
+                  <img
+                    src={island.flagMap}
+                    // Decorative: the panel is already titled with the
+                    // island's name, and repeating it here would have a
+                    // screen reader say it twice.
+                    alt=""
+                    className={styles.islandFlagMap}
+                    loading="lazy"
+                    decoding="async"
+                  />
+                ) : (
+                  <img
+                    src={island.hero.src}
+                    srcSet={island.hero.srcSet}
+                    sizes="(max-width: 900px) 100vw, 340px"
+                    width={island.hero.width}
+                    height={island.hero.height}
+                    alt=""
+                    className={styles.islandImage}
+                    loading="lazy"
+                    decoding="async"
+                  />
+                )}
               </li>
             );
           })}

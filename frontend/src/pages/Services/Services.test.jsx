@@ -60,19 +60,30 @@ describe('the services page', () => {
       .closest('li');
 
     for (const service of curacao.services) {
-      expect(within(panel).getByText(service)).toBeInTheDocument();
+      expect(within(panel).getByText(service.name)).toBeInTheDocument();
     }
   });
 
-  it('sends each service to the island it belongs to', () => {
+  it('sends a shop to the shop and an arrangement to the island', () => {
     renderWithProviders(<Services />, { route: '/services' });
 
     const bonaire = screen.getByText('Our services for Bonaire').closest('li');
+    const island = ISLAND_SERVICES.find((item) => item.slug === 'bonaire');
 
-    // Shop names, not shops: the link goes to that island's page, where the
-    // quote form is, rather than off to bol.com.
-    for (const link of within(bonaire).getAllByRole('link')) {
-      expect(link).toHaveAttribute('href', '/destinations/bonaire');
+    for (const service of island.services) {
+      const link = within(bonaire).getByRole('link', { name: service.name });
+
+      if (service.href) {
+        // A shop is somewhere else, so it opens in its own tab and cannot
+        // reach back into this one.
+        expect(link).toHaveAttribute('href', service.href);
+        expect(link).toHaveAttribute('target', '_blank');
+        expect(link).toHaveAttribute('rel', 'noopener noreferrer');
+      } else {
+        // An arrangement is ours: it goes to the island's page, where the
+        // quote form for it lives.
+        expect(link).toHaveAttribute('href', '/destinations/bonaire');
+      }
     }
   });
 

@@ -27,13 +27,15 @@ const WIDTHS = [480, 960, 1600];
 // Everything else in src/images is a flag: SVG, or a PNG small enough that
 // the WebP header would be a meaningful fraction of it.
 const PHOTOGRAPHS = [
-  'Aruba-Centraal.jpeg',
-  'Bonaire-centraal.webp',
+  'Aruba-centraal.avif',
+  'Bonaire-centraal.jpg',
+  'box-cart.jpg',
+  'boxes.png',
   'container-ship.webp',
-  'Curacao-centraal.png',
+  'Curacao-centraal.webp',
   'port-haven-ship.jpeg',
-  'St.Maarten-centraal.webp',
-  'Suriname-centraal.jpeg',
+  'St.Maarten-centraal.avif',
+  'Suriname-centraal.webp',
 ];
 
 // 78 is where WebP stops being distinguishable from the original on a

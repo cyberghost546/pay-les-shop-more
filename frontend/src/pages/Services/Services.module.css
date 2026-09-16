@@ -158,8 +158,10 @@
 
 .islandCard {
   display: grid;
-  /* The list takes what it needs; the island takes the rest. */
-  grid-template-columns: minmax(0, 1fr) minmax(0, 0.9fr);
+  /* The list takes what it needs; the island takes the rest. Near enough an
+     even split: the list is ten short lines, so giving the island less than
+     half the card only shrinks the island. */
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
   align-items: center;
   gap: 1.5rem;
   padding: 2.5rem 2rem;
@@ -222,6 +224,21 @@
   /* Squared off, like the rest of the page: nothing else here is rounded. */
   object-fit: cover;
   aspect-ratio: 4 / 3;
+}
+
+/* The flag maps are tall drawings on a transparent ground, so they are fitted
+   rather than cropped: `cover` on a 1920×2090 island would show its middle
+   third and none of its shape, which is the whole point of the picture.
+
+   Square rather than the photograph's 4:3, because `contain` fits a portrait
+   drawing by its height: in a short, wide box the island is sized by the 3,
+   not the 4, and sits small with empty air either side. A square box is the
+   one that lets a roughly-square drawing fill the column. */
+.islandFlagMap {
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+  aspect-ratio: 1 / 1;
 }
 
 /* ------------------------------------------------------------------- brands
