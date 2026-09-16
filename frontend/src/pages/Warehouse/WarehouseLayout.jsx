@@ -74,9 +74,6 @@ export default function WarehouseLayout() {
     <div className={`${dashboard.app} ${styles.shell}`}>
       <header className={styles.topbar}>
         <Link to="/warehouse" className={styles.brand}>
-          <span className={styles.brandMark} aria-hidden="true">
-            P
-          </span>
           <span className={styles.brandText}>
             <span className={styles.brandName}>
               PayLesShopMore<span className={styles.brandDot}>.com</span>

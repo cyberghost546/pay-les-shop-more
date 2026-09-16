@@ -47,20 +47,6 @@
   border-radius: 10px;
 }
 
-.brandMark {
-  display: grid;
-  flex-shrink: 0;
-  place-items: center;
-  width: 2.35rem;
-  height: 2.35rem;
-  border-radius: 11px;
-  background: linear-gradient(135deg, var(--cyan), #2563eb);
-  box-shadow: 0 6px 14px rgba(37, 99, 235, 0.3);
-  color: #ffffff;
-  font-size: 1.1rem;
-  font-weight: 800;
-}
-
 .brandText {
   display: flex;
   flex-direction: column;

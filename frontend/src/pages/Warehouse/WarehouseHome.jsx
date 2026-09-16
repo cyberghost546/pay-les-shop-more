@@ -75,13 +75,6 @@ export default function WarehouseHome() {
       <div className={styles.pageHead}>
         <div>
           <h1 className={styles.pageTitle}>{firstName ? fill(t('dashboard.warehouse.home.hello'), { name: firstName }) : t('dashboard.warehouse.home.fallbackTitle')}</h1>
-          <p className={styles.pageLead}>
-            {board
-              ? board.activity_today === 1
-                ? t('dashboard.warehouse.home.actionsOne')
-                : fill(t('dashboard.warehouse.home.actionsMany'), { count: board.activity_today })
-              : ' '}
-          </p>
         </div>
       </div>
 

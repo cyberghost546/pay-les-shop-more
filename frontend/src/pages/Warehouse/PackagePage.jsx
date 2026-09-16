@@ -71,6 +71,23 @@ function Steps({ shipment, step }) {
   );
 }
 
+/** A decimal the way the rest of the back office writes one: "12,5". */
+function number(value, digits) {
+  if (value === null || value === undefined || value === '') return '';
+  return Number(value).toLocaleString('nl-NL', {
+    minimumFractionDigits: digits,
+    maximumFractionDigits: digits,
+  });
+}
+
+/** "60 × 40 × 40 cm", or '' when the box has not been measured yet. */
+function dimensions(measurement) {
+  if (!measurement) return '';
+  const sides = [measurement.length_cm, measurement.width_cm, measurement.height_cm];
+  if (sides.some((side) => side === null || side === undefined || side === '')) return '';
+  return `${sides.map((side) => number(side, 0)).join(' × ')} cm`;
+}
+
 function Fact({ label, children, big }) {
   return (
     <div className={`${styles.fact} ${big ? styles.factBig : ''}`}>
@@ -250,6 +267,20 @@ export default function PackagePage() {
           </Fact>
           <Fact label={t(`${P}facts.status`)}>{t(`dashboard.flow.stages.${shipment.warehouse_stage}`)}</Fact>
           <Fact label={t(`${P}facts.location`)}>{shipment.warehouse_location}</Fact>
+
+          {/* The measurement, from the current record on the shipment. Each
+              falls back to the em dash a Fact draws for an empty value, so a
+              box that has not reached the measure step yet shows the same
+              three rows waiting to be filled rather than a card that changes
+              shape once somebody picks up a tape measure. */}
+          <Fact label={t(`${P}facts.dimensions`)}>{dimensions(shipment.measurement)}</Fact>
+          <Fact label={t(`${P}facts.weight`)}>
+            {shipment.measurement && `${number(shipment.measurement.weight_kg, 1)} kg`}
+          </Fact>
+          <Fact label={t(`${P}facts.chargeable`)}>
+            {shipment.measurement &&
+              `${number(shipment.measurement.chargeable_weight_kg, 1)} kg`}
+          </Fact>
         </dl>
 
         {(shipment.has_open_damage || shipment.has_problem || shipment.overdue) && (
