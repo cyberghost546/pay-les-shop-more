@@ -120,6 +120,7 @@ export function htmlForRoute(template, route) {
 
 /** @returns {import('vite').Plugin} */
 export function prerender() {
+  let root = process.cwd();
   let outDir = 'dist';
 
   return {
@@ -129,12 +130,21 @@ export function prerender() {
     apply: 'build',
 
     configResolved(config) {
+      // Both come from the resolved config rather than the process, because
+      // the build is started as `npm run build --prefix frontend` and what
+      // that leaves in cwd is an npm implementation detail.
+      root = config.root;
       outDir = config.build.outDir;
     },
 
-    // After Vite has written index.html and copied public/ across.
-    async closeBundle() {
-      const dist = join(process.cwd(), outDir);
+    // writeBundle, not closeBundle. closeBundle is a teardown hook: it runs
+    // after a *failed* build too, where there is no index.html to read, so
+    // this threw ENOENT and became the only error printed — hiding the real
+    // one. A miscased image import cost three days of deploys that way, with
+    // the log blaming the prerender step. writeBundle runs only after Vite
+    // has actually written the output, so a broken build now reports itself.
+    async writeBundle() {
+      const dist = join(root, outDir);
       const template = await readFile(join(dist, 'index.html'), 'utf8');
 
       for (const route of PUBLIC_ROUTES) {
