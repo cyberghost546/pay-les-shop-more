@@ -334,8 +334,8 @@ class DamageReportViewSet(mixins.RetrieveModelMixin, _RecordViewSet):
 
         try:
             handle = photo.image.open("rb")
-        except FileNotFoundError:
-            raise Http404("This photo is missing.")
+        except FileNotFoundError as error:
+            raise Http404("This photo is missing.") from error
 
         # The content type is the one sniffed at upload, never the uploader's.
         # nosniff is set site-wide, so the browser will not reinterpret it.
@@ -357,7 +357,7 @@ class WarehouseReportView(APIView):
         try:
             day = report.parse_date(request.query_params.get("date", ""))
         except ValueError:
-            raise ValidationError({"date": ["Use the form YYYY-MM-DD."]})
+            raise ValidationError({"date": ["Use the form YYYY-MM-DD."]}) from None
 
         data = report.build(day)
         if request.query_params.get("export") == "csv":

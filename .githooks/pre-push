@@ -1,0 +1,120 @@
+#!/bin/sh
+# Runs what CI runs, before the push rather than a minute after it.
+#
+# Enable it once, per clone:
+#
+#     git config core.hooksPath .githooks
+#
+# Not husky: husky is a dependency, a postinstall script and a second copy of
+# the hook directory, to do what one line of git config already does. The cost
+# of the plain version is that it has to be turned on by hand in each clone,
+# which is why the line above is also in DEPLOYMENT.md.
+#
+# To skip it for one push -- a work-in-progress branch, a documentation typo:
+#
+#     git push --no-verify
+#
+# Only what changed is checked. A frontend-only branch should not wait two
+# minutes for the Django suite, and a hook that always costs two minutes is a
+# hook everyone learns to pass --no-verify to.
+
+set -e
+
+ROOT=$(git rev-parse --show-toplevel)
+cd "$ROOT"
+
+# What this push actually contains, compared against the upstream branch. On a
+# branch with no upstream yet, fall back to the default branch: the whole
+# point is the set of commits the other side has not seen.
+upstream=$(git rev-parse --abbrev-ref --symbolic-full-name '@{upstream}' 2>/dev/null || echo '')
+
+if [ -n "$upstream" ]; then
+    base="$upstream"
+elif git rev-parse --verify --quiet origin/main >/dev/null; then
+    base='origin/main'
+else
+    # A fresh repository with nothing to compare against. Check everything.
+    base=''
+fi
+
+if [ -n "$base" ]; then
+    changed=$(git diff --name-only "$base"...HEAD)
+else
+    changed=$(git ls-files)
+fi
+
+# Nothing to push, or a push that changes no tracked file.
+if [ -z "$changed" ]; then
+    exit 0
+fi
+
+touched() {
+    echo "$changed" | grep -q "^$1" 2>/dev/null
+}
+
+failed=0
+
+note() {
+    printf '\n\033[1m==> %s\033[0m\n' "$1"
+}
+
+# ---------------------------------------------------------------------------
+# The origin check first: it is the fastest, needs nothing installed, and is
+# the one whose failure is cheapest to fix before the rest of the run.
+# ---------------------------------------------------------------------------
+
+if touched 'vercel.json' || touched 'render.yaml' || touched 'frontend/index.html' \
+    || touched 'frontend/scripts/routes.js' || touched 'frontend/src/hooks/usePageMeta.js'; then
+    note 'origins'
+    node scripts/check-origins.mjs || failed=1
+fi
+
+# ---------------------------------------------------------------------------
+# Backend.
+# ---------------------------------------------------------------------------
+
+if touched 'backend/'; then
+    # The virtualenv this repository's own instructions create. Without it,
+    # `python` is whatever is on PATH and may be a different interpreter with
+    # none of the dependencies -- so say so rather than failing obscurely.
+    if [ -x backend/.venv/Scripts/python.exe ]; then
+        PY=.venv/Scripts/python.exe
+    elif [ -x backend/.venv/bin/python ]; then
+        PY=.venv/bin/python
+    else
+        PY=python
+    fi
+
+    note 'ruff'
+    ( cd backend && "$PY" -m ruff check . ) || failed=1
+
+    note 'django tests'
+    # DJANGO_DEBUG=1 selects the SQLite database, the same as CI does, so the
+    # hook never touches a real one.
+    ( cd backend && DJANGO_DEBUG=1 DJANGO_SECRET_KEY=pre-push-hook-key \
+        DJANGO_LOG_LEVEL=WARNING "$PY" manage.py test ) || failed=1
+fi
+
+# ---------------------------------------------------------------------------
+# Frontend.
+# ---------------------------------------------------------------------------
+
+if touched 'frontend/'; then
+    note 'eslint'
+    ( cd frontend && npm run --silent lint ) || failed=1
+
+    note 'vitest'
+    ( cd frontend && npm run --silent test:run ) || failed=1
+
+    if echo "$changed" | grep -q '^frontend/src/images/'; then
+        note 'images'
+        ( cd frontend && npm run --silent check:images ) || failed=1
+    fi
+fi
+
+if [ "$failed" -ne 0 ]; then
+    printf '\n\033[31mpre-push: something above failed. Push anyway with --no-verify.\033[0m\n\n'
+    exit 1
+fi
+
+printf '\n\033[32mpre-push: ok\033[0m\n\n'

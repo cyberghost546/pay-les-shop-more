@@ -50,6 +50,12 @@ export const DESTINATIONS = [
     transitDays: 21,
   },
   {
+    slug: 'dominican-republic',
+    name: 'Dominican Republic',
+    port: 'Santo Domingo',
+    transitDays: 24,
+  },
+  {
     slug: 'sint-maarten',
     name: 'Sint Maarten',
     port: 'Philipsburg',
@@ -117,6 +123,13 @@ export const PUBLIC_ROUTES = [
     description:
       'Questions about a shipment, a quote or how the service works? Send us ' +
       'a message and we will come back to you.',
+  },
+  {
+    path: '/privacy',
+    title: 'Privacy policy',
+    description:
+      'What PayLesShopMore collects when you use this site, what we use ' +
+      'it for, who it is shared with, and how to turn cookies off.',
   },
   {
     path: '/destinations',

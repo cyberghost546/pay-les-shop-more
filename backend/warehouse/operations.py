@@ -111,7 +111,7 @@ def _decimal(data, field, minimum, maximum, unit):
     try:
         value = Decimal(str(raw).strip().replace(",", "."))
     except (InvalidOperation, ValueError):
-        raise ValidationError({field: ["Enter a number."]})
+        raise ValidationError({field: ["Enter a number."]}) from None
     if not value.is_finite():
         raise ValidationError({field: ["Enter a number."]})
     if value < minimum or value > maximum:
@@ -263,7 +263,7 @@ def add_packaging(package, user, data):
     try:
         quantity = int(str(raw_quantity).strip())
     except (TypeError, ValueError):
-        raise ValidationError({"quantity": ["Enter a whole number."]})
+        raise ValidationError({"quantity": ["Enter a whole number."]}) from None
     if not 1 <= quantity <= 999:
         raise ValidationError({"quantity": ["Must be between 1 and 999."]})
 

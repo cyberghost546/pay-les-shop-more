@@ -108,6 +108,52 @@ customer's address to be actionable.
 
 ## What runs on every push
 
-`.github/workflows/ci.yml` runs the Django suite, the deployment checks, a
-check for models changed without a migration, then the frontend's lint, tests
-and build. It does not deploy anything.
+`.github/workflows/ci.yml` runs three independent jobs. It does not deploy
+anything.
+
+**Django** — `ruff check` (configured in `backend/ruff.toml`), the system
+checks, the deployment checks, a check for models changed without a migration,
+then the test suite.
+
+**React** — eslint, a check that the committed image output still matches its
+sources, the tests with coverage, then the build.
+
+**Origins** — `scripts/check-origins.mjs`, which compares the canonical origin
+in the route table against its copies in `usePageMeta.js`, the social card tags
+in `index.html`, the `/api` rewrite in `vercel.json` and `DJANGO_FRONTEND_URL`
+in `render.yaml`. These five files have to agree and nothing else makes them
+move together; when they disagree the build is green and a form POST comes back
+as a CSRF failure days later.
+
+## What runs on a schedule
+
+`.github/workflows/smoke.yml` asks the deployed site the questions a browser
+would: the API answered through the site's own origin rather than the API
+host's, a prerendered page with real metadata in it, a deep link opened cold, the
+security headers `vercel.json` promises, and a `robots.txt` that does not
+disallow the world. Every request is a GET, so it is safe to point at
+production — which is the point, since a check that only runs against staging
+tells you nothing about the site customers are using.
+
+It runs twice a day and from the Actions tab, where it takes an origin as an
+input. Run it by hand after a deploy: neither Vercel nor Railway reports back
+to GitHub, so nothing else triggers it at the moment that matters.
+
+## Before you push
+
+```sh
+git config core.hooksPath .githooks
+```
+
+Once per clone. `.githooks/pre-push` then runs the parts of CI that apply to
+what you are pushing — the Django suite only if `backend/` changed, eslint and
+vitest only if `frontend/` did — so the answer arrives before the push rather
+than a minute after it. `git push --no-verify` skips it.
+
+## Keeping dependencies current
+
+Every version in this repository is pinned exactly, which is what makes a build
+reproducible and also what makes it go stale in silence.
+`.github/dependabot.yml` opens grouped pull requests on Monday mornings for
+pip, npm and the GitHub Actions themselves, with Django and React majors held
+back — those want reading the release notes, not a merge button.

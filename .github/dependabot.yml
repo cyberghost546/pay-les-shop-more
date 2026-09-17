@@ -1,0 +1,87 @@
+# Weekly pull requests for the things that are pinned by hand.
+#
+# Every version in this repository is pinned exactly -- requirements.txt,
+# requirements-prod.txt, requirements-dev.txt and package-lock.json -- which
+# is what makes a build reproducible and also what makes it go stale in
+# silence. This turns "somebody remembers to check" into a pull request that
+# CI has already run against.
+#
+# Monday morning, so a bump has the week to be looked at rather than landing
+# on a Friday.
+version: 2
+
+updates:
+  # ---------------------------------------------------------------- Python
+  - package-ecosystem: pip
+    directory: /backend
+    schedule:
+      interval: weekly
+      day: monday
+      time: '07:00'
+      timezone: Europe/Amsterdam
+    # Enough to cover a quiet week without filling the pull request list.
+    open-pull-requests-limit: 5
+    labels: ['dependencies', 'backend']
+    commit-message:
+      prefix: 'deps(backend)'
+    groups:
+      # One pull request for the patch and minor bumps. Individually they are
+      # noise; together they are a single CI run and a single review.
+      python-minor:
+        patterns: ['*']
+        update-types: ['minor', 'patch']
+    ignore:
+      # Django's majors are migrations, not upgrades: they deprecate APIs and
+      # want reading the release notes and a deliberate afternoon, which is
+      # not what a Monday pull request gets. Minor and patch still come
+      # through -- those are the security releases.
+      - dependency-name: django
+        update-types: ['version-update:semver-major']
+
+  # ------------------------------------------------------------------ npm
+  - package-ecosystem: npm
+    directory: /frontend
+    schedule:
+      interval: weekly
+      day: monday
+      time: '07:00'
+      timezone: Europe/Amsterdam
+    open-pull-requests-limit: 5
+    labels: ['dependencies', 'frontend']
+    commit-message:
+      prefix: 'deps(frontend)'
+    groups:
+      # The test and lint toolchain moves constantly and breaks nothing a
+      # green CI run would not catch.
+      dev-tooling:
+        dependency-type: development
+        patterns: ['*']
+      react:
+        patterns: ['react', 'react-dom', 'react-router-dom', '@types/react*']
+    ignore:
+      # React majors change rendering semantics. Deliberate, not automatic.
+      - dependency-name: react
+        update-types: ['version-update:semver-major']
+      - dependency-name: react-dom
+        update-types: ['version-update:semver-major']
+
+  # The Node version the site is built with, pinned in the root package.json.
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: monthly
+    labels: ['dependencies']
+    commit-message:
+      prefix: 'deps'
+
+  # -------------------------------------------------- GitHub Actions itself
+  # actions/checkout and friends. These pin to a major tag, so this mostly
+  # catches a major going out of support -- which otherwise shows up as a
+  # deprecation warning nobody reads until the runner stops honouring it.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    labels: ['dependencies', 'ci']
+    commit-message:
+      prefix: 'deps(ci)'

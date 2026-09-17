@@ -35,6 +35,7 @@ export const translations = {
       aruba: 'Aruba',
       bonaire: 'Bonaire',
       curacao: 'Curaçao',
+      dominicanRepublic: 'Dominicaanse Republiek',
       saintMartin: 'Sint Maarten',
       suriname: 'Suriname',
       other: 'Overige bestemmingen',
@@ -808,6 +809,123 @@ export const translations = {
       mapLabel: 'Locatie op de kaart',
       mapTitle: 'Kaart met de locatie aan de Hertzstraat 10, Berkel en Rodenrijs',
     },
+    privacy: {
+      title: 'Privacybeleid',
+      // The meta description and the sentence a search result shows, so it is
+      // a summary rather than the opening line of the policy itself.
+      summary:
+        'Welke gegevens Pay Less Shop More verzamelt wanneer u deze website ' +
+        'gebruikt, waarvoor wij ze gebruiken en hoe u cookies uitzet.',
+      questions:
+        'Heeft u een vraag over dit privacybeleid? Neem dan contact met ons ' +
+        'op via',
+      intro: [
+        'Wij zijn er van bewust dat u vertrouwen stelt in ons. Wij zien het ' +
+          'dan ook als onze verantwoordelijkheid om uw privacy te beschermen. ' +
+          'Op deze pagina laten we u weten welke gegevens we verzamelen als u ' +
+          'onze website gebruikt, waarom we deze gegevens verzamelen en hoe ' +
+          'we hiermee uw gebruikservaring verbeteren. Zo snapt u precies hoe ' +
+          'wij werken.',
+        'Dit privacybeleid is van toepassing op de diensten van Pay Less Shop ' +
+          'More. U dient zich ervan bewust te zijn dat Pay Less Shop More ' +
+          'niet verantwoordelijk is voor het privacybeleid van andere sites ' +
+          'en bronnen. Door gebruik te maken van deze website geeft u aan het ' +
+          'privacybeleid te accepteren. Pay Less Shop More respecteert de ' +
+          'privacy van alle gebruikers van haar site en draagt er zorg voor ' +
+          'dat de persoonlijke informatie die u ons verschaft vertrouwelijk ' +
+          'wordt behandeld.',
+      ],
+      sections: {
+        use: {
+          // A heading with no body of its own: it introduces the three below.
+          heading: 'Ons gebruik van verzamelde gegevens',
+          services: {
+            heading: 'Gebruik van onze diensten',
+            body: [
+              'Wanneer u zich aanmeldt voor een van onze diensten vragen we u ' +
+                'om persoons- of bedrijfsgegevens te verstrekken. Deze ' +
+                'gegevens worden gebruikt om de dienst uit te kunnen voeren. ' +
+                'De gegevens worden opgeslagen op eigen beveiligde servers van ' +
+                'Pay Less Shop More of die van een derde partij. Wij zullen ' +
+                'deze gegevens niet combineren met andere persoonlijke ' +
+                'gegevens waarover wij beschikken.',
+            ],
+          },
+          communication: {
+            heading: 'Communicatie',
+            body: [
+              'Wanneer u e-mail of andere berichten naar ons verzendt, is het ' +
+                'mogelijk dat we die berichten bewaren. Soms vragen wij u naar ' +
+                'uw persoonlijke gegevens die voor de desbetreffende situatie ' +
+                'relevant zijn. Dit maakt het mogelijk uw vragen te verwerken ' +
+                'en uw verzoeken te beantwoorden. De gegevens worden ' +
+                'opgeslagen op eigen beveiligde servers van Pay Less Shop ' +
+                'More of die van een derde partij. Wij zullen deze gegevens ' +
+                'niet combineren met andere persoonlijke gegevens waarover ' +
+                'wij beschikken.',
+            ],
+          },
+          cookies: {
+            heading: 'Cookies',
+            body: [
+              'Wij verzamelen gegevens voor onderzoek om zo een beter inzicht ' +
+                'te krijgen in onze klanten, zodat wij onze diensten hierop ' +
+                'kunnen afstemmen.',
+              'Deze website maakt gebruik van ‘cookies’ ' +
+                '(tekstbestandjes die op uw computer worden geplaatst) om de ' +
+                'website te helpen analyseren hoe gebruikers de site ' +
+                'gebruiken. De door het cookie gegenereerde informatie over ' +
+                'uw gebruik van de website kan worden overgebracht naar eigen ' +
+                'beveiligde servers van Pay Less Shop More of die van een ' +
+                'derde partij. Wij gebruiken deze informatie om bij te houden ' +
+                'hoe u de website gebruikt, om rapporten over de ' +
+                'website-activiteit op te stellen en andere diensten aan te ' +
+                'bieden met betrekking tot website-activiteit en ' +
+                'internetgebruik.',
+            ],
+          },
+        },
+        purposes: {
+          heading: 'Doeleinden',
+          body: [
+            'We verzamelen of gebruiken geen informatie voor andere ' +
+              'doeleinden dan de doeleinden die worden beschreven in dit ' +
+              'privacybeleid, tenzij we van tevoren uw toestemming hiervoor ' +
+              'hebben verkregen.',
+          ],
+        },
+        thirdParties: {
+          heading: 'Derden',
+          body: [
+            'De informatie wordt niet met derden gedeeld. In enkele gevallen ' +
+              'kan de informatie intern gedeeld worden. Onze werknemers zijn ' +
+              'verplicht om de vertrouwelijkheid van uw gegevens te ' +
+              'respecteren.',
+          ],
+        },
+        changes: {
+          heading: 'Veranderingen',
+          body: [
+            'Deze privacyverklaring is afgestemd op het gebruik van en de ' +
+              'mogelijkheden op deze site. Eventuele aanpassingen en/of ' +
+              'veranderingen van deze site kunnen leiden tot wijzigingen in ' +
+              'deze privacyverklaring. Het is daarom raadzaam om regelmatig ' +
+              'deze privacyverklaring te raadplegen.',
+          ],
+        },
+        optOut: {
+          heading: 'Cookies uitzetten',
+          body: [
+            'De meeste browsers zijn standaard ingesteld om cookies te ' +
+              'accepteren, maar u kunt uw browser opnieuw instellen om alle ' +
+              'cookies te weigeren of om aan te geven wanneer een cookie ' +
+              'wordt verzonden. Het is echter mogelijk dat sommige functies ' +
+              'en diensten, op onze en andere websites, niet correct ' +
+              'functioneren als cookies zijn uitgeschakeld in uw browser.',
+          ],
+        },
+      },
+    },
     footer: {
       tagline:
         'Shop slimmer, bespaar meer. Vergelijk prijzen en vind de beste deals op één plek.',
@@ -844,6 +962,7 @@ export const translations = {
       aruba: 'Aruba',
       bonaire: 'Bonaire',
       curacao: 'Curaçao',
+      dominicanRepublic: 'Dominican Republic',
       saintMartin: 'Saint Martin',
       suriname: 'Suriname',
       other: 'Other destinations',
@@ -1617,6 +1736,107 @@ export const translations = {
       mapLabel: 'Location on the map',
       mapTitle: 'Map showing the location at Hertzstraat 10, Berkel en Rodenrijs',
     },
+    privacy: {
+      title: 'Privacy policy',
+      summary:
+        'What Pay Less Shop More collects when you use this website, what we ' +
+        'use it for, and how to turn cookies off.',
+      questions:
+        'Do you have a question about this privacy policy? Get in touch ' +
+        'through',
+      intro: [
+        'We are aware that you place your trust in us, and we regard it as ' +
+          'our responsibility to protect your privacy. This page tells you ' +
+          'which data we collect when you use our website, why we collect it ' +
+          'and how it helps us improve your experience, so that you know ' +
+          'exactly how we work.',
+        'This privacy policy applies to the services of Pay Less Shop More. ' +
+          'Please be aware that Pay Less Shop More is not responsible for the ' +
+          'privacy policies of other sites and sources. By using this website ' +
+          'you indicate that you accept this privacy policy. Pay Less Shop ' +
+          'More respects the privacy of everyone who uses its site and makes ' +
+          'sure that the personal information you provide is treated ' +
+          'confidentially.',
+      ],
+      sections: {
+        use: {
+          heading: 'How we use the data we collect',
+          services: {
+            heading: 'Using our services',
+            body: [
+              'When you sign up for one of our services we ask you for ' +
+                'personal or company details. These details are used to carry ' +
+                'out the service. They are stored on secure servers belonging ' +
+                'to Pay Less Shop More or to a third party. We will not ' +
+                'combine this data with other personal data we hold.',
+            ],
+          },
+          communication: {
+            heading: 'Communication',
+            body: [
+              'When you send us e-mail or other messages, we may keep those ' +
+                'messages. We sometimes ask you for the personal details that ' +
+                'are relevant to the situation at hand, which allows us to ' +
+                'handle your questions and answer your requests. The data is ' +
+                'stored on secure servers belonging to Pay Less Shop More or ' +
+                'to a third party. We will not combine this data with other ' +
+                'personal data we hold.',
+            ],
+          },
+          cookies: {
+            heading: 'Cookies',
+            body: [
+              'We collect data for research, to gain a better understanding ' +
+                'of our customers so that we can tailor our services ' +
+                'accordingly.',
+              'This website uses ‘cookies’ (small text files placed ' +
+                'on your computer) to help analyse how visitors use the site. ' +
+                'The information the cookie generates about your use of the ' +
+                'website may be transferred to secure servers belonging to ' +
+                'Pay Less Shop More or to a third party. We use this ' +
+                'information to keep track of how you use the website, to ' +
+                'compile reports on website activity and to offer other ' +
+                'services relating to website activity and internet use.',
+            ],
+          },
+        },
+        purposes: {
+          heading: 'Purposes',
+          body: [
+            'We do not collect or use information for any purpose other than ' +
+              'those described in this privacy policy, unless we have ' +
+              'obtained your consent in advance.',
+          ],
+        },
+        thirdParties: {
+          heading: 'Third parties',
+          body: [
+            'The information is not shared with third parties. In a few cases ' +
+              'it may be shared internally. Our employees are obliged to ' +
+              'respect the confidentiality of your data.',
+          ],
+        },
+        changes: {
+          heading: 'Changes',
+          body: [
+            'This privacy statement is written for the way this site is used ' +
+              'and for what it offers. Any adjustments or changes to this ' +
+              'site may lead to changes in this privacy statement, so it is ' +
+              'wise to consult it regularly.',
+          ],
+        },
+        optOut: {
+          heading: 'Turning cookies off',
+          body: [
+            'Most browsers are set to accept cookies by default, but you can ' +
+              'change your browser settings to refuse all cookies or to warn ' +
+              'you when one is sent. Some features and services, on our site ' +
+              'and on others, may not work correctly when cookies are ' +
+              'disabled in your browser.',
+          ],
+        },
+      },
+    },
     footer: {
       tagline:
         'Shop smarter, save more. Compare prices and find the best deals in one place.',
@@ -1655,6 +1875,7 @@ export const translations = {
       aruba: 'Aruba',
       bonaire: 'Boneiru',
       curacao: 'Kòrsou',
+      dominicanRepublic: 'Repúblika Dominikana',
       saintMartin: 'Sint Maarten',
       suriname: 'Sürnam',
       other: 'Otro destinashonnan',
@@ -2425,6 +2646,108 @@ export const translations = {
       openInMaps: 'Habri den Maps',
       mapLabel: 'Lokashon riba mapa',
       mapTitle: 'Mapa ku e lokashon na Hertzstraat 10, Berkel en Rodenrijs',
+    },
+    privacy: {
+      title: 'Polítika di privasidat',
+      summary:
+        'Ki dato Pay Less Shop More ta rekohé ora bo ta usa e website akí, ' +
+        'pa kiko nos ta usé i kon bo por paga cookies.',
+      questions:
+        'Bo tin pregunta tokante e polítika di privasidat akí? Tuma kontakto ' +
+        'ku nos via',
+      intro: [
+        'Nos ta konsiente ku bo ta pone bo konfiansa den nos. P’esei nos ' +
+          'ta mira protekshon di bo privasidat komo nos responsabilidat. Riba ' +
+          'e página akí nos ta bisa bo ki dato nos ta rekohé ora bo ta usa ' +
+          'nos website, pakiko nos ta rekohé nan i kon esaki ta yuda nos ' +
+          'mehorá bo eksperensia, pa bo sa eksaktamente kon nos ta traha.',
+        'E polítika di privasidat akí ta konta pa e servisionan di Pay Less ' +
+          'Shop More. Bo mester ta konsiente ku Pay Less Shop More no ta ' +
+          'responsabel pa e polítika di privasidat di otro sitio of fuente. ' +
+          'Ora bo ta usa e website akí, bo ta indiká ku bo ta aseptá e ' +
+          'polítika di privasidat. Pay Less Shop More ta respetá e privasidat ' +
+          'di tur usuario di su sitio i ta sigurá ku e informashon personal ' +
+          'ku bo ta duna nos ta ser tratá konfidensialmente.',
+      ],
+      sections: {
+        use: {
+          heading: 'Kon nos ta usa e datonan rekohí',
+          services: {
+            heading: 'Uso di nos servisionan',
+            body: [
+              'Ora bo ta registrá pa un di nos servisionan, nos ta pidi bo ' +
+                'dato personal of dato di kompania. E datonan akí ta ser usá ' +
+                'pa por ehekutá e servisio. Nan ta ser guardá riba servidornan ' +
+                'sigurá di Pay Less Shop More of di un tersero. Nos lo no ' +
+                'kombiná e datonan akí ku otro dato personal ku nos tin.',
+            ],
+          },
+          communication: {
+            heading: 'Komunikashon',
+            body: [
+              'Ora bo ta manda nos e-mail of otro mensahe, ta posibel ku nos ' +
+                'ta warda e mensahenan ei. Tin biaha nos ta pidi bo e dato ' +
+                'personal ku ta relevante pa e situashon spesífiko. Esaki ta ' +
+                'pone posibel pa nos trata bo preguntanan i kontestá bo ' +
+                'petishonnan. E datonan ta ser guardá riba servidornan sigurá ' +
+                'di Pay Less Shop More of di un tersero. Nos lo no kombiná e ' +
+                'datonan akí ku otro dato personal ku nos tin.',
+            ],
+          },
+          cookies: {
+            heading: 'Cookies',
+            body: [
+              'Nos ta rekohé dato pa investigashon, pa haña mihó komprendementu ' +
+                'di nos klientenan, di manera ku nos por adaptá nos ' +
+                'servisionan na nan.',
+              'E website akí ta usa ‘cookies’ (archivo di teksto ' +
+                'chikitu ku ta ser poní riba bo kompüter) pa yuda analisá kon ' +
+                'bishitantenan ta usa e sitio. E informashon ku e cookie ta ' +
+                'generá tokante bo uso di e website por ser pasá pa ' +
+                'servidornan sigurá di Pay Less Shop More of di un tersero. ' +
+                'Nos ta usa e informashon akí pa sigui kon bo ta usa e ' +
+                'website, pa traha rapòrt tokante aktividat riba e website i ' +
+                'pa ofresé otro servisio relashoná ku aktividat riba website ' +
+                'i uso di internet.',
+            ],
+          },
+        },
+        purposes: {
+          heading: 'Propósito',
+          body: [
+            'Nos no ta rekohé ni usa informashon pa otro propósito ku esnan ' +
+              'deskribí den e polítika di privasidat akí, sino ku nos a haña ' +
+              'bo pèrmiso pa esei di antemano.',
+          ],
+        },
+        thirdParties: {
+          heading: 'Tersero',
+          body: [
+            'E informashon no ta ser kompartí ku tersero. Den algun kaso e por ' +
+              'ser kompartí interno. Nos empleadonan ta obligá pa respetá e ' +
+              'konfidensialidat di bo datonan.',
+          ],
+        },
+        changes: {
+          heading: 'Kambio',
+          body: [
+            'E deklarashon di privasidat akí ta trahá pa e manera ku e sitio ' +
+              'akí ta ser usá i pa loke e ta ofresé. Kualke ahuste of kambio ' +
+              'na e sitio por hiba na kambio den e deklarashon akí, p’esei ' +
+              'ta rekomendá pa konsulté regularmente.',
+          ],
+        },
+        optOut: {
+          heading: 'Paga cookies',
+          body: [
+            'Mayoria browser ta konfigurá pa aseptá cookies, pero bo por ' +
+              'kambia bo konfigurashon pa nenga tur cookie of pa ser avisá ora ' +
+              'un cookie ta ser mandá. Tin funshon i servisio, tantu riba nos ' +
+              'sitio komo riba otro sitio, ku por no funshoná korektamente ora ' +
+              'cookies ta pagá den bo browser.',
+          ],
+        },
+      },
     },
     footer: {
       tagline:

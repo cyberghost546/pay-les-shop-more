@@ -207,8 +207,22 @@ document for what turning it on costs.
 
 ## Background work and cron
 
-There are no scheduled jobs. Nothing in this project needs Vercel Cron, and
-`vercel.json` deliberately declares none.
+Nothing here runs on Vercel Cron, and `vercel.json` deliberately declares none:
+the work is Django's, so it belongs beside Django on Railway. Three services,
+one repository, one Dockerfile, three start commands.
+
+| Service | Config-as-code path | What it is |
+| --- | --- | --- |
+| `plsm-api` | `railway.json` | gunicorn, and the migrations at start |
+| `plsm-worker` | `railway.worker.json` | the Celery worker |
+| `plsm-report` | `railway.cron.json` | the daily warehouse report |
+
+Each is created the same way: Railway → New → GitHub Repo → this repository,
+then in the service's Settings set **Root Directory** to `backend` and
+**Config-as-code path** to the file in the table. Each file's own `"//"` notes
+list the variables that service needs.
+
+### The worker
 
 Two things run in the background, and both are triggered by something a person
 did rather than by a clock:
@@ -216,11 +230,28 @@ did rather than by a clock:
 - rendering an invoice PDF after it is approved
 - sending the e-mail copy of a notification
 
-Run one worker beside the web process:
-
 ```sh
 celery -A config worker --loglevel=info
 ```
+
+**Set `CELERY_BROKER_URL` on the web service only after the worker exists and
+is consuming.** With a broker set and no worker, every `.delay()` is accepted,
+queued and never run: invoices stay unrendered and the mail never arrives, with
+no error anywhere. Add Redis to the Railway project, share its URL to both
+services as `CELERY_BROKER_URL`, and deploy the worker first.
+
+### The daily report
+
+`warehouse/management/commands/send_warehouse_report.py` e-mails the office the
+previous day's report with a CSV attached. It was written to run on a schedule
+and said so in its docstring, but nothing ran it until `railway.cron.json`
+existed — so before that it went out only when somebody typed it into a shell.
+
+`0 6 * * *`, UTC, because Railway's scheduler has no timezone setting. That is
+07:00 in Amsterdam in winter and 08:00 in summer; both are before the working
+day, which is what matters. Its restart policy is `NEVER` on purpose — a cron
+service is meant to exit, and restarting a failed run re-sends the report to
+everyone it already reached.
 
 If `CELERY_BROKER_URL` is unset, both run inline in the request instead. That
 works and is the fallback a fresh clone uses; it makes whoever pressed Approve

@@ -19,7 +19,8 @@ from datetime import timedelta
 
 from django.db import transaction
 from django.utils import timezone
-from rest_framework import mixins, status as http_status
+from rest_framework import mixins
+from rest_framework import status as http_status
 from rest_framework.decorators import action
 from rest_framework.exceptions import APIException, ValidationError
 from rest_framework.response import Response
@@ -246,7 +247,7 @@ class IntakeSheetViewSet(mixins.CreateModelMixin, StaffViewSet):
             with transaction.atomic():
                 release_sheet(sheet, by=request.user)
         except AlreadyReleased as error:
-            raise SheetLocked(str(error))
+            raise SheetLocked(str(error)) from error
 
         return Response(self.get_serializer(sheet).data)
 
@@ -267,7 +268,7 @@ class IntakeSheetViewSet(mixins.CreateModelMixin, StaffViewSet):
         try:
             sheet.reopen()
         except NotReleased as error:
-            raise SheetLocked(str(error))
+            raise SheetLocked(str(error)) from error
 
         return Response(self.get_serializer(sheet).data)
 

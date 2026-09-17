@@ -56,6 +56,26 @@ export default defineConfig({
       // The interesting numbers are for logic, not for the route table or
       // the entry point.
       exclude: ['src/main.jsx', 'src/test/**', 'src/data/**', '**/*.config.js'],
+      // A ratchet, not a target.
+      //
+      // These sit just under what the suite covers today, so `npm run
+      // coverage` passes now and fails when a change removes tests or lands a
+      // substantial untested module. They are deliberately not round numbers
+      // and deliberately not aspirational: a threshold set above the real
+      // figure is a failing build that everyone learns to ignore, which is
+      // worse than no threshold.
+      //
+      // Raise them when the real figure rises. The line to beat is printed by
+      // the run itself.
+      // A couple of points of headroom under the measured figure rather than
+      // a hair: v8 coverage moves slightly between runs, and a threshold set
+      // to the exact number fails on the run where it does.
+      thresholds: {
+        statements: 34,
+        lines: 34,
+        functions: 46,
+        branches: 69,
+      },
     },
   },
 })

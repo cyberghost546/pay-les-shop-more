@@ -1,0 +1,38 @@
+{
+  "$schema": "https://railway.com/railway.schema.json",
+  "//": [
+    "The daily warehouse report: a third Railway service, same repository, same Dockerfile, run on a schedule instead of continuously.",
+    "",
+    "warehouse/management/commands/send_warehouse_report.py was written to be run this way and its docstring says so, but until now nothing ran it. Either somebody typed it into a shell every morning or the office was not getting the report.",
+    "",
+    "To create it: Railway > New > GitHub Repo > this repository, then in the service's Settings set Root Directory to `backend`, Config-as-code path to `railway.cron.json`, and confirm the Cron Schedule shown below.",
+    "",
+    "Variables it needs: DATABASE_URL, DJANGO_SECRET_KEY, and the EMAIL_* set with DJANGO_FROM_EMAIL. Without the EMAIL_* set the command succeeds, sends to the console backend, and reports nothing to anybody -- there is no error to notice.",
+    "",
+    "It does not need CELERY_BROKER_URL: the command builds and sends the mail itself rather than queueing it, which is right for a process whose whole life is this one job."
+  ],
+  "build": {
+    "builder": "DOCKERFILE",
+    "dockerfilePath": "Dockerfile"
+  },
+  "deploy": {
+    "//schedule": [
+      "06:00 UTC daily. The report is for the office to read first thing.",
+      "",
+      "UTC, because Railway's scheduler is UTC and has no timezone setting. That is 07:00 in Amsterdam in winter and 08:00 in summer -- the hour drifts twice a year and there is no way to pin it from here. Both are before the working day, which is what actually matters; if the summer hour becomes a problem, move it to 05:00 and accept 06:00 in winter.",
+      "",
+      "--yesterday, not today: a report generated at six in the morning about the day it is generated on covers nothing. This is the completed previous day, which is the number the office wants."
+    ],
+    "cronSchedule": "0 6 * * *",
+    "startCommand": "python manage.py send_warehouse_report --yesterday",
+    "//restartPolicy": [
+      "NEVER, and this is the one that matters most on a scheduled service.",
+      "",
+      "A cron service is expected to exit. With ON_FAILURE, a run that fails -- SMTP refusing a connection, say -- is restarted immediately, and each restart sends the report again to everyone it already reached before the failure. The office gets the same mail repeatedly and the cause looks like a mail loop rather than one bad send.",
+      "",
+      "A missed report is visible the next morning. A duplicated one is noise that hides the next real problem."
+    ],
+    "restartPolicyType": "NEVER",
+    "//healthcheck": "Deliberately absent, as with the worker: this process binds no port and is meant to finish."
+  }
+}

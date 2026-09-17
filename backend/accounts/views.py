@@ -10,8 +10,8 @@ from django.db import transaction
 from django.db.models import ProtectedError, Q
 from django.http import FileResponse, Http404
 from django.middleware.csrf import get_token
-from django.views.decorators.csrf import ensure_csrf_cookie
 from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import ensure_csrf_cookie
 from rest_framework import generics, mixins, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import (
@@ -25,7 +25,7 @@ from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 
 from .emails import send_password_reset
-from .models import Address, Package, PackageDocument, ShipmentLocked
+from .models import Address, Package, PackageDocument
 from .serializers import (
     AccountDeleteSerializer,
     AddressSerializer,
@@ -485,7 +485,7 @@ class PackageDocumentViewSet(
             # The same answer whether the parcel does not exist or belongs to
             # somebody else. Telling those two apart would turn this into a
             # way to discover which tracking numbers are real.
-            raise ValidationError({"package": "No such shipment."})
+            raise ValidationError({"package": "No such shipment."}) from None
 
     def perform_destroy(self, instance):
         """Remove an upload, and the file with it.
@@ -548,7 +548,7 @@ class PackageDocumentViewSet(
                 # reassign it to somebody else.
                 target = Package.objects.get(pk=package_id)
             except (Package.DoesNotExist, ValueError, TypeError):
-                raise ValidationError({"package": "No such shipment."})
+                raise ValidationError({"package": "No such shipment."}) from None
 
             if target.locked:
                 raise ShipmentChangeRefused(
@@ -576,8 +576,8 @@ class PackageDocumentViewSet(
 
         try:
             handle = document.file.open("rb")
-        except FileNotFoundError:
-            raise Http404("This document is missing.")
+        except FileNotFoundError as error:
+            raise Http404("This document is missing.") from error
 
         # as_attachment, so a browser saves it under a name that means
         # something rather than rendering it in a tab named by its storage

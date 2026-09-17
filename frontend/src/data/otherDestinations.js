@@ -1,8 +1,8 @@
 // src/data/otherDestinations.js
 //
-// Everywhere else we ship, beyond the five islands that have pages of their
-// own. One flat list, rendered in three columns and read down each column in
-// turn, the way an alphabetical list is meant to be read.
+// Everywhere else we ship, beyond the six destinations that have pages of
+// their own. One flat list, rendered in three columns and read down each
+// column in turn, the way an alphabetical list is meant to be read.
 //
 // Two names per country rather than one, because half of them differ between
 // the languages the site is written in: Brazilië and Brazil, Kaaimaneilanden
@@ -26,7 +26,9 @@ export const OTHER_DESTINATIONS = [
   { nl: 'Chili', en: 'Chile' },
   { nl: 'Colombia', en: 'Colombia' },
   { nl: 'Costa Rica', en: 'Costa Rica' },
-  { nl: 'Dominicaanse Republiek', en: 'Dominican Republic' },
+  // Not "Dominicaanse Republiek": it has a page of its own now, so it belongs
+  // in ./destinations.js and listing it here as well would offer the reader
+  // the same country twice, once as a link and once as plain type.
   { nl: 'Ecuador', en: 'Ecuador' },
   { nl: 'El Salvador', en: 'El Salvador' },
   { nl: 'Grenada', en: 'Grenada' },
@@ -80,7 +82,7 @@ export function destinationNames(language) {
  * D on one line, which is not how anybody scans a list for one name.
  *
  * Kept out of the component because it is the part with an off-by-one in it:
- * 38 names in three columns is 13, 13, 12, not 12, 12, 14.
+ * 37 names in three columns is 13, 13, 11, not 12, 12, 13.
  */
 export function inColumns(names, count = 3) {
   const perColumn = Math.ceil(names.length / count);

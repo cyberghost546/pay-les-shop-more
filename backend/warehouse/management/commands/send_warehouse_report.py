@@ -33,7 +33,7 @@ class Command(BaseCommand):
             try:
                 day = report.parse_date(options.get("date") or "")
             except ValueError:
-                raise CommandError("--date must be YYYY-MM-DD.")
+                raise CommandError("--date must be YYYY-MM-DD.") from None
 
         addresses = office_recipients()
         if not addresses:

@@ -1,0 +1,34 @@
+{
+  "$schema": "https://railway.com/railway.schema.json",
+  "//": [
+    "The Celery worker: a second Railway service, built from this same repository and this same Dockerfile, started differently.",
+    "",
+    "It has to be the same image as the web service. A task is queued by name, and the worker resolves that name in its own code -- a worker running an older build either does not know the task or runs the old version of it, and neither failure says so out loud.",
+    "",
+    "To create it: Railway > New > GitHub Repo > this repository, then in the service's Settings set Root Directory to `backend` and Config-as-code path to `railway.worker.json`.",
+    "",
+    "Variables it needs, all shared with the web service: DATABASE_URL, DJANGO_SECRET_KEY, CELERY_BROKER_URL, REDIS_URL, the EMAIL_* set, DJANGO_FRONTEND_URL, and the AWS_* set if object storage is on. A worker with a different DJANGO_SECRET_KEY renders invoices nobody can download; a worker with no EMAIL_* silently drops every notification it was given.",
+    "",
+    "DJANGO_ALLOWED_HOSTS is not needed -- nothing makes an HTTP request of this process.",
+    "",
+    "Do not set CELERY_BROKER_URL on the web service until this service exists and is consuming. With a broker set and no worker, every .delay() is accepted, queued, and never runs: invoices stay unrendered and the mail never arrives, with no error anywhere."
+  ],
+  "build": {
+    "builder": "DOCKERFILE",
+    "dockerfilePath": "Dockerfile"
+  },
+  "deploy": {
+    "//": [
+      "Overrides the image's CMD, which is entrypoint.sh -- migrate, then gunicorn. The worker must do neither. Migrations belong to exactly one process, and two processes racing to apply the same migration at deploy time is how a half-migrated database happens.",
+      "",
+      "--concurrency 2 rather than the default, which is one process per CPU. The work here is rendering PDFs and waiting on SMTP, and each child holds its own database connection; on a small plan the default opens more Postgres connections than the tier allows and the worker dies on connect.",
+      "",
+      "--max-tasks-per-child recycles a worker process periodically. ReportLab holds onto memory across renders, and a long-lived child on a 512 MB container is eventually killed by the OOM reaper mid-task."
+    ],
+    "startCommand": "celery -A config worker --loglevel=info --concurrency 2 --max-tasks-per-child 100",
+    "//restartPolicy": "A worker that exits has lost its broker connection or been OOM-killed. Both are recovered by starting again; neither is recovered by staying down.",
+    "restartPolicyType": "ON_FAILURE",
+    "restartPolicyMaxRetries": 10,
+    "//healthcheck": "Deliberately absent. A worker binds no port, and a health check against one that does not exist fails the deploy every time."
+  }
+}

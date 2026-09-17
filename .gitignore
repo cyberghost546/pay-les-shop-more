@@ -17,3 +17,7 @@ Thumbs.db
 
 # Build output, produced by `npm run build` in frontend/.
 frontend/dist/
+
+# Written by `npm run coverage` in frontend/. A report, regenerated on
+# every run, not something to review in a diff.
+frontend/coverage/

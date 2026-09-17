@@ -25,6 +25,8 @@ import containerShip1600 from './container-ship-1600.webp';
 import curacaoCentraal480 from './Curacao-centraal-480.webp';
 import curacaoCentraal960 from './Curacao-centraal-960.webp';
 import curacaoCentraal1500 from './Curacao-centraal-1500.webp';
+import dominicanRepublicCentraal480 from './dominican-republic-centraal-480.webp';
+import dominicanRepublicCentraal738 from './dominican-republic-centraal-738.webp';
 import portHavenShip480 from './port-haven-ship-480.webp';
 import portHavenShip554 from './port-haven-ship-554.webp';
 import stMaartenCentraal480 from './St-Maarten-centraal-480.webp';
@@ -98,6 +100,17 @@ export const curacaoCentraal = {
   small: curacaoCentraal480,
   width: 1500,
   height: 500,
+};
+
+/** dominican-republic-centraal.jpeg — 738×369 at full size. */
+export const dominicanRepublicCentraal = {
+  src: dominicanRepublicCentraal738,
+  srcSet: `${dominicanRepublicCentraal480} 480w, ${dominicanRepublicCentraal738} 738w`,
+  // For a CSS background, which cannot express a srcset. Use it
+  // where the image is painted small, such as a card thumbnail.
+  small: dominicanRepublicCentraal480,
+  width: 738,
+  height: 369,
 };
 
 /** port-haven-ship.jpeg — 554×361 at full size. */

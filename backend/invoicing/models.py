@@ -15,12 +15,13 @@ way in that skips it.
 
 import logging
 
-from accounts.events import record_event
-from accounts.models import PackageEvent
 from django.conf import settings
 from django.db import models, transaction
 from django.db.models import Q
 from django.utils import timezone
+
+from accounts.events import record_event
+from accounts.models import PackageEvent
 
 logger = logging.getLogger(__name__)
 

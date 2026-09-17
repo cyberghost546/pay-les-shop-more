@@ -1,0 +1,79 @@
+# Checks the deployed site, not the code.
+#
+# CI proves the code builds and the tests pass. It cannot prove the thing that
+# actually breaks here, which is the seam: the site is on Vercel, Django is on
+# Railway, and a rewrite in vercel.json is the only thing joining them. That
+# rewrite is a hostname in a JSON file. Nothing rebuilds when the API moves,
+# nothing fails when it is wrong, and the symptom -- an API call answered with
+# the React shell, so the app parses HTML as JSON -- looks like a frontend bug
+# to everyone who sees it first.
+#
+# So: ask the live site the same questions a browser would.
+#
+# Runs after a deploy (dispatched by hand, since Vercel and Railway deploy on
+# their own schedule and neither reports back here), and twice a day to catch
+# the case where nothing was deployed and something broke anyway -- a
+# certificate expiring, a free-tier database that was deleted, a service that
+# stopped waking up.
+
+name: Smoke
+
+on:
+  workflow_dispatch:
+    inputs:
+      site:
+        description: 'Origin to check (default: the production site)'
+        required: false
+        default: ''
+  schedule:
+    # 06:20 and 18:20 UTC. Not on the hour: GitHub's scheduler is busiest then
+    # and delays runs by up to a quarter of an hour.
+    - cron: '20 6,18 * * *'
+
+# Never more than one of these at a time, and a manual run is worth more than
+# a scheduled one -- it is somebody watching a deploy.
+concurrency:
+  group: smoke
+  cancel-in-progress: false
+
+jobs:
+  smoke:
+    name: Live site
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      # The deployment origin, which is NOT the canonical origin in
+      # frontend/scripts/routes.js, and that distinction is the reason this is
+      # written out here rather than read from the route table.
+      #
+      # routes.js says https://paylesshopmore.com, because that is the address
+      # the site's canonical links and social cards claim. As of this being
+      # written that domain is answered by a different, older site -- Apache
+      # and PHP, no /api, no SPA fallback -- and this React build is served
+      # only from its Vercel deployment URL. Pointing the smoke test at the
+      # canonical origin would fail every run against a site nobody here
+      # deploys.
+      #
+      # When the domain is moved onto this deployment, change this to the
+      # canonical origin and the two become the same thing again.
+      - name: Resolve the origin to check
+        id: target
+        env:
+          REQUESTED: ${{ inputs.site }}
+        run: |
+          if [ -n "$REQUESTED" ]; then
+            echo "site=$REQUESTED" >> "$GITHUB_OUTPUT"
+          else
+            echo "site=https://pay-les-shop-more.vercel.app" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Check
+        env:
+          SITE: ${{ steps.target.outputs.site }}
+        run: node scripts/smoke.mjs "$SITE"

@@ -8,28 +8,25 @@ once, on a shared base class, rather than remembered per view.
 
 import re
 from datetime import timedelta
-
 from pathlib import Path
 
 from django.contrib.auth import get_user_model
 from django.db import transaction
 from django.db.models import Count, DecimalField, OuterRef, Q, Subquery, Sum
-from django.db.models.functions import Coalesce
-from django.db.models.functions import TruncDate
+from django.db.models.functions import Coalesce, TruncDate
 from django.http import FileResponse, Http404
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
-from rest_framework import mixins, status as http_status, viewsets
+from rest_framework import mixins, viewsets
+from rest_framework import status as http_status
 from rest_framework.decorators import action
-from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.exceptions import APIException, PermissionDenied, ValidationError
+from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from accounts.emails import send_account_invite
 from accounts.events import record_event
-from accounts.warehouse import follow_status
-from accounts.views import ShipmentChangeRefused
 from accounts.models import (
     InvalidShipmentTransition,
     Package,
@@ -37,6 +34,8 @@ from accounts.models import (
     PackageEvent,
     ShipmentLocked,
 )
+from accounts.views import ShipmentChangeRefused
+from accounts.warehouse import follow_status
 from bookings.models import Booking
 from bookings.serializers import StaffBookingSerializer
 from enquiries.models import ContactMessage, QuoteRequest
@@ -249,8 +248,8 @@ class QuoteRequestViewSet(StaffViewSet):
 
         try:
             handle = quote.file.open("rb")
-        except FileNotFoundError:
-            raise Http404("This attachment is missing.")
+        except FileNotFoundError as error:
+            raise Http404("This attachment is missing.") from error
 
         return FileResponse(
             handle,
@@ -377,7 +376,7 @@ class PackageViewSet(StaffViewSet):
         try:
             package.check_transition(status)
         except InvalidShipmentTransition as exc:
-            raise ShipmentChangeRefused(str(exc))
+            raise ShipmentChangeRefused(str(exc)) from exc
 
         if status == Package.Status.IN_TRANSIT and package.shipped_at is None:
             stamps["shipped_at"] = timezone.now()
@@ -427,7 +426,7 @@ class PackageViewSet(StaffViewSet):
             # atomic block is gone with the exception, so the status
             # change, the event, the invoice and the queued e-mail all
             # go back together and the caller is told why.
-            raise ShipmentChangeRefused(str(exc))
+            raise ShipmentChangeRefused(str(exc)) from exc
 
 
 class BookingViewSet(StaffViewSet):
@@ -681,7 +680,7 @@ class InvoiceViewSet(
                         Invoice.objects.filter(pk=invoice.pk).update(pdf=stored)
                         invoice.refresh_from_db()
         except InvalidInvoiceTransition as exc:
-            raise InvoiceTransitionRefused(str(exc))
+            raise InvoiceTransitionRefused(str(exc)) from exc
 
         return Response(
             StaffInvoiceSerializer(
@@ -706,7 +705,7 @@ class InvoiceViewSet(
                 locked = Invoice.objects.select_for_update().get(pk=invoice.pk)
                 apply(locked)
         except InvalidInvoiceTransition as exc:
-            raise InvoiceTransitionRefused(str(exc))
+            raise InvoiceTransitionRefused(str(exc)) from exc
 
         return Response(self.get_serializer(self.base_queryset().get(pk=invoice.pk)).data)
 
@@ -734,11 +733,11 @@ class InvoiceViewSet(
 
         try:
             handle = invoice.pdf.open("rb")
-        except FileNotFoundError:
+        except FileNotFoundError as error:
             # A row pointing at bytes that are not there — a media directory
             # restored without its contents. A 404, not the 500 that opening a
             # missing file would otherwise produce.
-            raise Http404("This invoice's document is missing.")
+            raise Http404("This invoice's document is missing.") from error
 
         # Inline, unlike the customer route, which sends as_attachment so the
         # document lands in a downloads folder under a name that means
@@ -868,7 +867,7 @@ class InvoiceViewSet(
             # file this request wrote is not on any row, so it is removed
             # rather than left behind as an orphan nothing points at.
             invoice.pdf.storage.delete(stored)
-            raise InvoiceTransitionRefused(str(exc))
+            raise InvoiceTransitionRefused(str(exc)) from exc
 
         # Only now that the new document is recorded. Guarded, because storage
         # hands back the name it actually used — if something was already

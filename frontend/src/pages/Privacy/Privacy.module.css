@@ -1,0 +1,132 @@
+/* src/pages/Privacy/Privacy.module.css */
+
+.page {
+  padding-bottom: 4rem;
+}
+
+/* Top band: the same dark panel with the diagonal streaks the other inner
+   pages open with, minus the photo. There is no picture of a privacy policy
+   worth loading, and the band still has to look like it belongs to the site. */
+.banner {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 1rem 1rem 0;
+}
+
+.bannerInner {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 2.5rem 2rem;
+  box-sizing: border-box;
+  overflow: hidden;
+  background: #05070a;
+  background-image:
+    linear-gradient(115deg, rgba(56, 160, 220, 0.55) 0 6%, transparent 6%),
+    linear-gradient(115deg, rgba(56, 160, 220, 0.3) 0 11%, transparent 11%),
+    linear-gradient(115deg, rgba(56, 160, 220, 0.16) 0 18%, transparent 18%);
+}
+
+.title {
+  margin: 0;
+  color: #ffffff;
+  font-size: clamp(1.8rem, 4vw, 3rem);
+  font-weight: 800;
+  line-height: 1.05;
+}
+
+.rule {
+  width: min(240px, 60%);
+  height: 1px;
+  margin: 1.25rem 0 0.9rem;
+  border: 0;
+  background: rgba(255, 255, 255, 0.45);
+}
+
+.breadcrumb {
+  margin: 0;
+  color: #ffffff;
+  font-size: 0.95rem;
+}
+
+.crumbLink {
+  color: #38a0dc;
+  text-decoration: none;
+}
+
+.crumbLink:hover {
+  text-decoration: underline;
+}
+
+/* The text itself. Capped well short of the band above it: this is a page
+   somebody actually has to read, and a 1400px line of 10pt legal prose is one
+   nobody finishes. */
+.article {
+  max-width: 48rem;
+  margin: 0 auto;
+  padding: 2.5rem 1rem 0;
+  color: #374151;
+  font-size: 1rem;
+  line-height: 1.75;
+}
+
+.lead {
+  margin: 0 0 1.1rem;
+  font-size: 1.05rem;
+  color: #1f2937;
+}
+
+.section {
+  margin-top: 2.25rem;
+}
+
+.heading {
+  margin: 0 0 0.75rem;
+  font-size: clamp(1.25rem, 2.4vw, 1.5rem);
+  font-weight: 800;
+  line-height: 1.25;
+  color: #111827;
+}
+
+.subheading {
+  margin: 1.75rem 0 0.6rem;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+.paragraph {
+  margin: 0 0 1rem;
+}
+
+.contact {
+  margin: 2.5rem 0 0;
+  padding-top: 1.5rem;
+  border-top: 1px solid #e5e7eb;
+  color: #4b5563;
+}
+
+.contactLink {
+  color: #2563eb;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.contactLink:hover {
+  text-decoration: underline;
+}
+
+.contactLink:focus-visible {
+  outline: 3px solid #2563eb;
+  outline-offset: 3px;
+}
+
+@media (max-width: 640px) {
+  .bannerInner {
+    padding: 1.75rem 1.25rem;
+  }
+
+  .article {
+    padding-top: 2rem;
+  }
+}

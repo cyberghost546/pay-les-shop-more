@@ -474,7 +474,7 @@ class StaffPackageSerializer(_StaffPackageInvoiceMixin, serializers.ModelSeriali
             try:
                 package.check_transition(attrs["status"])
             except InvalidShipmentTransition as exc:
-                raise serializers.ValidationError({"status": str(exc)})
+                raise serializers.ValidationError({"status": str(exc)}) from exc
 
         if package.locked:
             # Whatever else the request carries, a shipment that has left is
@@ -486,7 +486,7 @@ class StaffPackageSerializer(_StaffPackageInvoiceMixin, serializers.ModelSeriali
             }
             if frozen:
                 raise serializers.ValidationError(
-                    {field: package.lock_reason for field in frozen}
+                    dict.fromkeys(frozen, package.lock_reason)
                 )
 
         return attrs

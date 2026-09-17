@@ -63,8 +63,8 @@ class InvoiceViewSet(
 
         try:
             handle = invoice.pdf.open("rb")
-        except FileNotFoundError:
-            raise Http404("This invoice's document is missing.")
+        except FileNotFoundError as error:
+            raise Http404("This invoice's document is missing.") from error
 
         # as_attachment, so a browser saves it under a name that means something
         # rather than rendering it in a tab called by its storage path.

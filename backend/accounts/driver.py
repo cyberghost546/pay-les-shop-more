@@ -14,7 +14,8 @@ from django.db import transaction
 from django.db.models import Q
 from django.http import FileResponse, Http404
 from django.utils import timezone
-from rest_framework import mixins, serializers, status as http_status, viewsets
+from rest_framework import mixins, serializers, viewsets
+from rest_framework import status as http_status
 from rest_framework.decorators import action
 from rest_framework.exceptions import APIException, ValidationError
 from rest_framework.response import Response
@@ -206,6 +207,6 @@ class DeliveryViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets
             raise Http404("No delivery photo.")
         try:
             handle = confirmation.photo.open("rb")
-        except FileNotFoundError:
-            raise Http404("The delivery photo is missing.")
+        except FileNotFoundError as error:
+            raise Http404("The delivery photo is missing.") from error
         return FileResponse(handle, content_type=confirmation.photo_content_type or "image/jpeg")

@@ -14,7 +14,6 @@ from django.db import models
 from django.db.models import Q
 from django.utils import timezone
 
-
 # Numbers are written a dozen ways across the islands and the Netherlands
 # (+599 9 123 4567, 010-7670371, (599) 9123456), so this only checks the shape
 # is plausible. The count of digits is the part worth enforcing.

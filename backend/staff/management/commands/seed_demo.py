@@ -218,10 +218,8 @@ class Command(BaseCommand):
 
         self.stdout.write(
             self.style.SUCCESS(
-                "Seeded {} customers, {} packages, {} quote requests and "
-                "{} messages.".format(
-                    len(customers), len(PACKAGES), len(QUOTES), len(MESSAGES)
-                )
+                f"Seeded {len(customers)} customers, {len(PACKAGES)} packages, {len(QUOTES)} quote requests and "
+                f"{len(MESSAGES)} messages."
             )
         )
         self.stdout.write("Open http://localhost:5173/dashboard as a staff account.")

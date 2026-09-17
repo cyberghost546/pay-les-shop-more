@@ -5,7 +5,10 @@ import reactRefresh from 'eslint-plugin-react-refresh'
 import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig([
-  globalIgnores(['dist']),
+  // dist is the build; coverage is written by `npm run coverage` and now by
+  // CI, and it ships a copy of istanbul's own reporter assets -- linting those
+  // reports problems in somebody else's minified JavaScript.
+  globalIgnores(['dist', 'coverage']),
   {
     files: ['**/*.{js,jsx}'],
     extends: [

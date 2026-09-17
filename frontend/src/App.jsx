@@ -28,6 +28,7 @@ const ForgotPassword = lazy(
   () => import('./pages/PasswordReset/ForgotPassword'),
 );
 const ResetPassword = lazy(() => import('./pages/PasswordReset/ResetPassword'));
+const Privacy = lazy(() => import('./pages/Privacy/Privacy'));
 const NotFound = lazy(() => import('./pages/NotFound/NotFound'));
 
 // The staff dashboard. Lazy like the rest, which matters more here than
@@ -120,6 +121,8 @@ export default function App() {
             <Route path="/booking" element={<Booking />} />
             <Route path="/services" element={<Services />} />
             <Route path="/contact" element={<Contact />} />
+            {/* Linked from the footer of every page on the site. */}
+            <Route path="/privacy" element={<Privacy />} />
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
             {/* The login page has linked here all along; until now it
