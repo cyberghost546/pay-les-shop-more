@@ -116,3 +116,31 @@ class QuoteAttachmentTests(APITestCase):
 
         self.assertEqual(row["file_url"], self.url())
         self.assertNotIn("/media/", row["file_url"])
+
+    def test_the_row_names_the_attachment(self):
+        """The detail panel says what the document is before it is fetched."""
+        self.client.force_authenticate(self.staff)
+
+        row = self.client.get(
+            reverse("staff-quote-detail", kwargs={"pk": self.quote.pk})
+        ).data
+
+        # The stored name carries the upload directory, which is ours rather
+        # than the visitor's, so only the last segment is published.
+        self.assertEqual(row["file_name"], "receipt.pdf")
+
+    def test_a_quote_with_no_attachment_names_nothing(self):
+        bare = QuoteRequest.objects.create(
+            destination="curacao",
+            first_name="Mary",
+            last_name="Jones",
+            email="mary@example.com",
+        )
+        self.client.force_authenticate(self.staff)
+
+        row = self.client.get(
+            reverse("staff-quote-detail", kwargs={"pk": bare.pk})
+        ).data
+
+        self.assertIsNone(row["file_name"])
+        self.assertIsNone(row["file_url"])

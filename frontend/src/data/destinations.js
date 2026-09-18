@@ -16,9 +16,6 @@ import {
   arubaCentraal,
   bonaireCentraal,
   curacaoCentraal,
-  dominicanRepublicCentraal,
-  stMaartenCentraal,
-  surinameCentraal,
 } from '../images/optimized/photos';
 
 // `flagMap` is the island drawn in its own flag, on a transparent ground. A
@@ -32,9 +29,6 @@ import {
 import arubaFlagMap from '../images/Flag_map_of_Aruba.webp';
 import bonaireFlagMap from '../images/Flag_map_of_Bonaire.png';
 import curacaoFlagMap from '../images/Flag_map_of_Curacao.webp';
-import dominicanRepublicFlagMap from '../images/Flag_map_of_the_Dominican_Republic.webp';
-import stMaartenFlagMap from '../images/Flag_map_of_Sint_Maarten.webp';
-import surinameFlagMap from '../images/Flag_map_of_Suriname.webp';
 
 export const DESTINATIONS = [
   {
@@ -66,40 +60,6 @@ export const DESTINATIONS = [
     transitDays: 21,
     mapX: 232,
     mapY: 300,
-  },
-  {
-    slug: 'dominican-republic',
-    nameKey: 'destinations.dominicanRepublic',
-    hero: dominicanRepublicCentraal,
-    flagMap: dominicanRepublicFlagMap,
-    port: 'Santo Domingo',
-    transitDays: 24,
-    // North-west of Sint Maarten and north of Aruba, which is where the
-    // country actually sits relative to the other five. Nudged off Aruba's
-    // column so the two labels do not stack: "Dominican Republic" is the
-    // longest label on the map and it is drawn centred above its pin.
-    mapX: 196,
-    mapY: 240,
-  },
-  {
-    slug: 'sint-maarten',
-    nameKey: 'destinations.saintMartin',
-    hero: stMaartenCentraal,
-    flagMap: stMaartenFlagMap,
-    port: 'Philipsburg',
-    transitDays: 18,
-    mapX: 268,
-    mapY: 268,
-  },
-  {
-    slug: 'suriname',
-    nameKey: 'destinations.suriname',
-    hero: surinameCentraal,
-    flagMap: surinameFlagMap,
-    port: 'Paramaribo',
-    transitDays: 28,
-    mapX: 300,
-    mapY: 348,
   },
 ];
 

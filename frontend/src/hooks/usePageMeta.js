@@ -29,7 +29,7 @@ const DEFAULT_TITLE = `${SITE_NAME} — Shop and ship to the Caribbean`;
 const DEFAULT_DESCRIPTION =
   'Order from Dutch webshops and ship to the Caribbean. We gather your ' +
   'parcels in one place and you follow every shipment to your door — ' +
-  'Aruba, Bonaire, Curaçao, Sint Maarten and Suriname.';
+  'Aruba, Bonaire and Curaçao.';
 
 /** Set the content of a <meta> by name, creating it if the page has none. */
 function setMetaByName(name, content) {

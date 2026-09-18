@@ -117,7 +117,23 @@ export default function Messages() {
                   return (
                     <tr
                       key={message.id}
-                      className={message.handled ? undefined : styles.rowUnhandled}
+                      className={[
+                        styles.rowOpens,
+                        message.handled ? '' : styles.rowUnhandled,
+                        isOpen ? styles.rowOpen : '',
+                      ]
+                        .filter(Boolean)
+                        .join(' ')}
+                      // Anywhere on the row opens the message, as on the
+                      // bookings and quotes tables. A click that landed on the
+                      // mailto or on "Mark handled" is that control's own, so
+                      // those are let through rather than swallowed.
+                      onClick={(event) => {
+                        if (event.target.closest('a, button, select, input, label')) {
+                          return;
+                        }
+                        toggle(message.id);
+                      }}
                     >
                       <td>
                         <div className={styles.primaryCell}>{message.name}</div>
@@ -141,12 +157,16 @@ export default function Messages() {
                         {/* Clamped to two lines by default; the whole thing is
                             one click away. Never dangerouslySetInnerHTML — a
                             stranger wrote this text. */}
-                        <div className={isOpen ? undefined : styles.excerpt}>
+                        {/* Open, it keeps the sender's own line breaks: a
+                            message typed in paragraphs is hard to read run
+                            together into one block. */}
+                        <div className={isOpen ? styles.messageBody : styles.excerpt}>
                           {message.message}
                         </div>
                         <button
                           type="button"
                           className={styles.linkButton}
+                          aria-expanded={isOpen}
                           onClick={() => toggle(message.id)}
                         >
                           {isOpen ? 'Show less' : 'Read all'}

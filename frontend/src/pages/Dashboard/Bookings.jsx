@@ -5,7 +5,7 @@ import Loading from '../../components/Loading/Loading';
 import ConnectionError from '../../components/ConnectionError/ConnectionError';
 import { BOOKING_STATUSES, listBookings, updateBooking } from '../../api/staff';
 import { useCollection } from './useCollection';
-import { formatDate, formatMoney } from './format';
+import { formatDate, formatDateTime, formatMoney } from './format';
 import {
   Banner,
   Empty,
@@ -43,6 +43,7 @@ function OfficeFields({ booking, onSave, busy }) {
     volume_m3: booking.volume_m3 ?? '',
     weight_kg: booking.weight_kg ?? '',
     packing_quality: booking.packing_quality ?? '',
+    office_notes: booking.office_notes ?? '',
   });
 
   const dirty = Object.entries(draft).some(
@@ -107,6 +108,21 @@ function OfficeFields({ booking, onSave, busy }) {
           </select>
         </label>
       </div>
+
+      {/* The counter's own note about the booking. Writable by the office and
+          never shown to the sender, so it is the place for "rang, no answer"
+          and "crate re-taped" — the things the four boxes above have no
+          column for. */}
+      <label className={styles.officeField}>
+        <span className={styles.officeLabel}>Office notes</span>
+        <textarea
+          className={styles.officeInput}
+          rows={3}
+          value={draft.office_notes}
+          onChange={(event) => set('office_notes', event.target.value)}
+          placeholder="Only the office sees this."
+        />
+      </label>
 
       <button
         type="button"
@@ -205,7 +221,24 @@ export default function Bookings() {
                 {list.rows.map((booking) => (
                   <tr
                     key={booking.id}
-                    className={booking.status === 'new' ? styles.rowUnhandled : undefined}
+                    className={[
+                      styles.rowOpens,
+                      booking.status === 'new' ? styles.rowUnhandled : '',
+                      openId === booking.id ? styles.rowOpen : '',
+                    ]
+                      .filter(Boolean)
+                      .join(' ')}
+                    // Anywhere on the row opens it, because the whole row is
+                    // what somebody is looking at when they decide they want
+                    // to see the rest of it. A click that landed on the
+                    // mailto, the tel or the status select is that control's
+                    // own, so those are let through rather than swallowed.
+                    onClick={(event) => {
+                      if (event.target.closest('a, button, select, input, label')) {
+                        return;
+                      }
+                      setOpenId(openId === booking.id ? null : booking.id);
+                    }}
                   >
                     <td>
                       <div className={styles.primaryCell}>
@@ -214,9 +247,13 @@ export default function Bookings() {
                       <div className={styles.mutedCell}>
                         {booking.freight_display} · {booking.destination_label}
                       </div>
+                      {/* Kept, and not only as a label for the row: this is
+                          the control somebody reaches on a keyboard, where
+                          there is no row to click. */}
                       <button
                         type="button"
                         className={styles.linkButton}
+                        aria-expanded={openId === booking.id}
                         onClick={() =>
                           setOpenId(openId === booking.id ? null : booking.id)
                         }
@@ -298,13 +335,146 @@ export default function Bookings() {
                 onSave={(changes) => save(booking, changes)}
               />
 
+              {/* The rest of the sheet, in the order the form asks for it:
+                  who is sending, who is receiving, what is in the shipment,
+                  and what they signed. Grouped rather than one long grid —
+                  a sender's postcode and a recipient's postcode next to each
+                  other in an unbroken run of fields is how they get confused
+                  for one another. */}
+              <p className={styles.detailGroupHead}>The booking</p>
               <dl className={styles.detailGrid}>
                 <div>
-                  <dt>Sender address</dt>
+                  <dt>Reference</dt>
+                  <dd className={styles.mono}>
+                    {booking.shipping_number || `#${booking.id}`}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Status</dt>
+                  <dd>{booking.status_display}</dd>
+                </div>
+                <div>
+                  <dt>Freight</dt>
+                  <dd>{booking.freight_display}</dd>
+                </div>
+                <div>
+                  <dt>Destination</dt>
+                  {/* destination_other is what they typed when the list of
+                      islands did not have theirs, so it is the answer and not
+                      a footnote to one. */}
+                  <dd>{booking.destination_other || booking.destination_label}</dd>
+                </div>
+                <div>
+                  <dt>Received</dt>
+                  <dd>{formatDateTime(booking.created_at)}</dd>
+                </div>
+                <div>
+                  <dt>Last changed</dt>
+                  <dd>{formatDateTime(booking.updated_at)}</dd>
+                </div>
+                <div>
+                  <dt>Filled in in</dt>
+                  <dd>
+                    {booking.language ? booking.language.toUpperCase() : '—'}
+                  </dd>
+                </div>
+              </dl>
+
+              <p className={styles.detailGroupHead}>Sender</p>
+              <dl className={styles.detailGrid}>
+                <div>
+                  <dt>Name</dt>
+                  <dd>{booking.sender_name}</dd>
+                </div>
+                <div>
+                  <dt>E-mail</dt>
+                  <dd>
+                    <a className={styles.link} href={`mailto:${booking.sender_email}`}>
+                      {booking.sender_email}
+                    </a>
+                  </dd>
+                </div>
+                <div>
+                  <dt>Phone</dt>
+                  <dd>
+                    {/* tel:, because this is the number staff ring when
+                        something about the booking needs asking. */}
+                    <a className={styles.link} href={`tel:${booking.sender_phone}`}>
+                      {booking.sender_phone}
+                    </a>
+                  </dd>
+                </div>
+                <div>
+                  <dt>Address</dt>
                   <dd>
                     {booking.sender_address}
                     <br />
                     {booking.sender_postal_code} {booking.sender_city}
+                  </dd>
+                </div>
+              </dl>
+
+              <p className={styles.detailGroupHead}>Recipient</p>
+              <dl className={styles.detailGrid}>
+                <div>
+                  <dt>Name</dt>
+                  <dd>{booking.recipient_name}</dd>
+                </div>
+                <div>
+                  <dt>E-mail</dt>
+                  <dd>
+                    {/* Optional on the form: a recipient on an island often
+                        has no e-mail address to give. */}
+                    {booking.recipient_email ? (
+                      <a
+                        className={styles.link}
+                        href={`mailto:${booking.recipient_email}`}
+                      >
+                        {booking.recipient_email}
+                      </a>
+                    ) : (
+                      '—'
+                    )}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Phone</dt>
+                  <dd>
+                    <a className={styles.link} href={`tel:${booking.recipient_phone}`}>
+                      {booking.recipient_phone}
+                    </a>
+                  </dd>
+                </div>
+                <div>
+                  <dt>Address</dt>
+                  <dd>
+                    {booking.recipient_address}
+                    <br />
+                    {booking.recipient_city}
+                  </dd>
+                </div>
+              </dl>
+
+              <p className={styles.detailGroupHead}>Consignment</p>
+              <dl className={styles.detailGrid}>
+                <div>
+                  <dt>Quantity</dt>
+                  <dd>
+                    {booking.quantity} {booking.unit_display}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Declared value</dt>
+                  {/* What customs charges duty on, so it is said plainly and
+                      is not editable anywhere in this panel. */}
+                  <dd>{formatMoney(booking.value_eur)}</dd>
+                </div>
+                <div>
+                  <dt>Insured</dt>
+                  <dd>
+                    {booking.insured
+                      ? formatMoney(booking.insured_value_eur)
+                      : 'No'}
                   </dd>
                 </div>
                 <div>
@@ -331,21 +501,30 @@ export default function Bookings() {
                       : 'No'}
                   </dd>
                 </div>
+                <div>
+                  <dt>Measured</dt>
+                  {/* The office's own figures, repeated here as read-back:
+                      the boxes above are for typing them in, this is the line
+                      somebody checks against the crate. */}
+                  <dd>
+                    {booking.volume_m3 ? `${booking.volume_m3} m³` : 'Volume —'}
+                    {' · '}
+                    {booking.weight_kg ? `${booking.weight_kg} kg` : 'Weight —'}
+                  </dd>
+                </div>
                 <div className={styles.detailWide}>
                   <dt>Contents</dt>
-                  <dd>
+                  <dd className={styles.messageBody}>
                     {booking.contents || '—'}
                     {booking.contents_attached && (
                       <em> (packing list sent separately)</em>
                     )}
                   </dd>
                 </div>
-                {booking.notes && (
-                  <div className={styles.detailWide}>
-                    <dt>Sender&apos;s remarks</dt>
-                    <dd>{booking.notes}</dd>
-                  </div>
-                )}
+                <div className={styles.detailWide}>
+                  <dt>Sender&apos;s remarks</dt>
+                  <dd className={styles.messageBody}>{booking.notes || '—'}</dd>
+                </div>
                 <div className={styles.detailWide}>
                   <dt>Signed</dt>
                   <dd>

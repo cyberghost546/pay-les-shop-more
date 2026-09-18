@@ -6,9 +6,6 @@ import bonaire from '../../images/Flag_of_Bonaire.svg';
 import curacao from '../../images/Flag_of_Curacao.webp';
 import saba from '../../images/Flag_of_Saba.svg';
 import sintEustatius from '../../images/Sint-Eustatius-vlag.png';
-import sintMaarten from '../../images/Sint-Maarten-vlag.png';
-import suriname from '../../images/Flag_of_Suriname.svg';
-import dominicanRepublic from '../../images/Flag_of_the_Dominican_Republic.svg';
 
 const SLIDES = [
   { id: 'aruba', image: aruba, caption: 'Aruba' },
@@ -16,9 +13,6 @@ const SLIDES = [
   { id: 'curacao', image: curacao, caption: 'Curaçao' },
   { id: 'saba', image: saba, caption: 'Saba' },
   { id: 'sint-eustatius', image: sintEustatius, caption: 'Sint Eustatius' },
-  { id: 'sint-maarten', image: sintMaarten, caption: 'Sint Maarten' },
-  { id: 'suriname', image: suriname, caption: 'Suriname' },
-  { id: 'dominican-republic', image: dominicanRepublic, caption: 'Dominican Republic' },
 ];
 
 const INTERVAL_MS = 2000;

@@ -1237,6 +1237,37 @@
   color: var(--navy);
 }
 
+/* The name in a table row, when opening it is what the row is for: it reads
+   as the row's heading and behaves as the button it is. Left-aligned and
+   unpadded so it sits exactly where plain text would. */
+.rowName {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-weight: 700;
+  color: var(--navy);
+  text-align: left;
+  cursor: pointer;
+}
+
+.rowName:hover {
+  color: var(--cyan);
+  text-decoration: underline;
+}
+
+.rowName[aria-expanded='true'] {
+  color: var(--cyan);
+}
+
+/* What somebody typed into the quote form, shown whole. Their own line
+   breaks are kept: a list of items typed one per line is unreadable run
+   together, and pre-wrap is what keeps the wrapping as well. */
+.messageBody {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
 .mutedCell {
   color: var(--muted);
   font-size: 0.85rem;
@@ -1417,6 +1448,24 @@
    message is findable without reading the status column. */
 .rowUnhandled td:first-child {
   box-shadow: inset 3px 0 0 #f59e0b;
+}
+
+/* A row that opens when it is clicked. The pointer is the only thing that
+   says so before the click, so it is worth having: there is no room in the
+   table for a hint, and the Details button underneath is easy to miss on a
+   row this wide. */
+.rowOpens {
+  cursor: pointer;
+}
+
+/* The row whose panel is open below, held apart from the rest so the panel
+   and the row it belongs to can be told apart at a glance. */
+.rowOpen td {
+  background: #f0f9ff;
+}
+
+.table tbody tr.rowOpen:hover td {
+  background: #e0f2fe;
 }
 
 /* --------------------------------------------------------------- customers */
@@ -1820,6 +1869,29 @@
   /* Same red the error banner uses, so a refusal reads the same wherever it
      appears on the page. */
   color: #991b1b;
+}
+
+/* The office note sits under the four boxes rather than beside them: it is a
+   sentence, not a measurement, and it needs the whole width. */
+.officeBox > .officeField {
+  margin-bottom: 1rem;
+}
+
+/* A heading over one group of fields in a detail panel. The same eyebrow the
+   office box uses, in the muted colour: these label what the sender wrote,
+   and the cyan one means "this part is yours to fill in". */
+.detailGroupHead {
+  margin: 1.6rem 0 0.75rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* The first group follows the office box, which already has its own space. */
+.detailGroupHead:first-of-type {
+  margin-top: 0;
 }
 
 .detailGrid {

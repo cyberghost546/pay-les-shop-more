@@ -1,6 +1,6 @@
 // src/data/otherDestinations.js
 //
-// Everywhere else we ship, beyond the six destinations that have pages of
+// Everywhere else we ship, beyond the three destinations that have pages of
 // their own. One flat list, rendered in three columns and read down each
 // column in turn, the way an alphabetical list is meant to be read.
 //
@@ -26,9 +26,9 @@ export const OTHER_DESTINATIONS = [
   { nl: 'Chili', en: 'Chile' },
   { nl: 'Colombia', en: 'Colombia' },
   { nl: 'Costa Rica', en: 'Costa Rica' },
-  // Not "Dominicaanse Republiek": it has a page of its own now, so it belongs
-  // in ./destinations.js and listing it here as well would offer the reader
-  // the same country twice, once as a link and once as plain type.
+  // No "Dominicaanse Republiek", and no Sint Maarten or Suriname further
+  // down: those three are not shipped to at all any more, so they are absent
+  // here as deliberately as they are absent from ./destinations.js.
   { nl: 'Ecuador', en: 'Ecuador' },
   { nl: 'El Salvador', en: 'El Salvador' },
   { nl: 'Grenada', en: 'Grenada' },

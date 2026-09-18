@@ -7,6 +7,8 @@ Each one still lists its fields explicitly and marks as read-only everything
 that is a record of what happened rather than a decision staff get to make.
 """
 
+from pathlib import Path
+
 from django.contrib.auth import get_user_model
 from django.urls import reverse
 from rest_framework import serializers
@@ -506,6 +508,11 @@ class StaffQuoteRequestSerializer(serializers.ModelSerializer):
     # guesses a name. The same reasoning as the invoice routes, arrived at
     # late for the same reason.
     file_url = serializers.SerializerMethodField()
+    # The name the visitor's own file had, so the detail panel can say what
+    # the document is before anybody downloads it. The stored name carries the
+    # upload directory, and that is ours rather than theirs, so only the last
+    # segment is published.
+    file_name = serializers.SerializerMethodField()
 
     class Meta:
         model = QuoteRequest
@@ -518,6 +525,7 @@ class StaffQuoteRequestSerializer(serializers.ModelSerializer):
             "email",
             "message",
             "file_url",
+            "file_name",
             "status",
             "status_display",
             "language",
@@ -541,6 +549,12 @@ class StaffQuoteRequestSerializer(serializers.ModelSerializer):
         if not obj.file:
             return None
         return reverse("staff-quote-file", kwargs={"pk": obj.pk})
+
+    def get_file_name(self, obj):
+        """The attachment's own file name, or None when there is none."""
+        if not obj.file:
+            return None
+        return Path(obj.file.name).name
 
 
 class StaffContactMessageSerializer(serializers.ModelSerializer):

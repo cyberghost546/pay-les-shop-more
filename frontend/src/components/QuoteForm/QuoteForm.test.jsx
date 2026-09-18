@@ -166,7 +166,7 @@ describe('QuoteForm', () => {
 
   it('confirms in words when the request has gone', async () => {
     const user = userEvent.setup();
-    renderWithProviders(<QuoteForm destination="Suriname" />);
+    renderWithProviders(<QuoteForm destination="Curaçao" />);
 
     await fillRequiredFields(user);
     await user.click(screen.getByRole('button', { name: 'Send request' }));

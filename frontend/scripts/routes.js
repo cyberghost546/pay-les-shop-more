@@ -25,7 +25,7 @@ export const DEFAULT_TITLE = `${SITE.name} — Shop and ship to the Caribbean`;
 export const DEFAULT_DESCRIPTION =
   'Order from Dutch webshops and ship to the Caribbean. We gather your ' +
   'parcels in one place and you follow every shipment to your door — ' +
-  'Aruba, Bonaire, Curaçao, Sint Maarten and Suriname.';
+  'Aruba, Bonaire and Curaçao.';
 
 // Mirrors src/data/destinations.js. Kept here as plain strings for the reason
 // in the header comment; src/test/seo-routes.test.js fails if the two lists
@@ -48,24 +48,6 @@ export const DESTINATIONS = [
     name: 'Curaçao',
     port: 'Willemstad',
     transitDays: 21,
-  },
-  {
-    slug: 'dominican-republic',
-    name: 'Dominican Republic',
-    port: 'Santo Domingo',
-    transitDays: 24,
-  },
-  {
-    slug: 'sint-maarten',
-    name: 'Sint Maarten',
-    port: 'Philipsburg',
-    transitDays: 18,
-  },
-  {
-    slug: 'suriname',
-    name: 'Suriname',
-    port: 'Paramaribo',
-    transitDays: 28,
   },
 ];
 
@@ -101,7 +83,7 @@ export const PUBLIC_ROUTES = [
     title: 'Our services',
     description:
       'Shop and ship, parcel forwarding, consolidation and door delivery ' +
-      'across the Dutch Caribbean and Suriname. What we do and how it works.',
+      'across the Dutch Caribbean. What we do and how it works.',
   },
   {
     path: '/tracking',
@@ -136,7 +118,7 @@ export const PUBLIC_ROUTES = [
     title: 'Where we ship',
     description:
       'The islands we serve, the ports we deliver to and how long each ' +
-      'crossing takes: Aruba, Bonaire, Curaçao, Sint Maarten and Suriname.',
+      'crossing takes: Aruba, Bonaire and Curaçao.',
   },
   ...DESTINATIONS.map(destinationRoute),
 ];

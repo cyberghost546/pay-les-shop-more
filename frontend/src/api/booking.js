@@ -10,13 +10,14 @@ export const FREIGHT = [
   { value: 'air', labelKey: 'booking.freight.air' },
 ];
 
-// Matches Booking.Destination on the server. "other" opens a free-text box.
+// The islands the form offers. Fewer than Booking.Destination on the server,
+// which still carries Sint Maarten and Suriname so that bookings taken while
+// those routes ran still read back by name rather than as a code. "other"
+// opens a free-text box.
 export const DESTINATIONS = [
   { value: 'AW', label: 'Aruba' },
   { value: 'BQ', label: 'Bonaire' },
   { value: 'CW', label: 'Curaçao' },
-  { value: 'SX', label: 'Sint Maarten' },
-  { value: 'SR', label: 'Suriname' },
   { value: 'other', labelKey: 'booking.destinationOther' },
 ];
 

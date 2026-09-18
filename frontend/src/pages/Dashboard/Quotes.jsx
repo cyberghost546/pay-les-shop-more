@@ -32,6 +32,10 @@ export default function Quotes() {
   const [savingId, setSavingId] = useState(null);
   const [error, setError] = useState('');
 
+  // Whose request is open in the panel under the table. One at a time: this is
+  // somebody reading a request, not comparing two.
+  const [openId, setOpenId] = useState(null);
+
   async function changeStatus(quote, status) {
     setSavingId(quote.id);
     setError('');
@@ -47,13 +51,18 @@ export default function Quotes() {
     }
   }
 
+  // Read off the rows rather than kept as a second copy, so a status change
+  // shows in the panel the moment the table has it.
+  const open = list.rows.find((quote) => quote.id === openId) ?? null;
+
   return (
     <>
       <header className={styles.head}>
         <h1 className={styles.title}>Quote requests</h1>
         <p className={styles.subtitle}>
-          Submissions from the destination pages. The request itself is a
-          record of what a visitor sent, so only the status can be changed.
+          Submissions from the destination pages. Open a name to read the whole
+          request and its document. The request itself is a record of what a
+          visitor sent, so only the status can be changed.
         </p>
       </header>
 
@@ -97,10 +106,41 @@ export default function Quotes() {
                 {list.rows.map((quote) => (
                   <tr
                     key={quote.id}
-                    className={quote.status === 'new' ? styles.rowUnhandled : undefined}
+                    className={[
+                      styles.rowOpens,
+                      quote.status === 'new' ? styles.rowUnhandled : '',
+                      openId === quote.id ? styles.rowOpen : '',
+                    ]
+                      .filter(Boolean)
+                      .join(' ')}
+                    // Anywhere on the row opens it, as on the bookings table.
+                    // A click that landed on the mailto, the attachment link
+                    // or the status select is that control's own, so those are
+                    // let through rather than swallowed.
+                    onClick={(event) => {
+                      if (event.target.closest('a, button, select, input, label')) {
+                        return;
+                      }
+                      setOpenId((current) =>
+                        current === quote.id ? null : quote.id,
+                      );
+                    }}
                   >
                     <td>
-                      <div className={styles.primaryCell}>{quote.full_name}</div>
+                      {/* The name is also a button: on a keyboard there is no
+                          row to click, and this is what is reached instead. */}
+                      <button
+                        type="button"
+                        className={styles.rowName}
+                        aria-expanded={openId === quote.id}
+                        onClick={() =>
+                          setOpenId((current) =>
+                            current === quote.id ? null : quote.id,
+                          )
+                        }
+                      >
+                        {quote.full_name}
+                      </button>
                       <div className={styles.mutedCell}>
                         {/* mailto, because replying is what happens next. */}
                         <a className={styles.link} href={`mailto:${quote.email}`}>
@@ -158,6 +198,97 @@ export default function Quotes() {
             </table>
           </div>
         ))}
+
+      {/* The whole request, below the table rather than inside it: the message
+          is the part a cell clips, and it is the part somebody opened the row
+          to read. Keyed by the row, so moving between two people rebuilds the
+          panel instead of carrying one person's scroll onto the other. */}
+      {open && (
+        <section key={open.id} className={styles.detail}>
+          <div className={styles.detailHead}>
+            <h2 className={styles.detailTitle}>{open.full_name}</h2>
+            <button
+              type="button"
+              className={styles.linkButton}
+              onClick={() => setOpenId(null)}
+            >
+              Close
+            </button>
+          </div>
+
+          <dl className={styles.detailGrid}>
+            <div>
+              <dt>E-mail</dt>
+              <dd>
+                <a className={styles.link} href={`mailto:${open.email}`}>
+                  {open.email}
+                </a>
+              </dd>
+            </div>
+            <div>
+              <dt>Destination</dt>
+              <dd>{open.destination}</dd>
+            </div>
+            <div>
+              <dt>Wrote in</dt>
+              <dd>{open.language ? open.language.toUpperCase() : '—'}</dd>
+            </div>
+            <div>
+              <dt>Status</dt>
+              <dd>{open.status_display ?? open.status}</dd>
+            </div>
+            <div>
+              <dt>Received</dt>
+              <dd>{formatDateTime(open.created_at)}</dd>
+            </div>
+            <div>
+              <dt>Last changed</dt>
+              <dd>{formatDateTime(open.updated_at)}</dd>
+            </div>
+            <div>
+              <dt>Reference</dt>
+              {/* What the Django admin and a support conversation call this
+                  request. Monospaced so it reads back accurately. */}
+              <dd className={styles.mono}>#{open.id}</dd>
+            </div>
+
+            <div className={styles.detailWide}>
+              <dt>Message</dt>
+              {/* Whole and unclipped, with the visitor's own line breaks: a
+                  list typed one item per line is unreadable run together. */}
+              <dd className={styles.messageBody}>{open.message || '—'}</dd>
+            </div>
+
+            <div className={styles.detailWide}>
+              <dt>Document</dt>
+              <dd>
+                {open.file_url ? (
+                  <>
+                    <a
+                      className={styles.link}
+                      href={open.file_url}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      {open.file_name || 'Attachment'} ↓
+                    </a>
+                    {/* Said out loud, because the link looks like one that
+                        would show the file and deliberately does not: an
+                        attachment from a stranger is handed over as a download
+                        rather than rendered in a tab. */}
+                    <div className={styles.mutedCell}>
+                      Saves to your computer rather than opening in the browser
+                      — attachments come from members of the public.
+                    </div>
+                  </>
+                ) : (
+                  'Nothing attached.'
+                )}
+              </dd>
+            </div>
+          </dl>
+        </section>
+      )}
 
       <Pagination
         page={list.page}

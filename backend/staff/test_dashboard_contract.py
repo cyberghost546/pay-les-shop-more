@@ -223,6 +223,7 @@ class ListContractTests(DashboardContractTestCase):
                 "created_at",
                 "destination",
                 "email",
+                "file_name",
                 "file_url",
                 "full_name",
                 "language",
