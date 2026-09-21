@@ -147,7 +147,7 @@ export function structuredData(route) {
     name: SITE.name,
     url: `${SITE.url}/`,
     email: SITE.email,
-    logo: `${SITE.url}/favicon.svg`,
+    logo: `${SITE.url}/favicon-192.png`,
     description: DEFAULT_DESCRIPTION,
     areaServed: DESTINATIONS.map((destination) => ({
       '@type': 'Place',

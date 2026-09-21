@@ -41,7 +41,15 @@
                object-src 'none'"
     />
 
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <!-- The company logo, in the browser tab. Two sizes because the tab
+         strip and a bookmark ask for different ones, and the logo carries
+         lettering: at 16px the browser downscales the 32 rather than the
+         192, which keeps "PAY LESS SHOP MORE" from turning to mud. The
+         180px apple-touch-icon is laid on white, since iOS composites a
+         transparent home-screen icon onto black. -->
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/favicon-192.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
     <!-- Poppins. preconnect first so the font files start downloading as soon
