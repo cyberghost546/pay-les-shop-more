@@ -24,6 +24,7 @@ export const translations = {
     nav: {
       home: 'Home',
       services: 'Diensten',
+      tutorial: 'Uitleg',
       tracking: 'Track & Trace',
       booking: 'Boeking',
       calculator: 'Calculator',
@@ -926,6 +927,180 @@ export const translations = {
         },
       },
     },
+    guide: {
+      eyebrow: 'Uitleg bij deze pagina',
+      panelLabel: 'Uitleg bij deze pagina',
+      openLabel: 'Uitleg bij deze pagina openen',
+      close: 'Sluiten',
+      listen: 'Lees voor',
+      stop: 'Stop',
+      full: 'Hele uitleg',
+      dontShow: 'Niet meer automatisch tonen',
+      pages: {
+        home: {
+          title: 'Welkom bij PayLesShopMore',
+          body:
+            'Hier begint alles. Wij ontvangen uw bestellingen in Nederland en sturen ze door naar het eiland.',
+          bullets: [
+            'Bekijk "Diensten" om te zien wat wij voor u kunnen doen.',
+            'Onder "Bestemmingen" leest u hoe het per eiland werkt.',
+            'Klaar om te versturen? Ga naar "Boeking".',
+          ],
+        },
+        services: {
+          title: 'Onze diensten',
+          body:
+            'Per eiland ziet u wat wij aanbieden en bij welke winkels onze klanten bestellen. U kunt bij vrijwel elke Nederlandse webshop bestellen.',
+          bullets: [
+            'Kies uw bestemming voor de details van dat eiland.',
+            'Twijfelt u over een product? Vraag het ons vooraf.',
+          ],
+        },
+        booking: {
+          title: 'Zending aanmelden',
+          body:
+            'Vul dit formulier in zodra uw bestelling onderweg is naar ons magazijn. Hoe vollediger, hoe sneller wij uw zending kunnen verwerken.',
+          bullets: [
+            'Vermeld de winkel en het ordernummer.',
+            'Voeg de factuur toe — die hebben wij nodig voor de douane.',
+            'U krijgt van ons een bevestiging per e-mail.',
+          ],
+        },
+        tracking: {
+          title: 'Volg uw zending',
+          body:
+            'Vul uw trackingcode in en u ziet waar uw zending is: bij ons in het magazijn, onderweg, of klaar voor aflevering.',
+          bullets: [
+            'De code staat in de e-mail die u van ons kreeg.',
+            'Bent u ingelogd? Dan staan al uw zendingen in uw account.',
+          ],
+        },
+        destinations: {
+          title: 'Onze bestemmingen',
+          body:
+            'Kies het eiland waar uw zending naartoe gaat. Per bestemming leest u de doorlooptijd, de mogelijkheden en hoe de aflevering gaat.',
+        },
+        destination: {
+          title: 'Deze bestemming',
+          body:
+            'Hier staat hoe wij naar dit eiland verzenden en wat u kunt verwachten. Onderaan vraagt u direct een offerte aan.',
+        },
+        profile: {
+          title: 'Uw account',
+          body:
+            'Uw gegevens, adressen, zendingen en facturen staan hier bij elkaar.',
+          bullets: [
+            'Houd uw afleveradres actueel — daar gaat uw zending naartoe.',
+            'Facturen en pakbonnen kunt u hier downloaden.',
+          ],
+        },
+        login: {
+          title: 'Inloggen',
+          body:
+            'Log in met het e-mailadres waarmee u zich heeft aangemeld. Wachtwoord vergeten? Gebruik de link onder het formulier — u krijgt binnen enkele minuten een e-mail.',
+        },
+        signup: {
+          title: 'Account aanmaken',
+          body:
+            'Vul uw naam, e-mailadres en wachtwoord in. Daarna kunt u zendingen aanmelden en volgen.',
+          bullets: [
+            'Gebruik een e-mailadres dat u dagelijks leest: daar sturen wij alles naartoe.',
+            'Uw afleveradres vult u later in uw account in.',
+          ],
+        },
+        contact: {
+          title: 'Neem contact op',
+          body:
+            'Stel hier uw vraag. Vermeld uw trackingcode of ordernummer als uw vraag over een zending gaat, dan kunnen wij direct meekijken.',
+        },
+      },
+    },
+    tutorial: {
+      eyebrow: 'UITLEG',
+      title: 'Zo werkt het',
+      breadcrumb: 'Uitleg',
+      lead:
+        'Onze assistent loopt stap voor stap met u mee: van uw account tot de aflevering op het eiland. Liever luisteren? Druk op "Lees voor".',
+      playerLabel: 'Stapsgewijze uitleg',
+      stepWord: 'Stap',
+      previous: 'Vorige',
+      next: 'Volgende',
+      restart: 'Opnieuw',
+      playVoice: 'Lees voor',
+      stopVoice: 'Stop met voorlezen',
+      voiceUnavailable:
+        'Uw browser kan deze uitleg niet voorlezen. De volledige tekst staat hieronder.',
+      writtenTitle: 'De uitleg op een rij',
+      writtenLead:
+        'Alle stappen achter elkaar, om rustig na te lezen of uit te printen.',
+      address: {
+        firstName: 'Voornaam',
+        firstNameValue: 'Uw volledige voor- en achternaam',
+        lastName: 'Achternaam',
+        street: 'Adres',
+      },
+      ctaTitle: 'Klaar om te beginnen?',
+      ctaBody:
+        'Meld uw zending aan of stel ons uw vraag — wij denken met u mee.',
+      ctaPrimary: 'Zending aanmelden',
+      ctaSecondary: 'Neem contact op',
+      steps: {
+        account: {
+          title: 'Maak een account aan',
+          body:
+            'Met een account ziet u uw zendingen, adressen, facturen en offertes op één plek terug. Aanmelden kost een minuut en is gratis.',
+          action: 'Account aanmaken',
+        },
+        quote: {
+          title: 'Vraag een offerte aan',
+          body:
+            'Vertel ons wat u wilt versturen en naar welk eiland. U krijgt een prijs op maat, op basis van gewicht en volume.',
+          bullets: [
+            'Kies uw bestemming: Aruba, Bonaire, Curaçao, Sint Maarten, Suriname of de Dominicaanse Republiek.',
+            'Geef zo goed mogelijk door wat u verstuurt en hoe groot het is.',
+            'Wij sturen u de prijs en de verzendmogelijkheden per e-mail.',
+          ],
+          action: 'Offerte aanvragen',
+        },
+        order: {
+          title: 'Bestel bij de winkel van uw keuze',
+          body:
+            'Plaats uw bestelling bij vrijwel elke Nederlandse webshop. U bestelt zelf, met uw eigen account bij die winkel.',
+          note: 'Rond de betaling direct af. Achteraf betalen is niet toegestaan.',
+          action: 'Bekijk onze diensten',
+        },
+        invoice: {
+          title: 'Vul bij de factuurgegevens onze adresgegevens in',
+          body:
+            'Vul bij het afrekenen bij de factuurgegevens ons adres in. Zo weten wij van wie het pakket is zodra het bij ons binnenkomt.',
+          note:
+            'Let op: zijn de factuurgegevens en het afleveradres niet correct ingevuld, dan kan de zending niet via onze inkoopservice worden verwerkt.',
+        },
+        announce: {
+          title: 'Meld uw zending bij ons aan',
+          body:
+            'Laat ons per e-mail of via het aanmeldformulier weten dat er een pakket onderweg is. Wij ontvangen de factuur graag zo spoedig mogelijk.',
+          action: 'Zending aanmelden',
+        },
+        warehouse: {
+          title: 'Wij ontvangen en verwerken uw pakket',
+          body:
+            'In ons magazijn in Berkel en Rodenrijs boeken wij uw pakket in, meten en wegen wij het en maken wij het verzendklaar. Losse pakketten kunnen wij samenvoegen tot één zending.',
+        },
+        track: {
+          title: 'Volg uw zending',
+          body:
+            'Zodra uw zending onderweg is, volgt u elke stap met Track & Trace of vanuit uw account.',
+          action: 'Volg uw zending',
+        },
+        delivery: {
+          title: 'Aflevering op het eiland',
+          body:
+            'Op de bestemming wordt uw zending afgeleverd of staat zij klaar om opgehaald te worden. Per bestemming leest u hoe dat precies gaat.',
+          action: 'Bekijk bestemmingen',
+        },
+      },
+    },
     footer: {
       tagline:
         'Shop slimmer, bespaar meer. Vergelijk prijzen en vind de beste deals op één plek.',
@@ -951,6 +1126,7 @@ export const translations = {
     nav: {
       home: 'Home',
       services: 'Services',
+      tutorial: 'How it works',
       tracking: 'Tracking',
       booking: 'Booking',
       calculator: 'Calculator',
@@ -1837,6 +2013,180 @@ export const translations = {
         },
       },
     },
+    guide: {
+      eyebrow: 'About this page',
+      panelLabel: 'About this page',
+      openLabel: 'Open the guide for this page',
+      close: 'Close',
+      listen: 'Read aloud',
+      stop: 'Stop',
+      full: 'Full guide',
+      dontShow: 'Stop showing this automatically',
+      pages: {
+        home: {
+          title: 'Welcome to PayLesShopMore',
+          body:
+            'This is where it starts. We receive your orders in the Netherlands and forward them to the island.',
+          bullets: [
+            'Open "Services" to see what we can do for you.',
+            'Under "Destinations" you can read how it works per island.',
+            'Ready to send something? Go to "Booking".',
+          ],
+        },
+        services: {
+          title: 'Our services',
+          body:
+            'Per island you can see what we offer and which shops our customers order from. You can order from almost any Dutch webshop.',
+          bullets: [
+            'Choose your destination for the details of that island.',
+            'Unsure about a product? Ask us before you order.',
+          ],
+        },
+        booking: {
+          title: 'Register a shipment',
+          body:
+            'Fill this in as soon as your order is on its way to our warehouse. The more complete it is, the faster we can handle it.',
+          bullets: [
+            'Give the shop and the order number.',
+            'Attach the invoice — we need it for customs.',
+            'You get a confirmation from us by e-mail.',
+          ],
+        },
+        tracking: {
+          title: 'Follow your shipment',
+          body:
+            'Enter your tracking code and you see where your shipment is: with us in the warehouse, on its way, or ready for delivery.',
+          bullets: [
+            'The code is in the e-mail we sent you.',
+            'Signed in? Then all your shipments are listed in your account.',
+          ],
+        },
+        destinations: {
+          title: 'Our destinations',
+          body:
+            'Choose the island your shipment is going to. Each destination explains the transit time, the options and how delivery works.',
+        },
+        destination: {
+          title: 'This destination',
+          body:
+            'Here is how we ship to this island and what to expect. At the bottom you can ask for a quote straight away.',
+        },
+        profile: {
+          title: 'Your account',
+          body:
+            'Your details, addresses, shipments and invoices are all kept here.',
+          bullets: [
+            'Keep your delivery address current — that is where your shipment goes.',
+            'Invoices and packing slips can be downloaded here.',
+          ],
+        },
+        login: {
+          title: 'Sign in',
+          body:
+            'Sign in with the e-mail address you registered with. Forgotten your password? Use the link under the form — the e-mail arrives within a few minutes.',
+        },
+        signup: {
+          title: 'Create an account',
+          body:
+            'Fill in your name, e-mail address and a password. After that you can register shipments and follow them.',
+          bullets: [
+            'Use an e-mail address you read daily: everything we send goes there.',
+            'You can fill in your delivery address later, in your account.',
+          ],
+        },
+        contact: {
+          title: 'Contact us',
+          body:
+            'Ask your question here. Mention your tracking code or order number if it is about a shipment, so we can look into it right away.',
+        },
+      },
+    },
+    tutorial: {
+      eyebrow: 'GUIDE',
+      title: 'How it works',
+      breadcrumb: 'Guide',
+      lead:
+        'Our assistant walks you through it step by step, from your account to delivery on the island. Rather listen? Press "Read aloud".',
+      playerLabel: 'Step-by-step guide',
+      stepWord: 'Step',
+      previous: 'Back',
+      next: 'Next',
+      restart: 'Start again',
+      playVoice: 'Read aloud',
+      stopVoice: 'Stop reading',
+      voiceUnavailable:
+        'Your browser cannot read this guide aloud. The full text is written out below.',
+      writtenTitle: 'Every step in writing',
+      writtenLead:
+        'All the steps in order, to read through at your own pace or print out.',
+      address: {
+        firstName: 'First name',
+        firstNameValue: 'Your own full first and last name',
+        lastName: 'Last name',
+        street: 'Address',
+      },
+      ctaTitle: 'Ready to start?',
+      ctaBody:
+        'Register your shipment or ask us your question — we are happy to think along with you.',
+      ctaPrimary: 'Register a shipment',
+      ctaSecondary: 'Contact us',
+      steps: {
+        account: {
+          title: 'Create an account',
+          body:
+            'An account keeps your shipments, addresses, invoices and quotes in one place. Signing up takes a minute and is free.',
+          action: 'Create an account',
+        },
+        quote: {
+          title: 'Ask for a quote',
+          body:
+            'Tell us what you want to send and which island it is going to. You get a price of your own, based on weight and volume.',
+          bullets: [
+            'Choose your destination: Aruba, Bonaire, Curaçao, Sint Maarten, Suriname or the Dominican Republic.',
+            'Describe as closely as you can what you are sending and how large it is.',
+            'We send you the price and the shipping options by e-mail.',
+          ],
+          action: 'Request a quote',
+        },
+        order: {
+          title: 'Order from the shop of your choice',
+          body:
+            'Place your order with almost any Dutch webshop. You order yourself, with your own account at that shop.',
+          note: 'Pay for the order straight away. Paying afterwards is not allowed.',
+          action: 'See our services',
+        },
+        invoice: {
+          title: 'Enter our address as the billing details',
+          body:
+            'At checkout, fill in our address under the billing details. That is how we know whose parcel it is the moment it reaches us.',
+          note:
+            'Please note: if the billing details and the delivery address are not filled in correctly, the shipment cannot be handled by our purchasing service.',
+        },
+        announce: {
+          title: 'Register the shipment with us',
+          body:
+            'Let us know by e-mail or through the booking form that a parcel is on its way. We would like to receive the invoice as soon as possible.',
+          action: 'Register a shipment',
+        },
+        warehouse: {
+          title: 'We receive and handle your parcel',
+          body:
+            'At our warehouse in Berkel en Rodenrijs we book your parcel in, measure and weigh it, and make it ready to ship. Separate parcels can be combined into one shipment.',
+        },
+        track: {
+          title: 'Follow your shipment',
+          body:
+            'Once your shipment is on its way, you follow every step with Track & Trace or from your account.',
+          action: 'Track your shipment',
+        },
+        delivery: {
+          title: 'Delivery on the island',
+          body:
+            'At the destination your shipment is delivered or held ready for collection. Each destination page explains exactly how that works.',
+          action: 'See destinations',
+        },
+      },
+    },
     footer: {
       tagline:
         'Shop smarter, save more. Compare prices and find the best deals in one place.',
@@ -1864,6 +2214,7 @@ export const translations = {
     nav: {
       home: 'Home',
       services: 'Servisionan',
+      tutorial: 'Kon e ta funshoná',
       tracking: 'Track & Trace',
       booking: 'Boeking',
       calculator: 'Kalkulador',
@@ -2746,6 +3097,180 @@ export const translations = {
               'sitio komo riba otro sitio, ku por no funshoná korektamente ora ' +
               'cookies ta pagá den bo browser.',
           ],
+        },
+      },
+    },
+    guide: {
+      eyebrow: 'Splikashon di e página aki',
+      panelLabel: 'Splikashon di e página aki',
+      openLabel: 'Habri e splikashon di e página aki',
+      close: 'Sera',
+      listen: 'Lesa na bos haltu',
+      stop: 'Stop',
+      full: 'Gia kompletu',
+      dontShow: 'No mustra esaki outomátikamente mas',
+      pages: {
+        home: {
+          title: 'Bonbiní na PayLesShopMore',
+          body:
+            'Aki tur kos ta kuminsá. Nos ta risibí bo òrdunan na Hulanda i manda nan pa e isla.',
+          bullets: [
+            'Wak "Servisionan" pa mira kiko nos por hasi pa bo.',
+            'Bou di "Destinashonnan" bo ta lesa kon e ta bai pa kada isla.',
+            'Kla pa manda algu? Bai na "Buking".',
+          ],
+        },
+        services: {
+          title: 'Nos servisionan',
+          body:
+            'Pa kada isla bo ta mira kiko nos ta ofresé i na ki tiendanan nos klientenan ta hasi òrdu. Bo por hasi òrdu na kasi tur webshop hulandes.',
+          bullets: [
+            'Skohe bo destinashon pa e detayenan di e isla ei.',
+            'Bo tin duda tokante un produkto? Puntra nos promé.',
+          ],
+        },
+        booking: {
+          title: 'Anunsiá un enbio',
+          body:
+            'Yena esaki ora bo òrdu ta na kaminda pa nos depósito. Mas kompletu e ta, mas lihé nos por traha ku dje.',
+          bullets: [
+            'Menshoná e tienda i e number di òrdu.',
+            'Manda e faktura huntu — nos tin mester di dje pa douane.',
+            'Bo ta risibí un konfirmashon di nos pa e-mail.',
+          ],
+        },
+        tracking: {
+          title: 'Sigui bo enbio',
+          body:
+            'Yena bo kódigo di tracking i bo ta mira unda bo enbio ta: serka nos den depósito, na kaminda, òf kla pa entrega.',
+          bullets: [
+            'E kódigo ta den e e-mail ku nos a manda bo.',
+            'Bo ta login? Anto tur bo enbionan ta den bo kuenta.',
+          ],
+        },
+        destinations: {
+          title: 'Nos destinashonnan',
+          body:
+            'Skohe e isla kaminda bo enbio ta bai. Kada destinashon ta splika e tempu di biahe, e posibilidatnan i kon entrega ta bai.',
+        },
+        destination: {
+          title: 'E destinashon aki',
+          body:
+            'Aki ta pará kon nos ta manda pa e isla aki i kiko bo por spera. Abou bo por pidi un preis mesora.',
+        },
+        profile: {
+          title: 'Bo kuenta',
+          body:
+            'Bo datonan, adresnan, enbionan i fakturanan tur ta warda aki.',
+          bullets: [
+            'Tene bo adres di entrega aktualisá — ta einan bo enbio ta bai.',
+            'Bo por baha fakturanan i pakbon aki.',
+          ],
+        },
+        login: {
+          title: 'Login',
+          body:
+            'Login ku e adres di e-mail ku bo a registrá kuné. Bo a lubidá bo kontraseña? Usa e link bou di e formulario — e e-mail ta yega den algun minüt.',
+        },
+        signup: {
+          title: 'Habri un kuenta',
+          body:
+            'Yena bo nòmber, adres di e-mail i un kontraseña. Despues bo por anunsiá i sigui bo enbionan.',
+          bullets: [
+            'Usa un e-mail ku bo ta lesa tur dia: tur loke nos ta manda ta bai einan.',
+            'Bo adres di entrega bo por yena despues den bo kuenta.',
+          ],
+        },
+        contact: {
+          title: 'Tuma kontakto',
+          body:
+            'Hasi bo pregunta aki. Menshoná bo kódigo di tracking òf number di òrdu si e ta tokante un enbio, asina nos por wak mesora.',
+        },
+      },
+    },
+    tutorial: {
+      eyebrow: 'GIA',
+      title: 'Kon e ta funshoná',
+      breadcrumb: 'Gia',
+      lead:
+        'Nos asistente ta kana paso pa paso ku bo: for di bo kuenta te na entrega riba e isla. Bo ke skucha mihó? Primi "Lesa na bos haltu".',
+      playerLabel: 'Gia paso pa paso',
+      stepWord: 'Paso',
+      previous: 'Atras',
+      next: 'Siguiente',
+      restart: 'Kuminsá di nobo',
+      playVoice: 'Lesa na bos haltu',
+      stopVoice: 'Stop di lesa',
+      voiceUnavailable:
+        'Bo browser no por lesa e gia aki na bos haltu. E teksto kompletu ta pará abou.',
+      writtenTitle: 'Tur paso na skirbi',
+      writtenLead:
+        'Tur e pasonan un tras di otro, pa lesa kalmo òf pa imprimí.',
+      address: {
+        firstName: 'Nòmber',
+        firstNameValue: 'Bo nòmber i fam kompletu',
+        lastName: 'Fam',
+        street: 'Adres',
+      },
+      ctaTitle: 'Kla pa kuminsá?',
+      ctaBody:
+        'Anunsiá bo enbio òf hasi nos bo pregunta — nos ta yuda bo ku gusto.',
+      ctaPrimary: 'Anunsiá enbio',
+      ctaSecondary: 'Tuma kontakto',
+      steps: {
+        account: {
+          title: 'Habri un kuenta',
+          body:
+            'Ku un kuenta bo ta mira bo enbionan, adresnan, fakturanan i preisnan na un solo lugá. Registrá ta dura un minüt i ta grátis.',
+          action: 'Habri un kuenta',
+        },
+        quote: {
+          title: 'Pidi un preis',
+          body:
+            'Bisa nos kiko bo ke manda i pa ki isla. Bo ta risibí un preis na midí, basá riba peso i volúmen.',
+          bullets: [
+            'Skohe bo destinashon: Aruba, Boneiru, Kòrsou, Sint Maarten, Sürnam òf Repúblika Dominikano.',
+            'Bisa nos mas presis posibel kiko bo ta manda i ki grandi e ta.',
+            'Nos ta manda bo e preis i e posibilidatnan di enbio pa e-mail.',
+          ],
+          action: 'Pidi un preis',
+        },
+        order: {
+          title: 'Hasi bo òrdu na e tienda ku bo skohe',
+          body:
+            'Hasi bo òrdu na kasi tur webshop hulandes. Bo mes ta hasi e òrdu, ku bo mes kuenta na e tienda.',
+          note: 'Paga e òrdu mesora. Paga despues no ta permití.',
+          action: 'Mira nos servisionan',
+        },
+        invoice: {
+          title: 'Yena nos adres den e datonan di fakturashon',
+          body:
+            'Ora bo ta paga, yena nos adres den e datonan di fakturashon. Asina nos sa di ken e pakete ta ora e yega serka nos.',
+          note:
+            'Tene kuenta: si e datonan di fakturashon i e adres di entrega no ta yená korektamente, nos servisio di kompra no por traha e enbio.',
+        },
+        announce: {
+          title: 'Anunsiá bo enbio serka nos',
+          body:
+            'Laga nos sa pa e-mail òf pa medio di e formulario ku tin un pakete na kaminda. Nos ke risibí e faktura mas lihé posibel.',
+          action: 'Anunsiá enbio',
+        },
+        warehouse: {
+          title: 'Nos ta risibí i traha ku bo pakete',
+          body:
+            'Den nos depósito na Berkel en Rodenrijs nos ta registrá bo pakete, midi i pisa e, i pone e kla pa manda. Paketenan suelto nos por uni den un solo enbio.',
+        },
+        track: {
+          title: 'Sigui bo enbio',
+          body:
+            'Ora bo enbio ta na kaminda, bo ta sigui kada paso ku Track & Trace òf for di bo kuenta.',
+          action: 'Sigui bo enbio',
+        },
+        delivery: {
+          title: 'Entrega riba e isla',
+          body:
+            'Na destinashon bo enbio ta wòrdu entregá òf ta keda kla pa bo bin buska. Kada destinashon tin su mes splikashon.',
+          action: 'Mira destinashonnan',
         },
       },
     },

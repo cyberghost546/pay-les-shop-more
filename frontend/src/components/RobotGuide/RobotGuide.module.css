@@ -1,0 +1,137 @@
+/* src/components/RobotGuide/RobotGuide.module.css */
+
+.robot {
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+/* The whole robot hovers; the glow under it stays on the ground. */
+.float {
+  animation: bob 4s ease-in-out infinite;
+  transform-origin: 120px 140px;
+}
+
+@keyframes bob {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-1deg);
+  }
+  50% {
+    transform: translateY(-9px) rotate(1deg);
+  }
+}
+
+/* Blink: a long pause, then a fast squash. Both eyes share the timing, which
+   is why they are animated as one group. */
+.eyes {
+  transform-origin: 120px 82px;
+  animation: blink 5.5s ease-in-out infinite;
+}
+
+@keyframes blink {
+  0%,
+  92%,
+  100% {
+    transform: scaleY(1);
+  }
+  95% {
+    transform: scaleY(0.08);
+  }
+}
+
+/* Closed by default: a flat line of a smile. */
+.mouth {
+  transform-origin: 120px 106px;
+  transform: scaleY(0.55);
+  transition: transform 160ms ease;
+}
+
+/* While the voice is running the mouth works. The uneven keyframes are
+   deliberate — an even open/close reads as a metronome, not as speech. */
+.isSpeaking .mouth {
+  animation: talk 420ms ease-in-out infinite;
+}
+
+@keyframes talk {
+  0% {
+    transform: scaleY(0.35) scaleX(0.95);
+  }
+  30% {
+    transform: scaleY(1.15) scaleX(1.05);
+  }
+  55% {
+    transform: scaleY(0.6);
+  }
+  80% {
+    transform: scaleY(1);
+  }
+  100% {
+    transform: scaleY(0.35) scaleX(0.95);
+  }
+}
+
+/* Arms drift gently, a little out of phase with each other. */
+.armLeft {
+  transform-origin: 51px 158px;
+  animation: swayLeft 4.6s ease-in-out infinite;
+}
+
+.armRight {
+  transform-origin: 189px 156px;
+  animation: swayRight 4s ease-in-out infinite;
+}
+
+@keyframes swayLeft {
+  0%,
+  100% {
+    transform: rotate(6deg);
+  }
+  50% {
+    transform: rotate(-6deg);
+  }
+}
+
+@keyframes swayRight {
+  0%,
+  100% {
+    transform: rotate(-30deg);
+  }
+  50% {
+    transform: rotate(-42deg);
+  }
+}
+
+/* The greeting on the opening step: the raised arm swings wider and faster. */
+.armWave {
+  transform-origin: 189px 156px;
+  animation: wave 1.1s ease-in-out infinite;
+}
+
+@keyframes wave {
+  0%,
+  100% {
+    transform: rotate(-38deg);
+  }
+  50% {
+    transform: rotate(-68deg);
+  }
+}
+
+/* Anyone who has asked for less motion gets a still robot — including the
+   mouth, which would otherwise be the busiest part of the page. */
+@media (prefers-reduced-motion: reduce) {
+  .float,
+  .eyes,
+  .armLeft,
+  .armRight,
+  .armWave,
+  .isSpeaking .mouth {
+    animation: none;
+  }
+
+  .armRight,
+  .armWave {
+    transform: rotate(-36deg);
+  }
+}

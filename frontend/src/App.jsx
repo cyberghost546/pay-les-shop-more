@@ -8,6 +8,7 @@ import RequireStaff from './components/RequireStaff/RequireStaff';
 import RequireWarehouse from './components/RequireWarehouse/RequireWarehouse';
 import RequireDriver from './components/RequireDriver/RequireDriver';
 import LanguageSwitcher from './components/LanguageSwitcher/LanguageSwitcher';
+import PageGuide from './components/PageGuide/PageGuide';
 import Footer from './components/Footer/Footer';
 import { useAuth } from './auth/useAuth';
 
@@ -18,6 +19,7 @@ const Home = lazy(() => import('./pages/Home/Home'));
 const Tracking = lazy(() => import('./pages/Tracking/Tracking'));
 const Booking = lazy(() => import('./pages/Booking/Booking'));
 const Services = lazy(() => import('./pages/Services/Services'));
+const Tutorial = lazy(() => import('./pages/Tutorial/Tutorial'));
 const Contact = lazy(() => import('./components/Contact/Contact'));
 const Login = lazy(() => import('./pages/Login/Login'));
 const Signup = lazy(() => import('./pages/Signup/Signup'));
@@ -120,6 +122,8 @@ export default function App() {
             <Route path="/tracking" element={<Tracking />} />
             <Route path="/booking" element={<Booking />} />
             <Route path="/services" element={<Services />} />
+            {/* The guided walkthrough, linked from the header and the home page. */}
+            <Route path="/tutorial" element={<Tutorial />} />
             <Route path="/contact" element={<Contact />} />
             {/* Linked from the footer of every page on the site. */}
             <Route path="/privacy" element={<Privacy />} />
@@ -226,6 +230,12 @@ export default function App() {
           dashboard is English-only, so the switcher has nothing to offer
           there. */}
       {!isDashboard && <LanguageSwitcher />}
+      {/* The robot in the corner, explaining whatever page is showing. Off
+          the staff screens for the same reason the switcher is: those are an
+          application, and their own onboarding is a different job. */}
+      {/* Keyed on the path: a new page gets a fresh guide, closed, with the
+          previous page's narration stopped as the old one unmounts. */}
+      {!isDashboard && <PageGuide key={pathname} />}
     </>
   );
 }

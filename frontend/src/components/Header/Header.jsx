@@ -12,6 +12,7 @@ import styles from './Header.module.css';
 const NAV_LINKS = [
   { key: 'nav.home', href: '/' },
   { key: 'nav.services', href: '/services' },
+  { key: 'nav.tutorial', href: '/tutorial' },
   { key: 'nav.tracking', href: '/tracking' },
   { key: 'nav.booking', href: '/booking' },
   { key: 'nav.calculator', href: '/calculator' },

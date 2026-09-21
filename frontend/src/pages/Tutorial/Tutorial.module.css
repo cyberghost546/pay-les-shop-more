@@ -1,0 +1,454 @@
+/* src/pages/Tutorial/Tutorial.module.css */
+
+/* --- Banner --------------------------------------------------------- */
+
+.hero {
+  background: linear-gradient(120deg, #0b2a44 0%, #14476e 55%, #29abe2 100%);
+  color: #ffffff;
+}
+
+.heroInner {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  align-items: center;
+  gap: 2rem;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 3.5rem 1rem;
+}
+
+.eyebrow {
+  margin: 0 0 0.35rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  color: #9fe4ff;
+}
+
+.title {
+  margin: 0 0 0.75rem;
+  font-size: clamp(1.8rem, 4vw, 3rem);
+  font-weight: 800;
+}
+
+.lead {
+  margin: 0;
+  max-width: 46ch;
+  font-size: clamp(1rem, 1.4vw, 1.15rem);
+  color: #dbeefb;
+}
+
+.robotWrap {
+  display: flex;
+  justify-content: center;
+}
+
+.robot {
+  width: min(240px, 60vw);
+}
+
+/* --- The player ----------------------------------------------------- */
+
+.player {
+  max-width: 1400px;
+  margin: 2.5rem auto 0;
+  padding: 0 1rem;
+}
+
+.playerInner {
+  padding: 2rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  background: #f9fafb;
+}
+
+/* Robot beside the speech bubble; stacked on a phone, where a robot wide
+   enough to see would leave the text a column two words across. */
+.stage {
+  display: grid;
+  grid-template-columns: 180px 1fr;
+  align-items: start;
+  gap: 1.5rem;
+}
+
+.stageRobot {
+  width: 100%;
+}
+
+.bubble {
+  position: relative;
+  padding: 1.75rem;
+  border: 1px solid #d8e3ee;
+  border-radius: 6px;
+  background: #ffffff;
+  box-shadow: 0 8px 24px rgba(15, 42, 68, 0.06);
+}
+
+/* The tail pointing back at the robot, drawn as a rotated square so the
+   bubble's border runs through it. */
+.bubble::before {
+  content: '';
+  position: absolute;
+  top: 48px;
+  left: -8px;
+  width: 14px;
+  height: 14px;
+  border-left: 1px solid #d8e3ee;
+  border-bottom: 1px solid #d8e3ee;
+  background: #ffffff;
+  transform: rotate(45deg);
+}
+
+.counter {
+  margin: 0 0 0.35rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #6b7280;
+}
+
+.stepTitle {
+  margin: 0 0 0.6rem;
+  font-size: clamp(1.1rem, 2vw, 1.4rem);
+  font-weight: 800;
+  color: #111827;
+}
+
+.stepBody {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.7;
+  color: #1f2937;
+}
+
+.bullets {
+  margin: 0.9rem 0 0;
+  padding-left: 1.1rem;
+  color: #1f2937;
+  line-height: 1.7;
+}
+
+.bullets li + li {
+  margin-top: 0.35rem;
+}
+
+/* The one thing on the page that gets copied into another form: kept in a
+   block of its own so it can be read off without hunting through a sentence. */
+.address {
+  margin: 1rem 0 0;
+  padding: 1rem 1.25rem;
+  border-left: 4px solid #29abe2;
+  border-radius: 4px;
+  background: #eff8fd;
+}
+
+.addressRow {
+  display: grid;
+  grid-template-columns: 9rem 1fr;
+  gap: 0.5rem;
+}
+
+.addressRow + .addressRow {
+  margin-top: 0.5rem;
+}
+
+.addressRow dt {
+  font-weight: 700;
+  color: #0b2a44;
+}
+
+.addressRow dd {
+  margin: 0;
+  color: #1f2937;
+}
+
+.note {
+  margin: 1rem 0 0;
+  padding: 0.75rem 1rem;
+  border-left: 4px solid #f0b429;
+  border-radius: 4px;
+  background: #fff8e6;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: #4a3a12;
+}
+
+.stepLink,
+.writtenLink {
+  display: inline-block;
+  margin-top: 1.1rem;
+  padding: 0.6rem 1.2rem;
+  border-radius: 4px;
+  background: #29abe2;
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 0.95rem;
+  text-decoration: none;
+}
+
+.stepLink:hover,
+.writtenLink:hover {
+  background: #1d94c7;
+}
+
+/* --- Controls ------------------------------------------------------- */
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+
+.button {
+  padding: 0.65rem 1.25rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  background: #ffffff;
+  color: #111827;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.button:hover:not(:disabled) {
+  border-color: #29abe2;
+  color: #1d94c7;
+}
+
+.button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.primary {
+  border-color: #29abe2;
+  background: #29abe2;
+  color: #ffffff;
+}
+
+.primary:hover:not(:disabled) {
+  background: #1d94c7;
+  color: #ffffff;
+}
+
+/* While the voice is running the button shows it, so it is obvious what to
+   press to make the sound stop. */
+.listening {
+  border-color: #0b2a44;
+  background: #0b2a44;
+  color: #ffffff;
+}
+
+.listening:hover:not(:disabled) {
+  color: #ffffff;
+}
+
+.speaker {
+  margin-right: 0.4rem;
+}
+
+.dots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 1.25rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dot {
+  width: 30px;
+  height: 8px;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  background: #cbd5e1;
+  cursor: pointer;
+}
+
+.dot:hover {
+  background: #94a3b8;
+}
+
+.dotActive {
+  background: #29abe2;
+}
+
+.voiceNote {
+  margin: 1rem 0 0;
+  font-size: 0.9rem;
+  color: #6b7280;
+}
+
+/* --- The written version -------------------------------------------- */
+
+.written {
+  max-width: 1400px;
+  margin: 3rem auto;
+  padding: 0 1rem;
+}
+
+.writtenTitle {
+  margin: 0 0 0.4rem;
+  font-size: clamp(1.2rem, 2.4vw, 1.6rem);
+  font-weight: 800;
+  color: #111827;
+}
+
+.writtenLead {
+  margin: 0 0 1.75rem;
+  max-width: 70ch;
+  color: #4b5563;
+}
+
+.writtenList {
+  display: grid;
+  gap: 1rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.writtenItem {
+  display: grid;
+  grid-template-columns: 48px 1fr;
+  gap: 1.25rem;
+  padding: 1.75rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  background: #ffffff;
+}
+
+.number {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: #eff8fd;
+  color: #1d94c7;
+  font-weight: 800;
+}
+
+.writtenStepTitle {
+  margin: 0 0 0.5rem;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+.writtenBody {
+  margin: 0;
+  line-height: 1.7;
+  color: #1f2937;
+}
+
+/* --- Closing call to action ----------------------------------------- */
+
+.cta {
+  margin-top: 2.5rem;
+  padding: 2.5rem;
+  border-radius: 6px;
+  background: #0b2a44;
+  color: #ffffff;
+  text-align: center;
+}
+
+.ctaTitle {
+  margin: 0 0 0.5rem;
+  font-size: clamp(1.15rem, 2.2vw, 1.5rem);
+  font-weight: 800;
+}
+
+.ctaBody {
+  margin: 0 auto 1.5rem;
+  max-width: 60ch;
+  color: #cfe6f5;
+}
+
+.ctaActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: center;
+}
+
+.ctaPrimary,
+.ctaSecondary {
+  padding: 0.7rem 1.5rem;
+  border-radius: 4px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.ctaPrimary {
+  background: #29abe2;
+  color: #ffffff;
+}
+
+.ctaSecondary {
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  color: #ffffff;
+}
+
+/* --- Narrow screens -------------------------------------------------- */
+
+@media (max-width: 900px) {
+  .heroInner {
+    grid-template-columns: 1fr;
+    text-align: center;
+    padding: 2.5rem 1rem;
+  }
+
+  .lead {
+    margin: 0 auto;
+  }
+
+  .stage {
+    grid-template-columns: 1fr;
+    justify-items: center;
+  }
+
+  .stageRobot {
+    width: min(170px, 50vw);
+  }
+
+  /* Tail moves to the top edge, since the robot is now above the bubble. */
+  .bubble::before {
+    top: -8px;
+    left: 50%;
+    border: 1px solid #d8e3ee;
+    border-right: none;
+    border-bottom: none;
+    transform: translateX(-50%) rotate(45deg);
+  }
+}
+
+@media (max-width: 620px) {
+  .playerInner,
+  .writtenItem,
+  .cta {
+    padding: 1.25rem;
+  }
+
+  .bubble {
+    padding: 1.25rem;
+  }
+
+  .addressRow {
+    grid-template-columns: 1fr;
+    gap: 0.1rem;
+  }
+
+  .writtenItem {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+
+  .button {
+    flex: 1 1 45%;
+  }
+}

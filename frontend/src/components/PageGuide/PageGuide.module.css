@@ -1,0 +1,215 @@
+/* src/components/PageGuide/PageGuide.module.css
+ *
+ * Bottom-left, because the language rail owns the right edge (z-index 80) and
+ * on phones parks itself along the bottom-right. Both stay below the header's
+ * 100, so an open mobile menu covers them rather than fighting them.
+ */
+
+.launcher {
+  position: fixed;
+  bottom: 1rem;
+  left: 1rem;
+  z-index: 80;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  padding: 0;
+  border: 1px solid #d8e3ee;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 10px 24px rgba(15, 42, 68, 0.18);
+  cursor: pointer;
+}
+
+.launcher:hover {
+  border-color: #29abe2;
+  box-shadow: 0 12px 28px rgba(15, 42, 68, 0.24);
+}
+
+/* The robot is drawn head-to-thruster; inside a 64px button only the head
+   should read, so it is scaled up and the rest allowed to run off the edge. */
+.launcherRobot {
+  width: 78px;
+  margin-top: 14px;
+}
+
+.panel {
+  position: fixed;
+  bottom: 1rem;
+  left: 1rem;
+  z-index: 80;
+  width: min(360px, calc(100vw - 2rem));
+  padding: 1.25rem;
+  border: 1px solid #d8e3ee;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 16px 40px rgba(15, 42, 68, 0.2);
+  animation: rise 220ms ease-out;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.head {
+  display: grid;
+  grid-template-columns: 56px 1fr auto;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.panelRobot {
+  width: 56px;
+}
+
+.eyebrow {
+  margin: 0;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #6b7280;
+}
+
+.title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #111827;
+}
+
+.close {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: #6b7280;
+  font-size: 1.4rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.close:hover {
+  background: #f3f4f6;
+  color: #111827;
+}
+
+.body {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.65;
+  color: #1f2937;
+}
+
+.bullets {
+  margin: 0.75rem 0 0;
+  padding-left: 1.1rem;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: #1f2937;
+}
+
+.bullets li + li {
+  margin-top: 0.3rem;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.button {
+  padding: 0.5rem 0.9rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  background: #ffffff;
+  color: #111827;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.button:hover {
+  border-color: #29abe2;
+  color: #1d94c7;
+}
+
+.listening {
+  border-color: #0b2a44;
+  background: #0b2a44;
+  color: #ffffff;
+}
+
+.listening:hover {
+  color: #ffffff;
+}
+
+.link {
+  padding: 0.5rem 0.9rem;
+  border-radius: 4px;
+  background: #29abe2;
+  color: #ffffff;
+  font-size: 0.875rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.link:hover {
+  background: #1d94c7;
+}
+
+/* Quiet by design: it should be findable, not competing with the two
+   buttons above it. */
+.dismiss {
+  margin-top: 0.85rem;
+  padding: 0;
+  border: none;
+  background: none;
+  color: #6b7280;
+  font-size: 0.8rem;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.dismiss:hover {
+  color: #111827;
+}
+
+/* Phones: the language rail lies across the bottom-right, so both the button
+   and the panel sit above it. */
+@media (max-width: 720px) {
+  .launcher,
+  .panel {
+    bottom: 4.5rem;
+  }
+
+  .launcher {
+    width: 56px;
+    height: 56px;
+  }
+
+  .launcherRobot {
+    width: 68px;
+    margin-top: 12px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .panel {
+    animation: none;
+  }
+}
