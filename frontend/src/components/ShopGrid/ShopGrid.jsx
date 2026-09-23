@@ -128,9 +128,9 @@ export default function ShopGrid() {
       {/* The window the rows slide behind. Its edges are faded by CSS, so a
           card arrives and leaves rather than appearing at a hard border. */}
       <div className={styles.marquee}>
-        <MarqueeRow shops={topRow} cta={t('home.shops.visit')} speed="26s" />
+        <MarqueeRow shops={topRow} cta={t('home.shops.visit')} speed="16s" />
         {bottomRow.length > 0 && (
-          <MarqueeRow shops={bottomRow} cta={t('home.shops.visit')} speed="34s" />
+          <MarqueeRow shops={bottomRow} cta={t('home.shops.visit')} speed="21s" />
         )}
       </div>
 
