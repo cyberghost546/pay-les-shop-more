@@ -18,6 +18,9 @@ urlpatterns = [
     path('api/', include('bookings.urls')),
     path('api/', include('notifications.urls')),
     path('api/', include('invoicing.urls')),
+    # The shops the services page lists. Read-only and public; the office
+    # edits them through /api/staff/shops/ below.
+    path('api/', include('shops.urls')),
     # The back-office API. Behind IsStaff, so a non-staff account gets 403
     # from every route under it.
     path('api/staff/', include('staff.urls')),

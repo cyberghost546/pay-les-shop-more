@@ -11,7 +11,7 @@ import ShipmentTimeline from '../../components/ShipmentTimeline/ShipmentTimeline
 import StatsBand from '../../components/StatsBand/StatsBand';
 import Steps from '../../components/Steps/Steps';
 import ShopAndShip from '../../components/ShopAndShip/ShopAndShip';
-import SpinningWheel from '../../components/SpinningWheel/SpinningWheel';
+import ShopGrid from '../../components/ShopGrid/ShopGrid';
 import RouteMap from './RouteMap';
 import { useAuth } from '../../auth/useAuth';
 import { useInViewport } from '../../hooks/useInViewport';
@@ -162,15 +162,14 @@ export default function Home() {
             </div>
           </div>
 
-          {/* The shops customers order from, on a wheel that turns to the
-              next one every 5 seconds. The shops are in src/data/shops.js. */}
+          {/* The shops customers order from, and what happens after the
+              order. The shops are in src/data/shops.js. */}
           <div className={styles.visual}>
-            <p className={styles.shopsCaption}>{t('home.hero.shops')}</p>
-            <SpinningWheel label={t('home.hero.shops')} intervalMs={5000} />
+            <ShopGrid />
           </div>
         </div>
 
-        {/* 3. Tracking, for signed-in customers only - it is the most common
+        {/* 2. Tracking, for signed-in customers only - it is the most common
             reason a returning customer opens the site. */}
         {isAuthenticated && (
           <div className={styles.heroTracking} id="track">
@@ -179,19 +178,19 @@ export default function Home() {
         )}
       </div>
 
-      {/* 4. Live statistics ---------------------------------------------- */}
+      {/* 3. Live statistics ---------------------------------------------- */}
       <StatsBand />
 
-      {/* 5. How it works — the existing Steps component, unchanged, which
+      {/* 4. How it works — the existing Steps component, unchanged, which
           already tells this story in three languages. */}
       <Section className={`${styles.plain} ${styles.anchor}`} id="how">
         <Steps />
       </Section>
 
-      {/* 6. Interactive map ----------------------------------------------- */}
+      {/* 5. Interactive map ----------------------------------------------- */}
       <RouteMap />
 
-      {/* 7. Services ------------------------------------------------------ */}
+      {/* 6. Services ------------------------------------------------------ */}
       <Section>
         <div className={styles.sectionHead}>
           <p className={styles.eyebrow}>{t('home.services.eyebrow')}</p>
@@ -219,7 +218,7 @@ export default function Home() {
         </div>
       </Section>
 
-      {/* 8. What happens to a shipment ------------------------------------ */}
+      {/* 7. What happens to a shipment ------------------------------------ */}
       <Section className={styles.timelineSection}>
         <div className={styles.sectionHead}>
           <p className={styles.eyebrow}>{t('home.journey.eyebrow')}</p>
@@ -246,7 +245,7 @@ export default function Home() {
         <ShopAndShip />
       </Section>
 
-      {/* 9. Closing call to action ---------------------------------------- */}
+      {/* 8. Closing call to action ---------------------------------------- */}
       <section className={styles.cta}>
         <div className={styles.ctaInner}>
           <h2 className={styles.ctaTitle}>{t('home.cta2.title')}</h2>

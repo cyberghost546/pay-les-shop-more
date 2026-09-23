@@ -419,6 +419,12 @@ export const translations = {
         'Opslaan is nog niet gekoppeld: er is nog geen server om de wijzigingen naartoe te sturen.',
     },
     destination: {
+      // The "Overige bestemmingen" page: everywhere we ship that has no page
+      // of its own. See pages/Destinations/OtherDestinations.jsx.
+      otherTitle: 'Overige bestemmingen',
+      otherLead:
+        'Wij verzenden ook naar de landen hieronder. Deze bestemmingen hebben geen eigen pagina, maar wij regelen uw zending er net zo goed naartoe — vraag ons naar de mogelijkheden en de kosten.',
+      otherCta: 'Vraag naar deze bestemming',
       eyebrow: 'Van winkelmandje tot voordeur',
       step: 'Stap',
       howTitle: 'Zo komt uw bestelling op {island}',
@@ -529,12 +535,11 @@ export const translations = {
       hero: {
         eyebrow: 'Btw-vrij van Nederland naar Curaçao en Bonaire',
         title: 'Bestel in Nederland. Wij bezorgen het btw-vrij op het eiland.',
-        lead: 'Koop bij elke Nederlandse webshop en laat het naar ons magazijn in Nederland sturen. Wij bundelen uw bestellingen, verschepen ze btw-vrij per boot of vliegtuig en bezorgen ze bij u thuis op Curaçao of Bonaire.',
+        lead: 'Koop bij elke Nederlandse webshop en laat het naar ons magazijn in Nederland sturen. Uw bestellingen, eenvoudig geregeld. Wij bundelen en verschepen ze btw-vrij per boot of vliegtuig en bezorgen ze vervolgens bij u thuis op Curaçao.',
         trackCta: 'Zending volgen',
         startCta: 'Aan de slag',
         howCta: 'Hoe het werkt',
         myShipments: 'Mijn zendingen',
-        shops: 'Bestel bij winkels zoals',
         points: {
           shop: {
             title: 'U bestelt',
@@ -542,13 +547,19 @@ export const translations = {
           },
           ship: {
             title: 'Wij verschepen',
-            body: 'We bundelen uw pakketten en versturen ze btw-vrij per zee of lucht.',
+            body: 'We bundelen uw pakketten en versturen ze btw-vrij per zeevracht of luchtvracht.',
           },
           deliver: {
             title: 'U ontvangt',
-            body: 'Onze agent op het eiland bezorgt alles bij u thuis of op het werk.',
+            body: 'Onze agent op het eiland zorgt ervoor dat uw bestelling gemakkelijk bij u thuis of op het werk wordt bezorgd.',
           },
         },
+      },
+      shops: {
+        title: 'BESTEL BIJ JOUW FAVORIETE WINKELS',
+        lead: 'Bestel eenvoudig bij populaire webshops. Onze agent op het eiland zorgt ervoor dat je bestelling bij jou thuis of op het werk wordt bezorgd.',
+        visit: 'Bekijk winkel',
+        cta: 'Bekijk alle winkels',
       },
       stats: {
         title: 'Onze cijfers',
@@ -653,6 +664,21 @@ export const translations = {
       },
     },
     services: {
+      hero: {
+        title: 'Onze diensten',
+        lead: 'Ontdek onze diensten en partners op Aruba, Bonaire en Curaçao.',
+      },
+      islandsLabel: 'Onze eilanden',
+      companies: {
+        title: 'Bedrijven en diensten',
+        lead: 'De partners waarmee wij samenwerken om uw zending op het eiland te krijgen.',
+        placeholder: 'Naam',
+        cta: 'Bekijk service',
+      },
+      contactCta: {
+        title: 'Benieuwd wat wij voor u kunnen betekenen?',
+        button: 'Neem contact met ons op',
+      },
       eyebrow: 'ONZE',
       title: 'DIENSTEN',
       breadcrumb: 'Diensten',
@@ -1521,6 +1547,12 @@ export const translations = {
         'Saving is not connected yet: there is no server to send the changes to.',
     },
     destination: {
+      // The "Other destinations" page: everywhere we ship that has no page
+      // of its own. See pages/Destinations/OtherDestinations.jsx.
+      otherTitle: 'Other destinations',
+      otherLead:
+        'We ship to the countries below as well. These destinations have no page of their own, but we arrange your shipment there just the same — ask us about the options and the cost.',
+      otherCta: 'Ask about this destination',
       eyebrow: 'From basket to front door',
       step: 'Step',
       howTitle: 'How your order reaches {island}',
@@ -1631,12 +1663,11 @@ export const translations = {
       hero: {
         eyebrow: 'BTW-free from the Netherlands to Curaçao and Bonaire',
         title: 'Shop in the Netherlands. We deliver it BTW-free to the island.',
-        lead: 'Buy from any Dutch webshop and have it sent to our warehouse in the Netherlands. We combine your orders, ship them BTW-free (no Dutch VAT) by sea or air, and deliver them to your door in Curaçao or Bonaire.',
+        lead: 'Buy from any Dutch webshop and have it sent to our warehouse in the Netherlands. Your orders, simply taken care of. We combine and ship them BTW-free (no Dutch VAT) by boat or plane, and then deliver them to your door in Curaçao.',
         trackCta: 'Track a shipment',
         startCta: 'Get started',
         howCta: 'How it works',
         myShipments: 'My shipments',
-        shops: 'Order from shops like',
         points: {
           shop: {
             title: 'You shop',
@@ -1644,13 +1675,19 @@ export const translations = {
           },
           ship: {
             title: 'We ship',
-            body: 'We combine your parcels and send them BTW-free by sea or air.',
+            body: 'We combine your parcels and send them BTW-free by sea freight or air freight.',
           },
           deliver: {
             title: 'You receive',
-            body: 'Our agent on the island delivers everything to your home or business.',
+            body: 'Our agent on the island makes sure your order is delivered easily to your home or your workplace.',
           },
         },
+      },
+      shops: {
+        title: 'ORDER FROM YOUR FAVOURITE SHOPS',
+        lead: 'Order easily from popular webshops. Our agent on the island makes sure your order is delivered to your home or your workplace.',
+        visit: 'Visit shop',
+        cta: 'See all shops',
       },
       stats: {
         title: 'Our numbers',
@@ -1755,6 +1792,21 @@ export const translations = {
       },
     },
     services: {
+      hero: {
+        title: 'Our services',
+        lead: 'Discover our services and partners on Aruba, Bonaire and Curaçao.',
+      },
+      islandsLabel: 'Our islands',
+      companies: {
+        title: 'Companies and services',
+        lead: 'The partners we work with to get your shipment onto the island.',
+        placeholder: 'Name',
+        cta: 'View service',
+      },
+      contactCta: {
+        title: 'Wondering what we can do for you?',
+        button: 'Get in touch with us',
+      },
       eyebrow: 'OUR',
       title: 'SERVICES',
       breadcrumb: 'Services',
@@ -2607,6 +2659,12 @@ export const translations = {
         'Warda ainda no ta konektá: no tin un server pa manda e kambionan.',
     },
     destination: {
+      // The "Otro destinashonnan" page: everywhere we ship that has no page
+      // of its own. See pages/Destinations/OtherDestinations.jsx.
+      otherTitle: 'Otro destinashonnan',
+      otherLead:
+        'Nos ta manda tambe pa e paisnan aki bou. E destinashonnan aki no tin nan mes página, pero nos ta reglar bo envio pa ayá mesíå bon — puntra nos tokante e posibilidatnan i e kosto.',
+      otherCta: 'Puntra tokante e destinashon aki',
       eyebrow: 'For di makutu te na porta',
       step: 'Paso',
       howTitle: 'Kon bo òrdu ta yega {island}',
@@ -2717,12 +2775,11 @@ export const translations = {
       hero: {
         eyebrow: 'Sin BTW for di Hulanda pa Kòrsou i Boneiru',
         title: 'Kumpra na Hulanda. Nos ta entregá e sin BTW na e isla.',
-        lead: 'Kumpra na kualke webshop hulandes i laga nan manda e pa nos warehouse na Hulanda. Nos ta hunta bo órdennan, manda nan sin BTW pa barku òf avion, i entregá nan na bo porta na Kòrsou òf Boneiru.',
+        lead: 'Kumpra na kualke webshop hulandes i laga nan manda e pa nos warehouse na Hulanda. Bo órdennan, reglá fásil. Nos ta hunta i manda nan sin BTW pa barku òf avion, i despues entregá nan na bo kas na Kòrsou.',
         trackCta: 'Sigui un enbio',
         startCta: 'Kuminsá',
         howCta: 'Kon e ta funshoná',
         myShipments: 'Mi enbionan',
-        shops: 'Kumpra na tiendanan manera',
         points: {
           shop: {
             title: 'Bo ta kumpra',
@@ -2730,13 +2787,19 @@ export const translations = {
           },
           ship: {
             title: 'Nos ta manda',
-            body: 'Nos ta hunta bo pakètnan i manda nan sin BTW pa laman òf pa aire.',
+            body: 'Nos ta hunta bo pakètnan i manda nan sin BTW pa fleit di laman òf fleit di aire.',
           },
           deliver: {
             title: 'Bo ta risibí',
-            body: 'Nos agente na e isla ta entregá tur kos na bo kas òf bo negoshi.',
+            body: 'Nos agente na e isla ta sòru pa bo òrdu yega fásil na bo kas òf na bo trabou.',
           },
         },
+      },
+      shops: {
+        title: 'HASI BO ÒRDU NA BO TIENDANAN FAVORITO',
+        lead: 'Hasi bo òrdu fásil na webshopnan populár. Nos agente riba e isla ta sòru pa bo òrdu yega na bo kas of na trabou.',
+        visit: 'Mira tienda',
+        cta: 'Mira tur tienda',
       },
       stats: {
         title: 'Nos siframan',
@@ -2841,6 +2904,21 @@ export const translations = {
       },
     },
     services: {
+      hero: {
+        title: 'Nos servisionan',
+        lead: 'Deskubrí nos servisionan i sosionan na Aruba, Boneiru i Kòrsou.',
+      },
+      islandsLabel: 'Nos islanan',
+      companies: {
+        title: 'Kompanianan i servisionan',
+        lead: 'E sosionan ku nos ta traha kuné pa hiba bo envio na e isla.',
+        placeholder: 'Nòmber',
+        cta: 'Mira servisio',
+      },
+      contactCta: {
+        title: 'Kurioso kiko nos por hasi pa bo?',
+        button: 'Tuma kontakto ku nos',
+      },
       eyebrow: 'NOS',
       title: 'SERVISIONAN',
       breadcrumb: 'Servisionan',

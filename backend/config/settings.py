@@ -116,6 +116,7 @@ INSTALLED_APPS = [
     'bookings',
     'invoicing',
     'notifications',
+    'shops',
     'staff',
     'warehouse',
 ]

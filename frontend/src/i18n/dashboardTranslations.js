@@ -26,6 +26,7 @@ export const dashboardTranslations = {
         shipments: 'Zendingen',
         billing: 'Facturatie',
         people: 'Mensen',
+        website: 'Website',
         warehouse: 'Magazijn',
       },
       nav: {
@@ -39,6 +40,7 @@ export const dashboardTranslations = {
         documents: 'Documenten',
         customers: 'Klanten',
         workers: 'Medewerkers',
+        shops: 'Winkels',
         warehouseDashboard: 'Magazijndashboard',
         scan: 'Pakket scannen',
         intake: 'Intakeformulieren',
@@ -211,6 +213,7 @@ export const dashboardTranslations = {
         shipments: 'Shipments',
         billing: 'Billing',
         people: 'People',
+        website: 'Website',
         warehouse: 'Warehouse',
       },
       nav: {
@@ -224,6 +227,7 @@ export const dashboardTranslations = {
         documents: 'Documents',
         customers: 'Customers',
         workers: 'Workers',
+        shops: 'Shops',
         warehouseDashboard: 'Warehouse dashboard',
         scan: 'Scan a package',
         intake: 'Intake sheets',
@@ -396,6 +400,7 @@ export const dashboardTranslations = {
         shipments: 'Envio',
         billing: 'Faktura',
         people: 'Hende',
+        website: 'Website',
         warehouse: 'Pakus',
       },
       nav: {
@@ -409,6 +414,7 @@ export const dashboardTranslations = {
         documents: 'Dokumento',
         customers: 'Kliente',
         workers: 'Trahadónan',
+        shops: 'Tiendanan',
         warehouseDashboard: 'Dashboard di pakus',
         scan: 'Skan un pakete',
         intake: 'Formulario di entrada',

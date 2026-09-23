@@ -1,6 +1,22 @@
-/* src/pages/Services/Services.module.css */
+/* src/pages/Services/Services.module.css
+ *
+ * The services page. The banner and the yellow strip carry the brand at the
+ * top; everything below them runs on white, so the flags and the shop logos
+ * are the only colour on the page. That is deliberate - they are meant to be
+ * the thing you look at.
+ *
+ * On white, a white card is invisible, so the cards below are held apart from
+ * the page by a hairline border rather than by contrast. The shadows are
+ * lighter than they were on the navy for the same reason: a heavy shadow on
+ * white reads as dirt.
+ */
 
-/* Top band: dark title panel on the left, photo on the right */
+/* ------------------------------------------------------- 1. split banner
+
+   Dark title panel on the left, the ship on the right. Kept from the previous
+   design: it is the page's masthead, and the breadcrumb under it is how a
+   visitor knows where they are.                                            */
+
 .banner {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -25,7 +41,7 @@
   /* Diagonal light streaks, echoing the brand banner */
   background-image:
     linear-gradient(115deg, rgba(56, 160, 220, 0.55) 0 6%, transparent 6%),
-    linear-gradient(115deg, rgba(56, 160, 220, 0.30) 0 11%, transparent 11%),
+    linear-gradient(115deg, rgba(56, 160, 220, 0.3) 0 11%, transparent 11%),
     linear-gradient(115deg, rgba(56, 160, 220, 0.16) 0 18%, transparent 18%);
 }
 
@@ -81,7 +97,8 @@
   object-fit: cover;
 }
 
-/* Yellow strip: three selling points, divided by thin rules */
+/* --------------------------------------------------- 2. the yellow strip */
+
 .highlights {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -118,7 +135,6 @@
   stroke-linejoin: round;
 }
 
-/* Stack everything on narrow screens */
 @media (max-width: 900px) {
   .banner {
     grid-template-columns: 1fr;
@@ -134,134 +150,263 @@
   }
 }
 
+.page {
+  --navy: #0b2545;
+  --cyan: #0ea5e9;
+  --cyan-bright: #38bdf8;
+  --ink: #0f172a;
+  --muted: #64748b;
+  /* The hairline that holds a white card off a white page. Doing that job
+     with a border rather than with contrast is what keeps the shadows light
+     enough not to look like dirt. */
+  --line: #e2e8f0;
 
-/* ------------------------------------------------------------------ islands
+  background: #ffffff;
+  color: var(--ink);
+}
 
-   One panel per island: the heading and the list of what is offered on the
-   left, the island itself on the right. Two panels to a row on a desktop,
-   one on anything narrower.                                                 */
+/* ------------------------------------------------------- 3. the islands */
 
 .islands {
-  max-width: 1400px;
-  margin: 0 auto;
-  padding: 3rem 1rem;
+  padding: 4rem 1.25rem 0;
+}
+
+/* The page's one line of introduction. The banner above already carries the
+   title, so this says what the page is for and then gets out of the way. */
+.intro {
+  max-width: 60ch;
+  margin: 0 auto 2.75rem;
+  font-size: 1.05rem;
+  line-height: 1.7;
+  text-align: center;
+  color: var(--muted);
 }
 
 .islandGrid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 2rem;
-  margin: 0;
+  /* Three across on a desktop; the same rule folds to two and then one as the
+     page narrows, which is the tablet and mobile behaviour without a
+     breakpoint of their own. */
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.75rem;
+  max-width: 1180px;
+  margin: 0 auto;
   padding: 0;
   list-style: none;
+}
+
+.islandItem {
+  display: flex;
 }
 
 .islandCard {
-  display: grid;
-  /* The list takes what it needs; the island takes the rest. Near enough an
-     even split: the list is ten short lines, so giving the island less than
-     half the card only shrinks the island. */
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+  display: flex;
+  flex: 1;
   align-items: center;
-  gap: 1.5rem;
-  padding: 2.5rem 2rem;
-  border: 1px solid #e4e7ec;
-  background: #ffffff;
+  justify-content: center;
+  /* Equal dimensions across the row, whatever shape the island is. */
+  aspect-ratio: 4 / 3;
+  padding: 2rem;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  /* Light, and neutral rather than blue. Two constraints meet here and only
+     a narrow band satisfies both: Bonaire's and Curacao's flags are mostly
+     deep blue, so the card cannot be dark or they vanish into it - and
+     Bonaire's carries a real white band, so the card cannot be white either
+     or that band vanishes instead. A soft grey clears both, and stays out of
+     the way of the blues the flags are made of. */
+  background: linear-gradient(160deg, #ffffff 0%, #f4f6f9 55%, #eef1f5 100%);
+  box-shadow: 0 1px 2px rgba(11, 37, 69, 0.05), 0 16px 32px -20px rgba(11, 37, 69, 0.28);
+  transition: transform 0.35s ease, box-shadow 0.35s ease, border-color 0.35s ease;
 }
 
-.islandBody {
-  min-width: 0;
+.islandCard:hover,
+.islandCard:focus-visible {
+  transform: translateY(-6px);
+  border-color: rgba(14, 165, 233, 0.55);
+  box-shadow: 0 2px 4px rgba(11, 37, 69, 0.07), 0 26px 46px -22px rgba(11, 37, 69, 0.36);
 }
 
-.islandTitle {
-  margin: 0 0 1.75rem;
-  color: #0b1220;
-  font-size: 1.1rem;
-  font-weight: 700;
+.islandCard:focus-visible {
+  outline: 3px solid var(--cyan);
+  outline-offset: 4px;
 }
 
-.serviceList {
+/* The island in its own flag, and the whole of the card. Fitted rather than
+   filled: the drawing is the shape of a coastline, so cropping it would be
+   cropping the thing that identifies the island. */
+.islandFlag {
+  display: block;
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 8px 16px rgba(11, 37, 69, 0.2));
+  transition: transform 0.35s ease;
+}
+
+.islandCard:hover .islandFlag,
+.islandCard:focus-visible .islandFlag {
+  /* Small and slow: the effect should register as quality, not animation. */
+  transform: scale(1.05);
+}
+
+/* ----------------------------------------------------- 4. the companies */
+
+.companies {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 5rem 1.25rem 1rem;
+}
+
+.sectionHead {
+  max-width: 60ch;
+  margin: 0 auto 3rem;
+  text-align: center;
+}
+
+.sectionTitle {
+  margin: 0 0 0.85rem;
+  color: var(--navy);
+  font-size: clamp(1.7rem, 3.4vw, 2.3rem);
+  font-weight: 800;
+  letter-spacing: -0.015em;
+}
+
+.sectionLead {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.7;
+  color: var(--muted);
+}
+
+.companyGrid {
   display: grid;
-  gap: 0.55rem;
+  /* Four across at full width, folding to three, two and one. */
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 1.5rem;
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.serviceItem {
+.companyItem {
+  display: flex;
+}
+
+.companyCard {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding: 2rem 1.5rem;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: #ffffff;
+  box-shadow: 0 1px 2px rgba(11, 37, 69, 0.05), 0 12px 26px -20px rgba(11, 37, 69, 0.3);
+  text-align: center;
+  transition: transform 0.28s ease, box-shadow 0.28s ease, border-color 0.28s ease;
+}
+
+.companyCard:hover {
+  transform: translateY(-4px);
+  border-color: rgba(14, 165, 233, 0.5);
+  box-shadow: 0 2px 4px rgba(11, 37, 69, 0.07), 0 22px 40px -22px rgba(11, 37, 69, 0.34);
+}
+
+.companyLogo {
+  width: 100%;
+  height: 46px;
+  /* contain, never cover: a cropped logo is a damaged trademark. */
+  object-fit: contain;
+  /* Does nothing to a logo on a transparent ground - there are no corners to
+     round. It is here for the few that ship as a mark on a block of brand
+     colour, so that block does not sit on the white card as a hard-edged
+     rectangle. */
+  border-radius: 6px;
+}
+
+/* Stands in for a logo that has not arrived. A flat tinted plate with the
+   company's initial - quiet enough that it does not pretend to be a brand. */
+.companyPlate {
   display: flex;
   align-items: center;
-  gap: 0.85rem;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  background: linear-gradient(150deg, #e0f2fe, #bae6fd);
+  color: #0b2545;
+  font-size: 1.3rem;
+  font-weight: 800;
+  line-height: 1;
 }
 
-/* The corner-and-arrow marker in front of every line. Drawn rather than
-   typed, so it keeps its weight next to the text at any size. */
-.serviceArrow {
-  flex: 0 0 auto;
-  width: 16px;
-  height: 16px;
-  fill: none;
-  stroke: #4b5563;
-  stroke-width: 1.4;
-  stroke-linecap: round;
-  stroke-linejoin: round;
+.companyName {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--ink);
 }
 
-.serviceLink {
-  color: #38a0dc;
-  font-size: 1.02rem;
+.companyBlurb {
+  margin: 0;
+  font-size: 0.88rem;
+  line-height: 1.6;
+  color: var(--muted);
+}
+
+.companyCta {
+  /* Pushed to the foot of the card, so buttons line up across a row whose
+     cards carry different amounts of text. */
+  margin-top: auto;
+  padding: 0.6rem 1.25rem;
+  border-radius: 8px;
+  background: rgba(14, 165, 233, 0.1);
+  color: #0369a1;
+  font-size: 0.85rem;
+  font-weight: 700;
   text-decoration: none;
+  transition: background 0.24s ease, color 0.24s ease;
 }
 
-.serviceLink:hover,
-.serviceLink:focus-visible {
-  text-decoration: underline;
+.companyCta:hover,
+.companyCta:focus-visible {
+  background: var(--cyan);
+  color: #ffffff;
 }
 
-.islandImage {
-  width: 100%;
-  height: auto;
-  /* Squared off, like the rest of the page: nothing else here is rounded. */
-  object-fit: cover;
-  aspect-ratio: 4 / 3;
+.companyCta:focus-visible {
+  outline: 3px solid var(--cyan);
+  outline-offset: 2px;
 }
 
-/* The flag maps are tall drawings on a transparent ground, so they are fitted
-   rather than cropped: `cover` on a 1920×2090 island would show its middle
-   third and none of its shape, which is the whole point of the picture.
+/* -------------------------------------------------------- 5. the brands
 
-   Square rather than the photograph's 4:3, because `contain` fits a portrait
-   drawing by its height: in a short, wide box the island is sized by the 3,
-   not the 4, and sits small with empty air either side. A square box is the
-   one that lets a roughly-square drawing fill the column. */
-.islandFlagMap {
-  width: 100%;
-  height: auto;
-  object-fit: contain;
-  aspect-ratio: 1 / 1;
-}
-
-/* ------------------------------------------------------------------- brands
-
-   A row of bordered boxes that scrolls sideways rather than wrapping, so the
-   strip stays one line however many brands are in it.                       */
+   A row of boxes that scrolls sideways rather than wrapping, so the strip
+   stays one line however many brands are in it. Kept from the previous
+   design; the boxes are white on the navy now, so they match the company
+   cards above them instead of the old grey-on-white.                       */
 
 .brands {
-  max-width: 1400px;
+  max-width: 1180px;
   margin: 0 auto;
-  padding: 0 1rem 4rem;
+  padding: 4.5rem 1.25rem 0;
 }
 
 .brandsTitle {
-  margin: 0 0 1.25rem;
-  color: #0b1220;
-  font-size: 1.05rem;
-  font-weight: 700;
+  margin: 0 0 1.5rem;
+  color: var(--navy);
+  font-size: clamp(1.15rem, 2vw, 1.4rem);
+  font-weight: 800;
+  letter-spacing: -0.01em;
 }
 
 .brandRow {
   display: flex;
-  gap: 1.25rem;
+  gap: 1rem;
   margin: 0;
   padding: 0 0 1rem;
   list-style: none;
@@ -271,8 +416,9 @@
 }
 
 .brandRow:focus-visible {
-  outline: 2px solid #38a0dc;
+  outline: 3px solid var(--cyan);
   outline-offset: 4px;
+  border-radius: 4px;
 }
 
 .brandCard {
@@ -280,18 +426,21 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: clamp(200px, 24vw, 300px);
-  height: 190px;
+  width: clamp(150px, 18vw, 190px);
+  height: 110px;
   padding: 1.5rem;
   box-sizing: border-box;
-  border: 1px solid #e4e7ec;
-  background: #fafafa;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: #ffffff;
+  box-shadow: 0 1px 2px rgba(11, 37, 69, 0.05), 0 10px 22px -18px rgba(11, 37, 69, 0.3);
   scroll-snap-align: start;
 }
 
 .brandLogo {
   max-width: 100%;
   max-height: 100%;
+  /* contain, never cover: a cropped logo is a damaged trademark. */
   object-fit: contain;
 }
 
@@ -300,19 +449,122 @@
    empty boxes. */
 .brandName {
   color: #4b5563;
-  font-size: 1.2rem;
+  font-size: 1rem;
   font-weight: 700;
   text-align: center;
 }
 
-@media (max-width: 900px) {
+/* --------------------------------------------- 6. closing call to action */
+
+.cta {
+  padding: 5rem 1.25rem 6rem;
+}
+
+.ctaInner {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 3rem 2rem;
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  /* A faint wash rather than plain white, so the panel is legible as a panel
+     on a page that is already white. */
+  background: linear-gradient(160deg, #ffffff 0%, #f6f9fc 100%);
+  text-align: center;
+}
+
+.ctaTitle {
+  margin: 0 0 1.75rem;
+  color: var(--navy);
+  font-size: clamp(1.4rem, 2.8vw, 1.9rem);
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  line-height: 1.3;
+}
+
+.ctaButton {
+  display: inline-block;
+  padding: 0.95rem 2.25rem;
+  border-radius: 10px;
+  background: var(--cyan);
+  color: #04182f;
+  font-size: 1rem;
+  font-weight: 700;
+  text-decoration: none;
+  transition: background 0.24s ease, transform 0.24s ease, box-shadow 0.24s ease;
+}
+
+.ctaButton:hover,
+.ctaButton:focus-visible {
+  background: var(--cyan-bright);
+  transform: translateY(-2px);
+  box-shadow: 0 16px 34px -16px rgba(56, 189, 248, 0.85);
+}
+
+.ctaButton:focus-visible {
+  outline: 3px solid var(--navy);
+  outline-offset: 3px;
+}
+
+/* --------------------------------------------------------- narrow screens */
+
+@media (max-width: 720px) {
+  .hero {
+    padding: 3.25rem 1.25rem 2.5rem;
+  }
+
   .islandGrid {
-    grid-template-columns: 1fr;
+    gap: 1.25rem;
   }
 
   .islandCard {
-    /* The island moves under the list rather than shrinking beside it. */
-    grid-template-columns: 1fr;
-    padding: 2rem 1.5rem;
+    padding: 1.5rem;
+  }
+
+  .companies {
+    padding-top: 3.5rem;
+  }
+
+  .sectionHead {
+    margin-bottom: 2.25rem;
+  }
+
+  .companyGrid {
+    gap: 1rem;
+  }
+
+  .companyCard {
+    padding: 1.5rem 1.25rem;
+  }
+
+  .brands {
+    padding-top: 3rem;
+  }
+
+  .cta {
+    padding: 3.5rem 1.25rem 4rem;
+  }
+
+  .ctaInner {
+    padding: 2.25rem 1.5rem;
+  }
+}
+
+/* The cards still respond to a pointer, they just stop moving. */
+@media (prefers-reduced-motion: reduce) {
+  .islandCard,
+  .islandFlag,
+  .companyCard,
+  .ctaButton {
+    transition: none;
+  }
+
+  .islandCard:hover,
+  .islandCard:focus-visible,
+  .companyCard:hover,
+  .ctaButton:hover,
+  .ctaButton:focus-visible,
+  .islandCard:hover .islandFlag,
+  .islandCard:focus-visible .islandFlag {
+    transform: none;
   }
 }

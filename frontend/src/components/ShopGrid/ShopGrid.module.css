@@ -1,0 +1,227 @@
+/* src/components/ShopGrid/ShopGrid.module.css
+ *
+ * The shop panel, sitting beside the hero copy on the hero's own navy. It
+ * brings no background of its own - the hero supplies that - so the white
+ * cards read as the only bright thing in the column, which is the point.
+ *
+ * The restraint is deliberate: generous whitespace, one accent colour, and
+ * hover effects small enough to read as quality rather than decoration.
+ */
+
+.panel {
+  --cyan: #0ea5e9;
+  --cyan-bright: #38bdf8;
+
+  color: #ffffff;
+}
+
+/* ------------------------------------------------------------------ head */
+
+.head {
+  margin: 0 0 1.5rem;
+}
+
+.title {
+  margin: 0 0 0.6rem;
+  /* Second to the hero's h1, and sized to say so. */
+  font-size: clamp(1.05rem, 1.6vw, 1.3rem);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  line-height: 1.35;
+  text-transform: uppercase;
+}
+
+.lead {
+  margin: 0;
+  font-size: 0.92rem;
+  line-height: 1.6;
+  /* Light enough to sit under the title without competing with it, bright
+     enough to stay legible on the navy. */
+  color: rgba(226, 232, 240, 0.82);
+}
+
+/* ----------------------------------------------------------------- cards */
+
+.grid {
+  display: grid;
+  /* Three across in the hero column, folding to two as it narrows. The same
+     rule covers every width - no breakpoint needed for the columns. */
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.item {
+  display: flex;
+}
+
+.card {
+  position: relative;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  min-height: 112px;
+  padding: 1rem 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  background: #ffffff;
+  box-shadow: 0 1px 2px rgba(7, 26, 48, 0.2), 0 10px 24px -16px rgba(7, 26, 48, 0.55);
+  text-decoration: none;
+  transition: transform 0.28s ease, box-shadow 0.28s ease, border-color 0.28s ease;
+}
+
+.card:hover,
+.card:focus-visible {
+  transform: translateY(-3px);
+  border-color: rgba(56, 189, 248, 0.55);
+  box-shadow: 0 2px 4px rgba(7, 26, 48, 0.18), 0 18px 36px -18px rgba(7, 26, 48, 0.65);
+}
+
+.card:focus-visible {
+  outline: 3px solid var(--cyan-bright);
+  outline-offset: 3px;
+}
+
+/* A fixed well, so six logos of six different shapes all sit on the same
+   optical line and the cards read as a set. */
+.logoWell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  /* Tall enough that a square mark like Coolblue's is not dwarfed by a wide
+     wordmark like MediaMarkt's - a square logo is capped by the well's
+     height, a wide one by its width. */
+  height: 46px;
+}
+
+.logo {
+  /* The well is the only thing that sizes a logo. Letting each one fill the
+     same box is what keeps a 7:1 wordmark and a square tile looking like they
+     belong to one set. */
+  width: 100%;
+  height: 100%;
+  /* contain, never cover: a cropped logo is a damaged trademark. */
+  object-fit: contain;
+  transition: transform 0.28s ease;
+}
+
+/* bol.com, IKEA and Coolblue ship as a mark on a block of brand colour. The
+   radius is what stops that block reading as an untrimmed rectangle. */
+.logoTile {
+  border-radius: 5px;
+}
+
+.card:hover .logo,
+.card:focus-visible .logo {
+  transform: scale(1.04);
+}
+
+.cardCta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  color: var(--cyan);
+  /* Held out of the way until wanted, but never display:none - it keeps its
+     space, so revealing it does not shift the logo above. */
+  opacity: 0;
+  transform: translateY(3px);
+  transition: opacity 0.28s ease, transform 0.28s ease;
+}
+
+.card:hover .cardCta,
+.card:focus-visible .cardCta {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.cardArrow {
+  width: 13px;
+  height: 13px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: transform 0.28s ease;
+}
+
+.card:hover .cardArrow,
+.card:focus-visible .cardArrow {
+  transform: translateX(3px);
+}
+
+/* ------------------------------------------------------------------- cta */
+
+.cta {
+  display: block;
+  /* The strip that used to sit here is gone, so the button carries the space
+     off the cards itself. */
+  margin-top: 1.75rem;
+  padding: 0.85rem 1.5rem;
+  border-radius: 10px;
+  background: var(--cyan);
+  color: #04182f;
+  font-size: 0.95rem;
+  font-weight: 700;
+  text-align: center;
+  text-decoration: none;
+  transition: background 0.24s ease, transform 0.24s ease, box-shadow 0.24s ease;
+}
+
+.cta:hover,
+.cta:focus-visible {
+  background: var(--cyan-bright);
+  transform: translateY(-2px);
+  box-shadow: 0 14px 30px -14px rgba(56, 189, 248, 0.85);
+}
+
+.cta:focus-visible {
+  outline: 3px solid #ffffff;
+  outline-offset: 3px;
+}
+
+/* --------------------------------------------------------- narrow screens */
+
+@media (max-width: 720px) {
+  .card {
+    min-height: 96px;
+  }
+
+  /* No hover on a touch screen, so the call to action is simply always
+     there rather than permanently hidden. */
+  .cardCta {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Respect a reduced-motion preference: the cards still respond, they just
+   stop moving. */
+@media (prefers-reduced-motion: reduce) {
+  .card,
+  .logo,
+  .cardCta,
+  .cardArrow,
+  .cta {
+    transition: none;
+  }
+
+  .card:hover,
+  .card:focus-visible,
+  .cta:hover,
+  .cta:focus-visible,
+  .card:hover .logo,
+  .card:focus-visible .logo {
+    transform: none;
+  }
+}

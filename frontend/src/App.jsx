@@ -48,6 +48,7 @@ const Workers = lazy(() => import('./pages/Dashboard/Workers'));
 const Bookings = lazy(() => import('./pages/Dashboard/Bookings'));
 const Invoices = lazy(() => import('./pages/Dashboard/Invoices'));
 const Documents = lazy(() => import('./pages/Dashboard/Documents'));
+const Shops = lazy(() => import('./pages/Dashboard/Shops'));
 const MeasurementsList = lazy(() => import('./pages/Dashboard/MeasurementsList'));
 
 // The warehouse dashboard. Scan and Intake above are shared with it.
@@ -172,6 +173,7 @@ export default function App() {
               <Route path="measurements" element={<MeasurementsList />} />
               <Route path="customers" element={<Customers />} />
               <Route path="workers" element={<Workers />} />
+              <Route path="shops" element={<Shops />} />
             </Route>
 
             {/* The warehouse dashboard: warehouse workers, and office staff

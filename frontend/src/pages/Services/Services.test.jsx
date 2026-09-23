@@ -1,16 +1,20 @@
-// The services page is now four bands and nothing else: the banner, the
-// yellow strip, one panel per island, and the brands.
+// The services page is six bands: the split banner, the yellow strip, the
+// three islands as photographs, the companies, the brands strip, and the
+// closing call to action.
 //
-// These check the shape rather than the styling, and the thing most worth
-// pinning down is what is *not* there any more. The rates table and the
-// frequently asked questions were removed deliberately; a test that says so
-// is what stops them coming back by accident in a merge.
+// These check the shape rather than the styling. The thing most worth pinning
+// down is what the island cards must *not* carry: the design brief asks for a
+// photograph and nothing else - no name, no caption, no button drawn on the
+// card. That is easy to undo by accident, so it is tested.
+//
+// jsdom reports an English browser, so these read the English dictionary.
 
 import { screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { renderWithProviders } from '../../test/utils';
 import Services from './Services';
-import { BRANDS, ISLAND_SERVICES } from '../../data/islandServices';
+import { DESTINATIONS } from '../../data/destinations';
+import { SHOPS } from '../../data/shops';
 
 describe('the services page', () => {
   it('opens with the banner and the breadcrumb', () => {
@@ -35,55 +39,82 @@ describe('the services page', () => {
     // The wording customers arrive knowing: no VAT, and it gets there.
     expect(within(strip).getByText('VAT exemption')).toBeInTheDocument();
     expect(within(strip).getByText('Unique products')).toBeInTheDocument();
-    expect(within(strip).getByText('Transport taken care of')).toBeInTheDocument();
+    expect(
+      within(strip).getByText('Transport taken care of'),
+    ).toBeInTheDocument();
   });
 
-  it('gives every island its own panel, titled with its name', () => {
+  it('introduces the page in one line', () => {
     renderWithProviders(<Services />, { route: '/services' });
 
-    const panels = screen
-      .getAllByRole('heading', { level: 2 })
-      .map((heading) => heading.textContent)
-      .filter((text) => text.startsWith('Our services for'));
-
-    // One panel per island the site ships to, and no leftovers for an island
-    // it no longer serves.
-    expect(panels).toHaveLength(ISLAND_SERVICES.length);
+    expect(
+      screen.getByText(
+        'Discover our services and partners on Aruba, Bonaire and Curaçao.',
+      ),
+    ).toBeInTheDocument();
   });
 
-  it("lists Curaçao's own services under Curaçao", () => {
+  it('shows one photograph per island, linking to that island', () => {
     renderWithProviders(<Services />, { route: '/services' });
 
-    const curacao = ISLAND_SERVICES.find((item) => item.slug === 'curacao');
-    const panel = screen
-      .getByText(`Our services for ${'Curaçao'}`)
-      .closest('li');
+    const islands = screen.getByRole('list', { name: 'Our islands' });
+    const cards = within(islands).getAllByRole('listitem');
+    expect(cards).toHaveLength(DESTINATIONS.length);
 
-    for (const service of curacao.services) {
-      expect(within(panel).getByText(service.name)).toBeInTheDocument();
+    // The island is named only in the alt text, never drawn on the card.
+    expect(
+      within(islands)
+        .getAllByRole('img')
+        .map((image) => image.getAttribute('alt')),
+    ).toEqual(['Aruba', 'Bonaire', 'Curaçao']);
+
+    const links = within(islands).getAllByRole('link');
+    expect(links.map((link) => link.getAttribute('href'))).toEqual(
+      DESTINATIONS.map((destination) => `/destinations/${destination.slug}`),
+    );
+  });
+
+  it('draws nothing on an island card but the photograph', () => {
+    renderWithProviders(<Services />, { route: '/services' });
+
+    const islands = screen.getByRole('list', { name: 'Our islands' });
+
+    for (const card of within(islands).getAllByRole('listitem')) {
+      // Whatever the card contains, none of it is visible text: no island
+      // name, no country, no caption, no button label.
+      expect(card.textContent).toBe('');
+      expect(within(card).queryByRole('button')).not.toBeInTheDocument();
+      expect(within(card).queryByRole('heading')).not.toBeInTheDocument();
     }
   });
 
-  it('sends a shop to the shop and an arrangement to the island', () => {
+  it('lays the shops out as a grid of cards', async () => {
     renderWithProviders(<Services />, { route: '/services' });
 
-    const bonaire = screen.getByText('Our services for Bonaire').closest('li');
-    const island = ISLAND_SERVICES.find((item) => item.slug === 'bonaire');
+    expect(
+      screen.getByRole('heading', { name: 'Companies and services' }),
+    ).toBeInTheDocument();
 
-    for (const service of island.services) {
-      const link = within(bonaire).getByRole('link', { name: service.name });
+    // The bundled list is what renders before - and instead of - an answer
+    // from the API, so the grid is never empty even with no server behind it.
+    const named = await screen.findAllByRole('heading', { level: 3 });
+    expect(named.map((heading) => heading.textContent)).toEqual(
+      SHOPS.map((shop) => shop.name),
+    );
+  });
 
-      if (service.href) {
-        // A shop is somewhere else, so it opens in its own tab and cannot
-        // reach back into this one.
-        expect(link).toHaveAttribute('href', service.href);
-        expect(link).toHaveAttribute('target', '_blank');
-        expect(link).toHaveAttribute('rel', 'noopener noreferrer');
-      } else {
-        // An arrangement is ours: it goes to the island's page, where the
-        // quote form for it lives.
-        expect(link).toHaveAttribute('href', '/destinations/bonaire');
-      }
+  it('sends each shop card to that shop, safely', () => {
+    renderWithProviders(<Services />, { route: '/services' });
+
+    for (const shop of SHOPS) {
+      const card = screen
+        .getByRole('heading', { level: 3, name: shop.name })
+        .closest('li');
+      const link = within(card).getByRole('link', { name: 'View service' });
+
+      expect(link).toHaveAttribute('href', shop.href);
+      // Without noopener the shop's page can reach back through window.opener.
+      expect(link).toHaveAttribute('rel', expect.stringContaining('noopener'));
     }
   });
 
@@ -94,24 +125,34 @@ describe('the services page', () => {
       screen.getByRole('heading', { name: 'Our brands' }),
     ).toBeInTheDocument();
 
-    // Scoped to the strip: several of these names are also services listed
-    // under an island above it.
+    // Scoped to the strip: the company cards above it carry names too.
     const strip = screen.getByRole('group', { name: 'Our brands' });
 
     // Each brand is named: by its logo's alt text, or in type without one.
-    for (const brand of BRANDS) {
-      const named = brand.logo
-        ? within(strip).getByRole('img', { name: brand.name })
-        : within(strip).getByText(brand.name);
+    for (const shop of SHOPS) {
+      const named = shop.logo
+        ? within(strip).getByRole('img', { name: shop.name })
+        : within(strip).getByText(shop.name);
       expect(named).toBeInTheDocument();
     }
+  });
+
+  it('closes on the call to action', () => {
+    renderWithProviders(<Services />, { route: '/services' });
+
+    expect(
+      screen.getByRole('heading', { name: 'Wondering what we can do for you?' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('link', { name: 'Get in touch with us' }),
+    ).toHaveAttribute('href', '/contact');
   });
 
   it('no longer carries the rates table or the questions', () => {
     renderWithProviders(<Services />, { route: '/services' });
 
-    // Removed on purpose. If one of these ever passes again, somebody has put
-    // a section back without deciding to.
+    // Removed on purpose, and still gone after the redesign. If one of these
+    // ever passes again, somebody has put a section back without deciding to.
     expect(screen.queryByText(/€/)).not.toBeInTheDocument();
     expect(
       screen.queryByRole('heading', { name: /frequently asked/i }),

@@ -76,6 +76,14 @@ const GROUPS = [
     ],
   },
   {
+    heading: 'dashboard.office.groups.website',
+    links: [
+      // The webshops the services page lists. Editing them used to mean a
+      // code change and a deploy; they are rows now - see Shops.jsx.
+      { to: '/dashboard/shops', labelKey: 'dashboard.office.nav.shops', icon: BoxIcon },
+    ],
+  },
+  {
     heading: 'dashboard.office.groups.warehouse',
     // The warehouse has its own dashboard and shell; these leave this one.
     links: [

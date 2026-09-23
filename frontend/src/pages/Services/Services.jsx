@@ -1,15 +1,27 @@
 // src/pages/Services/Services.jsx
 //
-// The page is four bands, in this order: the split banner, the yellow strip of
-// selling points, one panel per island listing what is offered there, and the
-// brands strip. That is the whole page — the rates table and the frequently
-// asked questions that used to sit between them have been removed.
+// The services page, in six bands: the split banner, the yellow strip of
+// selling points, the three islands as photographs, the companies whose
+// services are offered, the brands strip, and a closing call to action.
+//
+// The island cards carry the island drawn in its own flag, and nothing else -
+// no photograph, no name, no caption, no button. The shape is the label: it
+// says which island without a word of text on the card. They are still links,
+// and still named for a screen reader through the drawing's alt text, because
+// a card that can be clicked has to be reachable and announced; none of that
+// shows on screen.
+//
+// The companies grid is the shops the office maintains in the dashboard,
+// read through useShops - which falls back to the bundled list in
+// src/data/shops.js while the request is in flight or if it fails.
 
 import { Link } from 'react-router-dom';
 import { containerShip } from '../../images/optimized/photos';
-import { BRANDS, ISLAND_SERVICES } from '../../data/islandServices';
+import { DESTINATIONS } from '../../data/destinations';
+import { SHOPS } from '../../data/shops';
 import { useLanguage } from '../../i18n/useLanguage';
 import { usePageMeta } from '../../hooks/usePageMeta';
+import { useShops } from '../../hooks/useShops';
 import styles from './Services.module.css';
 
 // Inline SVGs: public/icons.svg only holds the footer's social logos.
@@ -48,12 +60,82 @@ const HIGHLIGHTS = [
   },
 ];
 
+/** The brands strip: the same shops the home page leads with, from ./shops.js. */
+const BRANDS = SHOPS.map(({ name, logo }) => ({ name, logo: logo ?? null }));
+
+/** One island, as its flag map, linking to that island's own page. */
+function IslandCard({ island, name }) {
+  return (
+    <li className={styles.islandItem}>
+      <Link to={`/destinations/${island.slug}`} className={styles.islandCard}>
+        {/* A flat drawing on a transparent ground, imported at full size
+            rather than put through `npm run images`: re-encoding flat colour
+            as WebP would not make it smaller, and it has to stay crisp at
+            whatever size the card lands on. */}
+        <img
+          src={island.flagMap}
+          // The only place the island is named. It is not drawn on the card -
+          // it is what a screen reader reads in place of the picture.
+          alt={name}
+          className={styles.islandFlag}
+          loading="lazy"
+          decoding="async"
+        />
+      </Link>
+    </li>
+  );
+}
+
+/** One shop, as a card that links out to that shop's own site. */
+function ShopCard({ shop, cta }) {
+  return (
+    <li className={styles.companyItem}>
+      <article className={styles.companyCard}>
+        {shop.logo ? (
+          <img
+            className={styles.companyLogo}
+            src={shop.logo}
+            alt={shop.name}
+            loading="lazy"
+            decoding="async"
+          />
+        ) : (
+          // A shop the office has added but not yet given a logo. A lettered
+          // plate keeps the grid even instead of leaving a card that has
+          // visibly lost its picture.
+          <span className={styles.companyPlate} aria-hidden="true">
+            {shop.name.charAt(0)}
+          </span>
+        )}
+
+        <h3 className={styles.companyName}>{shop.name}</h3>
+
+        {shop.description && (
+          <p className={styles.companyBlurb}>{shop.description}</p>
+        )}
+
+        <a
+          className={styles.companyCta}
+          href={shop.url}
+          target="_blank"
+          // noopener stops the shop's page reaching back through window.opener.
+          rel="noopener noreferrer"
+        >
+          {cta}
+        </a>
+      </article>
+    </li>
+  );
+}
+
 export default function Services() {
   const { t } = useLanguage();
-  usePageMeta(t('services.title'), t('services.lead'), '/services');
+  const { shops } = useShops();
+  usePageMeta(t('services.sectionTitle'), t('services.hero.lead'), '/services');
 
   return (
-    <>
+    <main>
+      {/* 1. The split banner --------------------------------------------- */}
       <section className={styles.banner}>
         <div className={styles.titlePanel}>
           <p className={styles.eyebrow}>{t('services.eyebrow')}</p>
@@ -82,6 +164,7 @@ export default function Services() {
         />
       </section>
 
+      {/* 2. The yellow strip of selling points --------------------------- */}
       <ul className={styles.highlights}>
         {HIGHLIGHTS.map((item) => (
           <li key={item.labelKey} className={styles.highlight}>
@@ -91,128 +174,92 @@ export default function Services() {
         ))}
       </ul>
 
-      {/* One panel per island ------------------------------------------- */}
-      <section className={styles.islands}>
-        <ul className={styles.islandGrid}>
-          {ISLAND_SERVICES.map((island) => {
-            const name = t(island.nameKey);
+      {/* Everything below runs on the navy, as one band. */}
+      <div className={styles.page}>
+        {/* 3. The islands, as photographs and nothing else --------------- */}
+        <section className={styles.islands}>
+          <p className={styles.intro}>{t('services.hero.lead')}</p>
 
-            return (
-              <li key={island.slug} className={styles.islandCard}>
-                <div className={styles.islandBody}>
-                  <h2 className={styles.islandTitle}>
-                    {t('services.forIsland')} {name}
-                  </h2>
+          {/* The label sits on the list, not the section: it is the list that
+              has to be findable and announced, since its items carry no text
+              of their own to go by. */}
+          <ul
+            className={styles.islandGrid}
+            aria-label={t('services.islandsLabel')}
+          >
+            {DESTINATIONS.map((island) => (
+              <IslandCard
+                key={island.slug}
+                island={island}
+                name={t(island.nameKey)}
+              />
+            ))}
+          </ul>
+        </section>
 
-                  <ul className={styles.serviceList}>
-                    {island.services.map((service) => (
-                      <li key={service.name} className={styles.serviceItem}>
-                        {/* The arrow is drawn, not typed: an arrow character
-                            is read out as "downwards arrow with tip
-                            rightwards" by a screen reader, once per line. */}
-                        <svg
-                          className={styles.serviceArrow}
-                          viewBox="0 0 16 16"
-                          aria-hidden="true"
-                        >
-                          <path d="M3 2v7.5h9" />
-                          <path d="m9 6.5 3.5 3L9 12.5" />
-                        </svg>
+        {/* 4. The companies --------------------------------------------- */}
+        <section className={styles.companies} aria-labelledby="companies-title">
+          <div className={styles.sectionHead}>
+            <h2 className={styles.sectionTitle} id="companies-title">
+              {t('services.companies.title')}
+            </h2>
+            <p className={styles.sectionLead}>{t('services.companies.lead')}</p>
+          </div>
 
-                        {/* A shop goes to the shop, in a new tab so the order
-                            the visitor came here to place is still open behind
-                            it. An arrangement is ours and has no href, so it
-                            goes to the island's page, where its quote form
-                            lives. */}
-                        {service.href ? (
-                          <a
-                            href={service.href}
-                            className={styles.serviceLink}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                          >
-                            {service.name}
-                          </a>
-                        ) : (
-                          <Link
-                            to={`/destinations/${island.slug}`}
-                            className={styles.serviceLink}
-                          >
-                            {service.name}
-                          </Link>
-                        )}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+          <ul className={styles.companyGrid}>
+            {shops.map((shop) => (
+              <ShopCard
+                key={shop.id}
+                shop={shop}
+                cta={t('services.companies.cta')}
+              />
+            ))}
+          </ul>
+        </section>
 
-                {/* The island in its own flag where there is one, and the
-                    photograph where there is not. The flag map is a single
-                    file rather than a srcset: it is a drawing, so one copy at
-                    full size costs less than a photograph would and scales
-                    without going soft. */}
-                {island.flagMap ? (
+        {/* 5. The brands ------------------------------------------------- */}
+        <section className={styles.brands}>
+          <h2 className={styles.brandsTitle}>{t('services.brandsTitle')}</h2>
+
+          {/* Scrolls sideways rather than wrapping, and says so to a screen
+              reader: a region with tabIndex is reachable by keyboard, which is
+              what lets somebody not using a mouse scroll it at all. */}
+          <ul
+            className={styles.brandRow}
+            tabIndex={0}
+            role="group"
+            aria-label={t('services.brandsTitle')}
+          >
+            {BRANDS.map((brand) => (
+              <li key={brand.name} className={styles.brandCard}>
+                {brand.logo ? (
                   <img
-                    src={island.flagMap}
-                    // Decorative: the panel is already titled with the
-                    // island's name, and repeating it here would have a
-                    // screen reader say it twice.
-                    alt=""
-                    className={styles.islandFlagMap}
+                    src={brand.logo}
+                    alt={brand.name}
+                    className={styles.brandLogo}
                     loading="lazy"
                     decoding="async"
                   />
                 ) : (
-                  <img
-                    src={island.hero.src}
-                    srcSet={island.hero.srcSet}
-                    sizes="(max-width: 900px) 100vw, 340px"
-                    width={island.hero.width}
-                    height={island.hero.height}
-                    alt=""
-                    className={styles.islandImage}
-                    loading="lazy"
-                    decoding="async"
-                  />
+                  // No logo file for this brand yet. See src/data/shops.js for
+                  // where one goes; until then the name carries the box.
+                  <span className={styles.brandName}>{brand.name}</span>
                 )}
               </li>
-            );
-          })}
-        </ul>
-      </section>
+            ))}
+          </ul>
+        </section>
 
-      {/* The brands ------------------------------------------------------ */}
-      <section className={styles.brands}>
-        <h2 className={styles.brandsTitle}>{t('services.brandsTitle')}</h2>
-
-        {/* Scrolls sideways rather than wrapping, and says so to a screen
-            reader: a region with tabIndex is reachable by keyboard, which is
-            what lets somebody not using a mouse scroll it at all. */}
-        <ul
-          className={styles.brandRow}
-          tabIndex={0}
-          role="group"
-          aria-label={t('services.brandsTitle')}
-        >
-          {BRANDS.map((brand) => (
-            <li key={brand.name} className={styles.brandCard}>
-              {brand.logo ? (
-                <img
-                  src={brand.logo}
-                  alt={brand.name}
-                  className={styles.brandLogo}
-                  loading="lazy"
-                  decoding="async"
-                />
-              ) : (
-                // No logo file for this brand yet. See src/data/islandServices.js
-                // for where one goes; until then the name carries the box.
-                <span className={styles.brandName}>{brand.name}</span>
-              )}
-            </li>
-          ))}
-        </ul>
-      </section>
-    </>
+        {/* 6. Closing call to action ------------------------------------- */}
+        <section className={styles.cta}>
+          <div className={styles.ctaInner}>
+            <h2 className={styles.ctaTitle}>{t('services.contactCta.title')}</h2>
+            <Link className={styles.ctaButton} to="/contact">
+              {t('services.contactCta.button')}
+            </Link>
+          </div>
+        </section>
+      </div>
+    </main>
   );
 }
