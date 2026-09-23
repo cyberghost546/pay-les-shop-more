@@ -12,16 +12,18 @@
 //            renumbers in tens
 //   shown    unticked hides the shop from the services page without losing
 //            its logo and description, which is what a seasonal shop wants
-//   logo     PNG, JPEG or WebP, 2 MB at most. A shop with none falls back to
-//            the logo bundled with the site if the site has one for that
-//            name, and to a lettered plate if it does not
+//   logo     PNG, JPEG or WebP, 2 MB at most. Drop one straight onto a row's
+//            logo to replace it, or use the button beside it. A shop with no
+//            logo falls back to the one bundled with the site if the site has
+//            one for that name, and to a lettered plate if it does not
 //
 // Every write here is refused by the server unless the session is staff. The
 // page hiding itself from a customer is only tidiness.
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Loading from '../../components/Loading/Loading';
 import ConnectionError from '../../components/ConnectionError/ConnectionError';
+import FileDrop from '../../components/FileDrop/FileDrop';
 import {
   createShop,
   deleteShop,
@@ -32,6 +34,9 @@ import {
 import { apiUrl } from '../../api/client';
 import { Banner, Empty, SearchInput, Toolbar } from './ui';
 import styles from './Dashboard.module.css';
+
+/** What the logo inputs accept, said once so the picker and the server agree. */
+const LOGO_TYPES = 'image/png,image/jpeg,image/webp';
 
 /** What a blank row in the "add a shop" form starts as. */
 const BLANK = { name: '', url: '', description: '', logo: null };
@@ -57,26 +62,85 @@ function firstError(error, fallback = 'That could not be saved.') {
   return fallback;
 }
 
-/** A shop's logo in the table, or a lettered plate when it has none. */
-function LogoCell({ shop }) {
-  if (!shop.logo_url) {
-    return (
-      <span className={styles.personAvatar} aria-hidden="true">
-        {shop.name.charAt(0)}
-      </span>
-    );
-  }
+/**
+ * A thumbnail of a file the browser is holding but has not sent yet.
+ *
+ * The object URL is released when the file changes and when this unmounts:
+ * until it is revoked the browser keeps the whole file in memory.
+ */
+function LogoPreview({ file, onClear }) {
+  // Derived during render rather than set from an effect: the URL is a pure
+  // function of the file, and going through state would render once without
+  // it and again with it.
+  const url = useMemo(() => (file ? URL.createObjectURL(file) : null), [file]);
+
+  // Released when the file changes and when this unmounts.
+  useEffect(() => () => { if (url) URL.revokeObjectURL(url); }, [url]);
+
+  if (!url) return null;
 
   return (
-    <img
-      // Straight from the API rather than through request(): this is an <img>,
-      // so the browser fetches it itself. Same origin, so the session cookie
-      // goes with it — which is what lets a hidden shop's logo show here.
-      src={apiUrl(shop.logo_url)}
-      alt=""
-      className={styles.shopLogo}
-      loading="lazy"
-    />
+    <div className={styles.logoPreview}>
+      <img src={url} alt="" className={styles.logoPreviewImage} />
+      <span className={styles.logoPreviewName}>{file.name}</span>
+      <button type="button" className={styles.linkButton} onClick={onClear}>
+        Remove
+      </button>
+    </div>
+  );
+}
+
+/**
+ * A shop's logo in the table - and the drop target for replacing it.
+ *
+ * Dropping a file straight onto the logo is the shortest route there is from
+ * "I have the new artwork" to "the website shows it", which is what this page
+ * is for. The button beside it does the same thing for anyone not dragging.
+ */
+function LogoCell({ shop, onFile, disabled }) {
+  // Counted rather than a boolean: dragging across a child element fires
+  // dragleave on the parent, so a boolean flickers off halfway through.
+  const [depth, setDepth] = useState(0);
+
+  return (
+    <span
+      className={[styles.logoDrop, depth > 0 ? styles.logoDropActive : '']
+        .filter(Boolean)
+        .join(' ')}
+      onDragEnter={(event) => {
+        event.preventDefault();
+        setDepth((n) => n + 1);
+      }}
+      onDragOver={(event) => {
+        // Without this the browser navigates to the file instead of handing
+        // it over, which looks exactly like the page crashing.
+        event.preventDefault();
+      }}
+      onDragLeave={() => setDepth((n) => Math.max(0, n - 1))}
+      onDrop={(event) => {
+        event.preventDefault();
+        setDepth(0);
+        const [file] = event.dataTransfer.files ?? [];
+        if (file && !disabled) onFile(file);
+      }}
+    >
+      {shop.logo_url ? (
+        <img
+          // Straight from the API rather than through request(): this is an
+          // <img>, so the browser fetches it itself. Same origin, so the
+          // session cookie goes with it — which is what lets a hidden shop's
+          // logo show here.
+          src={apiUrl(shop.logo_url)}
+          alt=""
+          className={styles.shopLogo}
+          loading="lazy"
+        />
+      ) : (
+        <span className={styles.personAvatar} aria-hidden="true">
+          {shop.name.charAt(0)}
+        </span>
+      )}
+    </span>
   );
 }
 
@@ -85,9 +149,6 @@ function AddShop({ onAdded }) {
   const [draft, setDraft] = useState(BLANK);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
-  // Reset by key rather than by value: a file input's value cannot be set
-  // from script, so clearing it means mounting a fresh one.
-  const [fileKey, setFileKey] = useState(0);
 
   const set = (field) => (event) =>
     setDraft((current) => ({ ...current, [field]: event.target.value }));
@@ -106,7 +167,6 @@ function AddShop({ onAdded }) {
       });
 
       setDraft(BLANK);
-      setFileKey((key) => key + 1);
       onAdded();
     } catch (failure) {
       setError(firstError(failure, 'That shop could not be added.'));
@@ -153,21 +213,24 @@ function AddShop({ onAdded }) {
           />
         </label>
 
-        <label className={styles.officeField}>
-          <span className={styles.officeLabel}>Logo (optional)</span>
-          <input
-            key={fileKey}
-            className={styles.officeInput}
-            type="file"
-            accept="image/png,image/jpeg,image/webp"
-            onChange={(event) =>
-              setDraft((current) => ({
-                ...current,
-                logo: event.target.files?.[0] ?? null,
-              }))
-            }
+        <div className={styles.officeField}>
+          <FileDrop
+            label="Logo"
+            optionalLabel="optional"
+            hint="PNG, JPEG or WebP. 2 MB at most."
+            accept={LOGO_TYPES}
+            chooseLabel="Choose a logo"
+            dropLabel="or drop one here"
+            disabled={busy}
+            onFile={(file) => setDraft((current) => ({ ...current, logo: file }))}
           />
-        </label>
+
+          <LogoPreview
+            file={draft.logo}
+            onClear={() => setDraft((current) => ({ ...current, logo: null }))}
+          />
+        </div>
+
       </div>
 
       <p className={styles.officeNote}>
@@ -255,7 +318,11 @@ function ShopRow({ shop, onChanged, onError, onMove, isFirst, isLast }) {
       </td>
 
       <td>
-        <LogoCell shop={shop} />
+        <LogoCell
+          shop={shop}
+          disabled={busy}
+          onFile={(file) => save({ logo: file })}
+        />
       </td>
 
       <td>

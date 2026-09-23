@@ -21,9 +21,16 @@
 //          bought in the Netherlands, so a customer sent to the .com would
 //          land on a shop that will not deliver to the warehouse.
 //
-// To add a shop: put its logo in src/images, add it to LOGOS in
-// scripts/optimize-logos.js, run `npm run logos`, then add a line below. To
-// show it on the home page as well, name it in FEATURED below.
+// This list is the FALLBACK, not the source. The shops the site shows come
+// from the API the office edits in the dashboard; these stand in until that
+// request answers, and if it fails. A row whose logo has not been uploaded
+// yet also borrows the logo here that matches its name, which is what lets
+// the table be filled in over time without the pages losing their pictures.
+//
+// So: add a shop in the dashboard, not here. Edit here only to change what a
+// visitor sees before the API answers, or to add a bundled logo for a shop
+// that already exists - put the file in src/images, add it to LOGOS in
+// scripts/optimize-logos.js, run `npm run logos`, then add a line below.
 
 import action from '../images/optimized/logos/action.webp';
 import bolLong from '../images/optimized/logos/bol-long.webp';
@@ -59,19 +66,6 @@ export const SHOPS = [
   { name: 'Action', logo: action, href: 'https://www.action.com/nl-nl/' },
   { name: 'Zalando', logo: zalando, href: 'https://www.zalando.nl/' },
 ];
-
-// The six shops the home page leads with, in the order the client asked for.
-// The rest of SHOPS is still offered - the grid's "all shops" button is what
-// carries a visitor to them - so this is a running order, not a shortlist.
-const FEATURED = ['Zalando', 'IKEA', 'Bol.com', 'Action', 'MediaMarkt', 'Coolblue'];
-
-export const FEATURED_SHOPS = FEATURED.map((name) => {
-  const shop = SHOPS.find((entry) => entry.name === name);
-  // A name here with no shop behind it is a typo, and a silent hole in the
-  // grid is the kind of thing that ships. Say so instead.
-  if (!shop) throw new Error(`FEATURED names "${name}", which is not in SHOPS`);
-  return shop;
-});
 
 /**
  * The logo to show for a shop: the long one where there is one.

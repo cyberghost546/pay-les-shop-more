@@ -3265,3 +3265,52 @@
   opacity: 0.35;
   cursor: default;
 }
+
+/* The logo cell in the shops table, which is also the drop target for
+   replacing that shop's logo. Padded so there is something to aim at. */
+.logoDrop {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 84px;
+  padding: 0.4rem;
+  border: 1px dashed transparent;
+  border-radius: 10px;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+/* Only while a file is over it: a dashed box around every row all the time
+   would make the table look like a form. */
+.logoDropActive {
+  border-color: #38a0dc;
+  background: #f1f7fd;
+}
+
+/* The chosen-but-not-yet-sent logo under the add form's drop box. */
+.logoPreview {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid #e4e7ec;
+  border-radius: 10px;
+  background: #fbfcfe;
+}
+
+.logoPreviewImage {
+  width: 56px;
+  height: 30px;
+  /* contain, never cover: a cropped logo is a damaged trademark. */
+  object-fit: contain;
+}
+
+.logoPreviewName {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  color: #4b5563;
+  font-size: 0.85rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
