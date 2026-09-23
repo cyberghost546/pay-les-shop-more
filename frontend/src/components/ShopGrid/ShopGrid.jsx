@@ -33,18 +33,12 @@ import styles from './ShopGrid.module.css';
 const MIN_PER_ROW = 4;
 
 /**
- * One shop, as a logo that links to that shop's Dutch storefront.
- *
- * No card around it: the logos sit straight on the strip, the way a "these
- * are the shops" row is usually set. Every one of these files is opaque with
- * its own white or brand-coloured background baked in, which is the reason
- * the strip below them is light - on the navy each logo would show as a
- * rectangle rather than as a mark.
+ * One shop, as a card that is entirely a link to that shop's Dutch storefront.
  *
  * `clone` marks the duplicate half of the track: same markup, but invisible
  * to a screen reader and unreachable by tab.
  */
-function ShopCard({ shop, clone = false }) {
+function ShopCard({ shop, cta, clone = false }) {
   return (
     <li className={styles.item} aria-hidden={clone || undefined}>
       <a
@@ -72,6 +66,14 @@ function ShopCard({ shop, clone = false }) {
           )}
         </span>
 
+        {/* Shown on hover and whenever the card has keyboard focus, so it is
+            not a mouse-only affordance. */}
+        <span className={styles.cardCta} aria-hidden="true">
+          {cta}
+          <svg viewBox="0 0 24 24" className={styles.cardArrow} focusable="false">
+            <path d="M4 12h15M13 6l6 6-6 6" />
+          </svg>
+        </span>
       </a>
     </li>
   );
@@ -84,7 +86,7 @@ function ShopCard({ shop, clone = false }) {
  *   how long one full pass takes, and is what keeps the two rows from
  *   travelling in lockstep.
  */
-function MarqueeRow({ shops, speed }) {
+function MarqueeRow({ shops, cta, speed }) {
   // Repeated until the row is longer than its window, so a short list still
   // fills it. Two shops become two runs of two, then doubled again below for
   // the loop itself.
@@ -94,10 +96,10 @@ function MarqueeRow({ shops, speed }) {
   return (
     <ul className={styles.track} style={{ animationDuration: speed }}>
       {filled.map((shop, index) => (
-        <ShopCard key={`${shop.id}-${index}`} shop={shop} />
+        <ShopCard key={`${shop.id}-${index}`} shop={shop} cta={cta} />
       ))}
       {filled.map((shop, index) => (
-        <ShopCard key={`clone-${shop.id}-${index}`} shop={shop} clone />
+        <ShopCard key={`clone-${shop.id}-${index}`} shop={shop} cta={cta} clone />
       ))}
     </ul>
   );
@@ -126,9 +128,9 @@ export default function ShopGrid() {
       {/* The window the rows slide behind. Its edges are faded by CSS, so a
           card arrives and leaves rather than appearing at a hard border. */}
       <div className={styles.marquee}>
-        <MarqueeRow shops={topRow} speed="16s" />
+        <MarqueeRow shops={topRow} cta={t('home.shops.visit')} speed="16s" />
         {bottomRow.length > 0 && (
-          <MarqueeRow shops={bottomRow} speed="21s" />
+          <MarqueeRow shops={bottomRow} cta={t('home.shops.visit')} speed="21s" />
         )}
       </div>
 
