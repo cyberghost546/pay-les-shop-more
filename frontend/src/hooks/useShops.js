@@ -12,20 +12,17 @@
 
 import { useEffect, useState } from 'react';
 import { listShops, logoUrl } from '../api/shops';
-import { SHOPS, displayLogo } from '../data/shops';
+import { SHOPS, bundledLogo, displayLogo } from '../data/shops';
 
 /**
- * The bundled shops by lowercased name, for the fallbacks below.
+ * Whether a bundled logo wants its corners rounded, by lowercased name.
  *
- * `tile` travels with the logo: it says the mark is drawn on its own block of
- * brand colour and wants its corners rounded, and that is a fact about the
- * picture rather than about the row it came from.
+ * `tile` says the mark is drawn on its own block of brand colour, which is a
+ * fact about the picture rather than about the row it came from. The logo
+ * itself comes from bundledLogo() in ../data/shops.
  */
-const BUNDLED = new Map(
-  SHOPS.map((shop) => [
-    shop.name.toLowerCase(),
-    { logo: displayLogo(shop), tile: shop.tile ?? false },
-  ]),
+const BUNDLED_TILE = new Map(
+  SHOPS.map((shop) => [shop.name.toLowerCase(), shop.tile ?? false]),
 );
 
 /** The bundled list, in the shape the API returns, for use before it answers. */
@@ -40,19 +37,18 @@ const BUNDLED_SHOPS = SHOPS.map((shop, index) => ({
 
 /** One API row, with its logo resolved to something an <img> can use. */
 function withLogo(shop) {
-  const bundled = BUNDLED.get(shop.name?.toLowerCase());
   const uploaded = logoUrl(shop.logo);
 
   return {
     ...shop,
     // The uploaded logo when there is one, the bundled copy when there is
     // not, and null when this shop is new and has neither - the card falls
-    // back to a lettered plate for that.
-    logo: uploaded ?? bundled?.logo ?? null,
+    // back to the shop's name in type for that.
+    logo: uploaded ?? bundledLogo(shop.name),
     // Only meaningful for a bundled logo. An uploaded one is whatever the
     // office uploaded, and guessing that it needs a tile would round the
     // corners off a mark that has none.
-    tile: uploaded ? false : (bundled?.tile ?? false),
+    tile: uploaded ? false : (BUNDLED_TILE.get(shop.name?.toLowerCase()) ?? false),
   };
 }
 

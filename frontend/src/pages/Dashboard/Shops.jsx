@@ -32,6 +32,7 @@ import {
   updateShop,
 } from '../../api/shops';
 import { apiUrl } from '../../api/client';
+import { bundledLogo } from '../../data/shops';
 import { Banner, Empty, SearchInput, Toolbar } from './ui';
 import styles from './Dashboard.module.css';
 
@@ -98,6 +99,14 @@ function LogoPreview({ file, onClear }) {
  * is for. The button beside it does the same thing for anyone not dragging.
  */
 function LogoCell({ shop, onFile, disabled }) {
+  // The uploaded logo, or the one bundled with the site for a shop of this
+  // name. Showing the bundled copy here matters: it is what the website is
+  // actually displaying for a row nobody has uploaded to yet, so a table full
+  // of lettered plates would be telling the office something untrue.
+  const uploaded = shop.logo_url ? apiUrl(shop.logo_url) : null;
+  const fallback = uploaded ? null : bundledLogo(shop.name);
+  const src = uploaded ?? fallback;
+
   // Counted rather than a boolean: dragging across a child element fires
   // dragleave on the parent, so a boolean flickers off halfway through.
   const [depth, setDepth] = useState(0);
@@ -124,15 +133,24 @@ function LogoCell({ shop, onFile, disabled }) {
         if (file && !disabled) onFile(file);
       }}
     >
-      {shop.logo_url ? (
+      {src ? (
         <img
-          // Straight from the API rather than through request(): this is an
-          // <img>, so the browser fetches it itself. Same origin, so the
-          // session cookie goes with it — which is what lets a hidden shop's
-          // logo show here.
-          src={apiUrl(shop.logo_url)}
+          // An uploaded logo is fetched straight from the API rather than
+          // through request(): this is an <img>, so the browser fetches it
+          // itself. Same origin, so the session cookie goes with it — which
+          // is what lets a hidden shop's logo show here.
+          src={src}
           alt=""
-          className={styles.shopLogo}
+          className={
+            fallback ? `${styles.shopLogo} ${styles.shopLogoBundled}` : styles.shopLogo
+          }
+          // Says which of the two this is, so "why can I not delete it" has
+          // an answer without anyone having to ask.
+          title={
+            fallback
+              ? 'Bundled with the site. Upload one to replace it.'
+              : undefined
+          }
           loading="lazy"
         />
       ) : (
@@ -388,7 +406,7 @@ function ShopRow({ shop, onChanged, onError, onMove, isFirst, isLast }) {
           onClick={() => fileRef.current?.click()}
           disabled={busy}
         >
-          {shop.logo_url ? 'Replace logo' : 'Add logo'}
+          {shop.logo_url ? 'Replace logo' : 'Upload logo'}
         </button>
 
         <button

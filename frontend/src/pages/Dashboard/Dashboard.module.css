@@ -3314,3 +3314,10 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* A logo that came from the site's own bundle rather than from an upload.
+   Held back very slightly, so a glance down the column tells the office which
+   rows still have artwork to supply without making those rows look broken. */
+.shopLogoBundled {
+  opacity: 0.72;
+}

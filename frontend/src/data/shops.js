@@ -76,3 +76,24 @@ export const SHOPS = [
 export function displayLogo(shop) {
   return shop.longLogo ?? shop.logo;
 }
+
+/** The bundled shops by lowercased name, for the lookup below. */
+const BY_NAME = new Map(SHOPS.map((shop) => [shop.name.toLowerCase(), shop]));
+
+/**
+ * The logo bundled with the site for a shop of this name, or null.
+ *
+ * This is the bridge between the two halves of the picture. A shop's row in
+ * the database may have no uploaded logo - every seeded row starts that way -
+ * and matching it back to the artwork already in the bundle is what lets the
+ * site, and the dashboard, show a real logo in the meantime.
+ *
+ * Matched on the name because that is the only thing the two sides share: the
+ * bundle has no ids, and the database has no files until somebody uploads one.
+ *
+ * @param {string} name a shop's name, as the database holds it
+ */
+export function bundledLogo(name) {
+  const shop = BY_NAME.get(String(name ?? '').toLowerCase());
+  return shop ? displayLogo(shop) : null;
+}
