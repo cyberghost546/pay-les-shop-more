@@ -94,7 +94,7 @@
   /* Fixed, because the track is laid out on its intrinsic width: a card that
      sized itself to its logo would make the two halves different lengths and
      the loop would drift. */
-  flex: 0 0 150px;
+  flex: 0 0 182px;
 }
 
 .card {
@@ -105,8 +105,8 @@
   align-items: center;
   justify-content: center;
   gap: 0.6rem;
-  min-height: 112px;
-  padding: 1rem 0.75rem;
+  min-height: 132px;
+  padding: 1rem 0.6rem;
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 14px;
   background: #ffffff;
@@ -137,7 +137,7 @@
   /* Tall enough that a square mark like Coolblue's is not dwarfed by a wide
      wordmark like MediaMarkt's - a square logo is capped by the well's
      height, a wide one by its width. */
-  height: 46px;
+  height: 64px;
 }
 
 .logo {
@@ -234,11 +234,11 @@
 
 @media (max-width: 720px) {
   .item {
-    flex-basis: 132px;
+    flex-basis: 156px;
   }
 
   .card {
-    min-height: 96px;
+    min-height: 112px;
   }
 
   /* No hover on a touch screen, so the call to action is simply always
