@@ -38,7 +38,7 @@
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #7f9bb8;
+  color: var(--brand-yellow);
 }
 
 .factValue {
@@ -65,13 +65,18 @@
   text-align: center;
 }
 
+/* Navy letters over a marker stroke of the accent yellow, as on the home
+   page: yellow letters on white would not be legible. */
 .eyebrow {
+  display: inline-block;
   margin: 0 0 0.7rem;
+  padding: 0 0.3em;
   font-size: 0.76rem;
   font-weight: 700;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: #0ea5e9;
+  color: var(--brand-ink);
+  background: linear-gradient(transparent 55%, var(--brand-yellow) 55%);
 }
 
 .howTitle {
@@ -141,10 +146,13 @@
 }
 
 /* The customer's steps and ours read differently, so the two are coloured
-   apart — the page is partly about how little the customer has to do. */
+   apart — the page is partly about how little the customer has to do.
+   Theirs in the accent yellow, ours in navy. */
 .stageYours .stageMarker {
-  border-color: #bae6fd;
-  color: #0369a1;
+  /* The deeper yellow for the ring: the light one alone melts into white. */
+  border-color: var(--brand-yellow-deep);
+  background: var(--brand-yellow);
+  color: var(--brand-ink);
 }
 
 .stageOurs .stageMarker {
@@ -176,7 +184,7 @@
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: #0ea5e9;
+  color: #0369a1;
 }
 
 .stage:nth-child(odd) .stageWho {

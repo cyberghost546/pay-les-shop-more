@@ -26,13 +26,22 @@ const FAILURE_KEYS = {
   [TRACKING_ERRORS.UNAVAILABLE]: 'tracking.errors.offline',
 };
 
+/** The panel's classes for each variant. */
+const VARIANTS = {
+  page: styles.panel,
+  hero: `${styles.panel} ${styles.hero}`,
+  inline: `${styles.panel} ${styles.inline}`,
+};
+
 /**
  * The tracking search box and its result.
  *
- * Reusable on purpose: it sits in the homepage hero and is the whole of the
- * /tracking page. `variant="hero"` is the light-on-dark treatment.
+ * Reusable on purpose: it sits in the homepage hero for a signed-in customer,
+ * and in the Track & Trace card of their account. `variant="hero"` is the
+ * light-on-dark treatment; `variant="inline"` drops the panel's own frame and
+ * heading, for a card that already has both.
  *
- * @param {{ variant?: 'hero' | 'page', autoFocus?: boolean }} props
+ * @param {{ variant?: 'hero' | 'page' | 'inline', autoFocus?: boolean }} props
  */
 export default function TrackingPanel({ variant = 'page', autoFocus = false }) {
   const { t, language } = useLanguage();
@@ -76,12 +85,10 @@ export default function TrackingPanel({ variant = 'page', autoFocus = false }) {
       : t('tracking.notKnown');
 
   return (
-    <section
-      className={
-        variant === 'hero' ? `${styles.panel} ${styles.hero}` : styles.panel
-      }
-    >
-      <h2 className={styles.title}>{t('tracking.title')}</h2>
+    <section className={VARIANTS[variant] ?? VARIANTS.page}>
+      {variant !== 'inline' && (
+        <h2 className={styles.title}>{t('tracking.title')}</h2>
+      )}
       <p className={styles.subtitle}>{t('tracking.subtitle')}</p>
 
       <form className={styles.form} onSubmit={handleSubmit} noValidate>

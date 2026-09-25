@@ -29,6 +29,7 @@ SENDER_FIELDS = [
     "recipient_city",
     "recipient_phone",
     "recipient_email",
+    "recipient_crib_number",
     "packing",
     "payment",
     "quantity",
@@ -71,6 +72,9 @@ class BookingSerializer(serializers.ModelSerializer):
             "contents": {"required": False, "allow_blank": True},
             "notes": {"required": False, "allow_blank": True},
             "recipient_email": {"required": False, "allow_blank": True},
+            "recipient_crib_number": {"required": False, "allow_blank": True},
+            # Left out when the sender cannot know it yet; see the model.
+            "quantity": {"required": False, "allow_null": True},
             "destination_other": {"required": False, "allow_blank": True},
             "language": {"required": False, "allow_blank": True},
         }

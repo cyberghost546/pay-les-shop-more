@@ -466,8 +466,8 @@
   padding: 0.75rem 1.6rem;
   border: 0;
   border-radius: 9px;
-  background: var(--blue);
-  color: #ffffff;
+  background: var(--brand-yellow);
+  color: var(--brand-ink);
   font: inherit;
   font-size: 0.95rem;
   font-weight: 700;
@@ -476,12 +476,14 @@
 }
 
 .submit:hover:not(:disabled) {
-  background: #1d4ed8;
+  background: var(--brand-yellow-light);
   transform: translateY(-1px);
 }
 
 .submit:disabled {
-  background: #93b4f5;
+  /* The yellow, washed out: still the same button, plainly not ready. */
+  background: var(--brand-yellow-pale);
+  color: #5b6b80;
   cursor: not-allowed;
 }
 

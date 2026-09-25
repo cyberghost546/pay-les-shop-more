@@ -9,11 +9,13 @@ import styles from './Header.module.css';
 // `key` points at the translation; the label itself comes from the dictionary.
 // The Destinations dropdown is rendered separately, between Services and
 // Calculator, so it is not in this list.
+//
+// No Track & Trace: it is a card in the customer's own account, reached from
+// there rather than from the site's navigation.
 const NAV_LINKS = [
   { key: 'nav.home', href: '/' },
   { key: 'nav.services', href: '/services' },
   { key: 'nav.tutorial', href: '/tutorial' },
-  { key: 'nav.tracking', href: '/tracking' },
   { key: 'nav.booking', href: '/booking' },
   { key: 'nav.calculator', href: '/calculator' },
   { key: 'nav.contact', href: '/contact' },

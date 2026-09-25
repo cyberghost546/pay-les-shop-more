@@ -44,10 +44,13 @@ const EMPTY = {
   recipient_city: '',
   recipient_phone: '',
   recipient_email: '',
+  recipient_crib_number: '',
 
   packing: 'sender',
   payment: 'bank',
-  quantity: '1',
+  // Empty rather than 1: somebody who ordered online cannot know how many
+  // parcels the shop will send it in, and a guess would be a wrong number.
+  quantity: '',
   unit: 'boxes',
   contents: '',
   contents_attached: false,
@@ -105,7 +108,11 @@ function validate(form) {
   if (form.destination === 'other' && !form.destination_other.trim())
     errors.destination_other = 'booking.errors.required';
 
-  if (!(Number(form.quantity) >= 1)) errors.quantity = 'booking.errors.quantity';
+  // Optional - the warehouse counts the parcels when they arrive - but a
+  // number, when one is given, has to be a real one.
+  const quantity = String(form.quantity).trim();
+  if (quantity && !(Number.isInteger(Number(quantity)) && Number(quantity) >= 1))
+    errors.quantity = 'booking.errors.quantity';
   if (form.value_eur === '' || Number(form.value_eur) < 0)
     errors.value_eur = 'booking.errors.value';
 
@@ -251,7 +258,7 @@ export default function Booking() {
     try {
       const saved = await submitBooking({
         ...form,
-        quantity: Number(form.quantity),
+        quantity: String(form.quantity).trim() ? Number(form.quantity) : null,
         value_eur: form.value_eur,
         insured_value_eur: form.insured ? form.insured_value_eur : null,
         language,
@@ -377,6 +384,11 @@ export default function Booking() {
               type="email"
               required={false} {...shared} />
           </div>
+          <TextField
+            name="recipient_crib_number"
+            labelKey="booking.cribOptional"
+            autoComplete="off"
+            required={false} {...shared} />
         </fieldset>
 
         {/* 4 — the consignment ---------------------------------------- */}
@@ -385,19 +397,18 @@ export default function Booking() {
 
           <div className={styles.row}>
             <label className={styles.field}>
-              <span className={styles.label}>
-                {t('booking.quantity')}
-                <span className={styles.required} aria-hidden="true"> *</span>
-              </span>
+              <span className={styles.label}>{t('booking.quantity')}</span>
               <input
                 className={styles.input}
                 type="number"
                 name="quantity"
                 min="1"
+                step="1"
                 value={form.quantity}
                 onChange={handleChange}
                 aria-invalid={Boolean(errors.quantity)}
               />
+              <span className={styles.hint}>{t('booking.quantityHint')}</span>
               {errors.quantity && (
                 <span className={styles.error}>{t(errors.quantity)}</span>
               )}

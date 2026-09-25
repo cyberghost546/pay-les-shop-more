@@ -20,8 +20,16 @@ export default function RequireAuth({ children }) {
 
   if (!isAuthenticated) {
     // `replace` keeps the guarded page out of history, so Back does not land
-    // on it again. `state.from` lets the login page return them here after.
-    return <Navigate to="/login" replace state={{ from: location.pathname }} />;
+    // on it again. `state.from` lets the login page return them here after -
+    // to the same card, too: /profile#tracking should not come back as the
+    // top of the profile.
+    return (
+      <Navigate
+        to="/login"
+        replace
+        state={{ from: location.pathname + location.search + location.hash }}
+      />
+    );
   }
 
   return children;

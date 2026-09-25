@@ -226,3 +226,31 @@ class BookingValidationTests(ThrottleFreeAPITestCase):
         """The agent phones rather than writes; an island address is enough."""
         response = self.client.post(URL, payload(recipient_email=""), format="json")
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+    def test_the_recipients_crib_number_is_optional(self):
+        response = self.client.post(URL, payload(), format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(Booking.objects.get().recipient_crib_number, "")
+
+    def test_the_recipients_crib_number_is_kept_when_given(self):
+        self.client.post(
+            URL, payload(recipient_crib_number="1234567890"), format="json"
+        )
+        self.assertEqual(Booking.objects.get().recipient_crib_number, "1234567890")
+
+    def test_the_number_of_parcels_can_be_left_open(self):
+        """Somebody who ordered online cannot know how many parcels the shop
+        will send; the warehouse counts them when they arrive."""
+        data = payload()
+        del data["quantity"]
+
+        response = self.client.post(URL, data, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertIsNone(Booking.objects.get().quantity)
+
+    def test_an_empty_number_of_parcels_is_accepted_too(self):
+        """What the form sends when the box is left empty."""
+        response = self.client.post(URL, payload(quantity=None), format="json")
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)

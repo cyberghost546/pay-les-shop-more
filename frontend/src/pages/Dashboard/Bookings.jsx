@@ -33,6 +33,16 @@ const PACKING_QUALITY = [
 ];
 
 /**
+ * "3 Dozen", or the unit alone when the sender left the count open - somebody
+ * who ordered online cannot know how many parcels the shop will send.
+ */
+function describeQuantity(booking) {
+  return booking.quantity == null
+    ? `${booking.unit_display} (count not given)`
+    : `${booking.quantity} ${booking.unit_display}`;
+}
+
+/**
  * The office half of a booking form: the four things staff fill in at the
  * counter. What the sender declared is shown beside it and is not editable —
  * the value especially, which customs charges duty on.
@@ -281,9 +291,7 @@ export default function Bookings() {
                     </td>
 
                     <td className={styles.numberCell}>
-                      <div>
-                        {booking.quantity} {booking.unit_display}
-                      </div>
+                      <div>{describeQuantity(booking)}</div>
                       <div className={styles.mutedCell}>
                         {formatMoney(booking.value_eur)} declared
                       </div>
@@ -453,15 +461,18 @@ export default function Bookings() {
                     {booking.recipient_city}
                   </dd>
                 </div>
+                <div>
+                  <dt>Crib number</dt>
+                  {/* Optional on the form, like the e-mail. */}
+                  <dd>{booking.recipient_crib_number || '—'}</dd>
+                </div>
               </dl>
 
               <p className={styles.detailGroupHead}>Consignment</p>
               <dl className={styles.detailGrid}>
                 <div>
                   <dt>Quantity</dt>
-                  <dd>
-                    {booking.quantity} {booking.unit_display}
-                  </dd>
+                  <dd>{describeQuantity(booking)}</dd>
                 </div>
                 <div>
                   <dt>Declared value</dt>

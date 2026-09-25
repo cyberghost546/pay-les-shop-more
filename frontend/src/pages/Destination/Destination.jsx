@@ -10,9 +10,24 @@ import styles from './Destination.module.css';
 // The four stages of an order, laid out as a timeline rather than a row of
 // equal columns: they happen one after another, and two of them are ours
 // rather than the customer's, which the alternating sides make visible.
+//
+// The customer does the buying. We do not shop on anyone's behalf, so the
+// stages that are ours start once the goods are on their way to us: shipping
+// them, then clearing and delivering them on the island.
 const STAGES = [
   {
-    id: 'basket',
+    id: 'quote',
+    who: 'you',
+    icon: (
+      <svg viewBox="0 0 48 48" aria-hidden="true">
+        <path d="M11 6h20l6 6v30H11z" />
+        <path d="M31 6v6h6" />
+        <path d="M17 22h14M17 29h10" />
+      </svg>
+    ),
+  },
+  {
+    id: 'purchase',
     who: 'you',
     icon: (
       <svg viewBox="0 0 48 48" aria-hidden="true">
@@ -24,30 +39,20 @@ const STAGES = [
     ),
   },
   {
-    id: 'list',
-    who: 'you',
-    icon: (
-      <svg viewBox="0 0 48 48" aria-hidden="true">
-        <path d="M11 6h20l6 6v30H11z" />
-        <path d="M31 6v6h6" />
-        <path d="M17 22h14M17 29h10" />
-      </svg>
-    ),
-  },
-  {
-    id: 'quote',
+    id: 'ship',
     who: 'us',
     icon: (
       <svg viewBox="0 0 48 48" aria-hidden="true">
-        <rect x="6" y="10" width="36" height="24" rx="2" />
-        <path d="M6 18h36" />
-        <path d="M13 26h9" />
-        <circle cx="34" cy="26" r="3" />
+        <path d="M8 32h32l-3 8H11Z" />
+        <path d="M12 32V20h10v12" />
+        <path d="M22 26h14v6H22z" />
+        <path d="M15 20v-5h4v5" />
+        <path d="M26 26v6M30 26v6M34 26v6" />
       </svg>
     ),
   },
   {
-    id: 'delivery',
+    id: 'deliver',
     who: 'us',
     icon: (
       <svg viewBox="0 0 48 48" aria-hidden="true">

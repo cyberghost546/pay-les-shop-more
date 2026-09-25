@@ -50,7 +50,7 @@
 }
 
 .crumbLink {
-  color: #38a0dc;
+  color: var(--brand-yellow);
   text-decoration: none;
 }
 

@@ -35,19 +35,19 @@ export const DESTINATIONS = [
     slug: 'aruba',
     name: 'Aruba',
     port: 'Oranjestad',
-    transitDays: 21,
+    transitDays: 16,
   },
   {
     slug: 'bonaire',
     name: 'Bonaire',
     port: 'Kralendijk',
-    transitDays: 24,
+    transitDays: 18,
   },
   {
     slug: 'curacao',
     name: 'Curaçao',
     port: 'Willemstad',
-    transitDays: 21,
+    transitDays: 17,
   },
 ];
 
@@ -62,10 +62,12 @@ function destinationRoute({ slug, name, port, transitDays }) {
   return {
     path: `/destinations/${slug}`,
     title: `Shipping to ${name}`,
+    // "At sea" rather than "delivered in": customs clearance on the island
+    // comes on top of the crossing, so the days are not a delivery date.
     description:
       `Ship your online orders from the Netherlands to ${name}. ` +
-      `We collect your parcels, combine them into one shipment and deliver ` +
-      `to ${port} in about ${transitDays} days.`,
+      `We collect your parcels, combine them into one shipment and ship ` +
+      `them to ${port}: about ${transitDays} days at sea, or faster by air.`,
   };
 }
 
@@ -84,13 +86,6 @@ export const PUBLIC_ROUTES = [
     description:
       'Shop and ship, parcel forwarding, consolidation and door delivery ' +
       'across the Dutch Caribbean. What we do and how it works.',
-  },
-  {
-    path: '/tracking',
-    title: 'Track your shipment',
-    description:
-      'Enter your tracking number to see where your shipment is, from the ' +
-      'warehouse in the Netherlands to your door.',
   },
   {
     path: '/booking',

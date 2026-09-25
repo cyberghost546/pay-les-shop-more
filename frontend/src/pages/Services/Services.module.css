@@ -47,7 +47,7 @@
 
 .eyebrow {
   margin: 0;
-  color: #38a0dc;
+  color: var(--brand-yellow);
   font-size: clamp(1.4rem, 3vw, 2.6rem);
   font-weight: 400;
   letter-spacing: 0.02em;
@@ -78,7 +78,7 @@
 }
 
 .crumbLink {
-  color: #38a0dc;
+  color: var(--brand-yellow);
   text-decoration: none;
 }
 
@@ -106,7 +106,7 @@
   margin: 1rem auto 0;
   padding: 0;
   list-style: none;
-  background: #f9c80e;
+  background: var(--brand-yellow);
 }
 
 .highlight {
@@ -252,9 +252,13 @@
   transform: scale(1.05);
 }
 
-/* ----------------------------------------------------- 4. the companies */
+/* --------------------------------------------------- 4. what we do
 
-.companies {
+   The company's own services. Cards without links and without a hover lift:
+   nothing here is clickable, and a card that rises under the pointer says
+   it is.                                                                   */
+
+.offer {
   max-width: 1180px;
   margin: 0 auto;
   padding: 5rem 1.25rem 1rem;
@@ -279,6 +283,76 @@
   font-size: 1rem;
   line-height: 1.7;
   color: var(--muted);
+}
+
+.offerGrid {
+  display: grid;
+  /* Three across at full width, folding to two and one. */
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.offerItem {
+  display: flex;
+}
+
+.offerCard {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 2rem 1.75rem;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: #ffffff;
+  box-shadow: 0 1px 2px rgba(11, 37, 69, 0.05), 0 12px 26px -20px rgba(11, 37, 69, 0.3);
+}
+
+/* A flat tinted tile behind a line icon, in the page's own blues. */
+.offerIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  /* The accent yellow, softened so a row of six does not shout. */
+  background: linear-gradient(150deg, var(--brand-yellow-pale), var(--brand-yellow));
+}
+
+.offerIcon svg {
+  width: 28px;
+  height: 28px;
+  fill: none;
+  stroke: var(--navy);
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.offerName {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.offerBlurb {
+  margin: 0;
+  font-size: 0.92rem;
+  line-height: 1.65;
+  color: var(--muted);
+}
+
+/* ----------------------------------------------------- 5. the companies */
+
+.companies {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 5rem 1.25rem 1rem;
 }
 
 .companyGrid {
@@ -374,84 +448,13 @@
 
 .companyCta:hover,
 .companyCta:focus-visible {
-  background: var(--cyan);
-  color: #ffffff;
+  background: var(--brand-yellow);
+  color: var(--brand-ink);
 }
 
 .companyCta:focus-visible {
   outline: 3px solid var(--cyan);
   outline-offset: 2px;
-}
-
-/* -------------------------------------------------------- 5. the brands
-
-   A row of boxes that scrolls sideways rather than wrapping, so the strip
-   stays one line however many brands are in it. Kept from the previous
-   design; the boxes are white on the navy now, so they match the company
-   cards above them instead of the old grey-on-white.                       */
-
-.brands {
-  max-width: 1180px;
-  margin: 0 auto;
-  padding: 4.5rem 1.25rem 0;
-}
-
-.brandsTitle {
-  margin: 0 0 1.5rem;
-  color: var(--navy);
-  font-size: clamp(1.15rem, 2vw, 1.4rem);
-  font-weight: 800;
-  letter-spacing: -0.01em;
-}
-
-.brandRow {
-  display: flex;
-  gap: 1rem;
-  margin: 0;
-  padding: 0 0 1rem;
-  list-style: none;
-  overflow-x: auto;
-  /* Each box keeps its width instead of being squeezed by the ones after it. */
-  scroll-snap-type: x proximity;
-}
-
-.brandRow:focus-visible {
-  outline: 3px solid var(--cyan);
-  outline-offset: 4px;
-  border-radius: 4px;
-}
-
-.brandCard {
-  flex: 0 0 auto;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: clamp(150px, 18vw, 190px);
-  height: 110px;
-  padding: 1.5rem;
-  box-sizing: border-box;
-  border: 1px solid var(--line);
-  border-radius: 14px;
-  background: #ffffff;
-  box-shadow: 0 1px 2px rgba(11, 37, 69, 0.05), 0 10px 22px -18px rgba(11, 37, 69, 0.3);
-  scroll-snap-align: start;
-}
-
-.brandLogo {
-  max-width: 100%;
-  max-height: 100%;
-  /* contain, never cover: a cropped logo is a damaged trademark. */
-  object-fit: contain;
-}
-
-/* Shown until a logo file exists for that brand. Set in type rather than
-   left blank, so the strip reads as a list of names instead of a row of
-   empty boxes. */
-.brandName {
-  color: #4b5563;
-  font-size: 1rem;
-  font-weight: 700;
-  text-align: center;
 }
 
 /* --------------------------------------------- 6. closing call to action */
@@ -485,8 +488,8 @@
   display: inline-block;
   padding: 0.95rem 2.25rem;
   border-radius: 10px;
-  background: var(--cyan);
-  color: #04182f;
+  background: var(--brand-yellow);
+  color: var(--brand-ink);
   font-size: 1rem;
   font-weight: 700;
   text-decoration: none;
@@ -495,9 +498,9 @@
 
 .ctaButton:hover,
 .ctaButton:focus-visible {
-  background: var(--cyan-bright);
+  background: var(--brand-yellow-light);
   transform: translateY(-2px);
-  box-shadow: 0 16px 34px -16px rgba(56, 189, 248, 0.85);
+  box-shadow: 0 16px 34px -16px rgba(253, 224, 71, 0.85);
 }
 
 .ctaButton:focus-visible {
@@ -520,12 +523,24 @@
     padding: 1.5rem;
   }
 
-  .companies {
+  .offer {
     padding-top: 3.5rem;
   }
 
   .sectionHead {
     margin-bottom: 2.25rem;
+  }
+
+  .offerGrid {
+    gap: 1rem;
+  }
+
+  .offerCard {
+    padding: 1.5rem 1.25rem;
+  }
+
+  .companies {
+    padding-top: 3.5rem;
   }
 
   .companyGrid {
@@ -534,10 +549,6 @@
 
   .companyCard {
     padding: 1.5rem 1.25rem;
-  }
-
-  .brands {
-    padding-top: 3rem;
   }
 
   .cta {

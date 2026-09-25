@@ -10,6 +10,7 @@ Allow: /
 Disallow: /dashboard
 Disallow: /warehouse
 Disallow: /profile
+Disallow: /tracking
 Disallow: /login
 Disallow: /signup
 Disallow: /forgot-password

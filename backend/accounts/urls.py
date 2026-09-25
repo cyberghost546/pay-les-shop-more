@@ -18,8 +18,9 @@ router.register(
 )
 
 urlpatterns = [
-    # Open to anyone: the homepage's tracking box and statistics band.
-    # A tracking number is an identifier, not a credential — see
+    # The public site's tracking page and statistics band. The statistics are
+    # open to anyone; tracking takes an account and finds only its own
+    # shipments. A tracking number is an identifier, not a credential — see
     # accounts/public.py for what that means for these two.
     path(
         "track/<str:tracking_number>/",

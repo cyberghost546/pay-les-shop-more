@@ -218,8 +218,8 @@
   padding: 0.85rem 1.5rem;
   border: 0;
   border-radius: 8px;
-  background: #2563eb;
-  color: #ffffff;
+  background: var(--brand-yellow);
+  color: var(--brand-ink);
   font: inherit;
   font-size: 1rem;
   font-weight: 700;
@@ -228,12 +228,14 @@
 }
 
 .submit:hover:not(:disabled) {
-  background: #1d4ed8;
+  background: var(--brand-yellow-light);
 }
 
 /* While the request is in flight: still readable, clearly not clickable */
 .submit:disabled {
-  background: #93b4f5;
+  /* The yellow, washed out: still the same button, plainly not ready. */
+  background: var(--brand-yellow-pale);
+  color: #5b6b80;
   cursor: not-allowed;
 }
 

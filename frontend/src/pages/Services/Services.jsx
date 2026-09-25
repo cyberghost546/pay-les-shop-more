@@ -1,8 +1,8 @@
 // src/pages/Services/Services.jsx
 //
 // The services page, in six bands: the split banner, the yellow strip of
-// selling points, the three islands as photographs, the companies whose
-// services are offered, the brands strip, and a closing call to action.
+// selling points, the three islands as photographs, what the company does,
+// the companies whose services are offered, and a closing call to action.
 //
 // The island cards carry the island drawn in its own flag, and nothing else -
 // no photograph, no name, no caption, no button. The shape is the label: it
@@ -11,14 +11,14 @@
 // a card that can be clicked has to be reachable and announced; none of that
 // shows on screen.
 //
-// The companies grid is the shops the office maintains in the dashboard,
-// read through useShops - which falls back to the bundled list in
-// src/data/shops.js while the request is in flight or if it fails.
+// "What we do" is the company's own services. The companies grid under it is
+// the shops the office maintains in the dashboard, read through useShops -
+// which falls back to the bundled list in src/data/shops.js while the request
+// is in flight or if it fails.
 
 import { Link } from 'react-router-dom';
 import { containerShip } from '../../images/optimized/photos';
 import { DESTINATIONS } from '../../data/destinations';
-import { SHOPS } from '../../data/shops';
 import { useLanguage } from '../../i18n/useLanguage';
 import { usePageMeta } from '../../hooks/usePageMeta';
 import { useShops } from '../../hooks/useShops';
@@ -60,8 +60,73 @@ const HIGHLIGHTS = [
   },
 ];
 
-/** The brands strip: the same shops the home page leads with, from ./shops.js. */
-const BRANDS = SHOPS.map(({ name, logo }) => ({ name, logo: logo ?? null }));
+// What the company does, in the order a shipment meets it: how it travels,
+// what happens before it leaves, and what happens once it lands.
+const OFFER = [
+  {
+    id: 'sea',
+    icon: (
+      <>
+        <path d="M3 15h18l-2.5 5h-13Z" />
+        <path d="M6 15V9h6v6" />
+        <path d="M12 12h7v3h-7z" />
+        <path d="M8 9V6h2v3" />
+      </>
+    ),
+  },
+  {
+    id: 'air',
+    icon: (
+      <path d="M3 11h5l3-4h2.5l-1.5 4h5l2-2h1.5l-1 3 1 3h-1.5l-2-2H12l1.5 4H11l-3-4H3" />
+    ),
+  },
+  {
+    id: 'warehouse',
+    icon: (
+      <>
+        <path d="M3 12h8v8H3zM13 12h8v8h-8z" />
+        <path d="M8 4h8v8H8z" />
+      </>
+    ),
+  },
+  {
+    id: 'customs',
+    icon: (
+      <>
+        <path d="M6 3h9l4 4v14H6z" />
+        <path d="M15 3v4h4" />
+        <path d="M9 12h7M9 16h5" />
+      </>
+    ),
+  },
+  {
+    id: 'delivery',
+    icon: (
+      <>
+        <path d="M2 7h11v9H2z" />
+        <path d="M13 10h4.5l3.5 3v3h-8z" />
+        <circle cx="7" cy="17.5" r="1.8" />
+        <circle cx="17" cy="17.5" r="1.8" />
+      </>
+    ),
+  },
+  {
+    id: 'moving',
+    icon: (
+      <>
+        <path d="M3 11 12 4l9 7" />
+        <path d="M5 10v10h14V10" />
+        <path d="M10 20v-5h4v5" />
+      </>
+    ),
+  },
+];
+
+// The range of sailing times, read from the island list rather than written
+// into the copy, so the card cannot disagree with the destination pages.
+const SAILING_DAYS = DESTINATIONS.map((island) => island.transitDays);
+const FEWEST_DAYS = Math.min(...SAILING_DAYS);
+const MOST_DAYS = Math.max(...SAILING_DAYS);
 
 /** One island, as its flag map, linking to that island's own page. */
 function IslandCard({ island, name }) {
@@ -197,7 +262,37 @@ export default function Services() {
           </ul>
         </section>
 
-        {/* 4. The companies --------------------------------------------- */}
+        {/* 4. What we do ------------------------------------------------- */}
+        <section className={styles.offer} aria-labelledby="offer-title">
+          <div className={styles.sectionHead}>
+            <h2 className={styles.sectionTitle} id="offer-title">
+              {t('services.offer.title')}
+            </h2>
+            <p className={styles.sectionLead}>{t('services.offer.lead')}</p>
+          </div>
+
+          <ul className={styles.offerGrid}>
+            {OFFER.map((item) => (
+              <li key={item.id} className={styles.offerItem}>
+                <article className={styles.offerCard}>
+                  <span className={styles.offerIcon} aria-hidden="true">
+                    <svg viewBox="0 0 24 24">{item.icon}</svg>
+                  </span>
+                  <h3 className={styles.offerName}>
+                    {t(`services.offer.${item.id}.title`)}
+                  </h3>
+                  <p className={styles.offerBlurb}>
+                    {t(`services.offer.${item.id}.body`)
+                      .replace('{min}', FEWEST_DAYS)
+                      .replace('{max}', MOST_DAYS)}
+                  </p>
+                </article>
+              </li>
+            ))}
+          </ul>
+        </section>
+
+        {/* 5. The companies --------------------------------------------- */}
         <section className={styles.companies} aria-labelledby="companies-title">
           <div className={styles.sectionHead}>
             <h2 className={styles.sectionTitle} id="companies-title">
@@ -213,39 +308,6 @@ export default function Services() {
                 shop={shop}
                 cta={t('services.companies.cta')}
               />
-            ))}
-          </ul>
-        </section>
-
-        {/* 5. The brands ------------------------------------------------- */}
-        <section className={styles.brands}>
-          <h2 className={styles.brandsTitle}>{t('services.brandsTitle')}</h2>
-
-          {/* Scrolls sideways rather than wrapping, and says so to a screen
-              reader: a region with tabIndex is reachable by keyboard, which is
-              what lets somebody not using a mouse scroll it at all. */}
-          <ul
-            className={styles.brandRow}
-            tabIndex={0}
-            role="group"
-            aria-label={t('services.brandsTitle')}
-          >
-            {BRANDS.map((brand) => (
-              <li key={brand.name} className={styles.brandCard}>
-                {brand.logo ? (
-                  <img
-                    src={brand.logo}
-                    alt={brand.name}
-                    className={styles.brandLogo}
-                    loading="lazy"
-                    decoding="async"
-                  />
-                ) : (
-                  // No logo file for this brand yet. See src/data/shops.js for
-                  // where one goes; until then the name carries the box.
-                  <span className={styles.brandName}>{brand.name}</span>
-                )}
-              </li>
             ))}
           </ul>
         </section>

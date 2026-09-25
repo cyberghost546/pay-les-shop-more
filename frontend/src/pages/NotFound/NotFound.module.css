@@ -38,8 +38,8 @@
   margin-top: 1rem;
   padding: 0.8rem 1.8rem;
   border-radius: 8px;
-  background: #2563eb;
-  color: #ffffff;
+  background: var(--brand-yellow);
+  color: var(--brand-ink);
   font-size: 0.95rem;
   font-weight: 700;
   text-decoration: none;
@@ -47,7 +47,7 @@
 }
 
 .link:hover {
-  background: #1d4ed8;
+  background: var(--brand-yellow-light);
 }
 
 .link:focus-visible {

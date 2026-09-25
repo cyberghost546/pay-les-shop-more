@@ -40,7 +40,7 @@
   font-weight: 700;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: #38bdf8;
+  color: var(--brand-yellow);
 }
 
 .title {
@@ -117,13 +117,14 @@
   height: 42px;
   margin-bottom: 0.5rem;
   border-radius: 11px;
-  background: #e0f2fe;
+  /* A pale wash of the accent yellow, filling in fully on hover. */
+  background: var(--brand-yellow-pale);
   color: var(--navy);
 }
 
 .method:hover .methodIcon {
-  background: var(--cyan);
-  color: #ffffff;
+  background: var(--brand-yellow);
+  color: var(--brand-ink);
 }
 
 .methodIcon svg {
@@ -285,8 +286,8 @@
   padding: 0.9rem 2.25rem;
   border: 0;
   border-radius: 10px;
-  background: #2563eb;
-  color: #ffffff;
+  background: var(--brand-yellow);
+  color: var(--brand-ink);
   font: inherit;
   font-size: 1rem;
   font-weight: 700;
@@ -295,7 +296,7 @@
 }
 
 .submit:hover:not(:disabled) {
-  background: #1d4ed8;
+  background: var(--brand-yellow-light);
   transform: translateY(-1px);
 }
 

@@ -22,7 +22,7 @@
   font-size: 0.85rem;
   font-weight: 700;
   letter-spacing: 0.18em;
-  color: #9fe4ff;
+  color: var(--brand-yellow);
 }
 
 .title {
@@ -180,8 +180,8 @@
   margin-top: 1.1rem;
   padding: 0.6rem 1.2rem;
   border-radius: 4px;
-  background: #29abe2;
-  color: #ffffff;
+  background: var(--brand-yellow);
+  color: var(--brand-ink);
   font-weight: 700;
   font-size: 0.95rem;
   text-decoration: none;
@@ -189,7 +189,7 @@
 
 .stepLink:hover,
 .writtenLink:hover {
-  background: #1d94c7;
+  background: var(--brand-yellow-light);
 }
 
 /* --- Controls ------------------------------------------------------- */
@@ -223,14 +223,15 @@
 }
 
 .primary {
-  border-color: #29abe2;
-  background: #29abe2;
-  color: #ffffff;
+  border-color: var(--brand-yellow);
+  background: var(--brand-yellow);
+  color: var(--brand-ink);
 }
 
 .primary:hover:not(:disabled) {
-  background: #1d94c7;
-  color: #ffffff;
+  border-color: var(--brand-yellow-light);
+  background: var(--brand-yellow-light);
+  color: var(--brand-ink);
 }
 
 /* While the voice is running the button shows it, so it is obvious what to
@@ -385,8 +386,8 @@
 }
 
 .ctaPrimary {
-  background: #29abe2;
-  color: #ffffff;
+  background: var(--brand-yellow);
+  color: var(--brand-ink);
 }
 
 .ctaSecondary {

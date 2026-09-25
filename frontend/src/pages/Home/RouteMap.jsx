@@ -6,9 +6,9 @@ import { useInViewport } from '../../hooks/useInViewport';
 import { useLanguage } from '../../i18n/useLanguage';
 import styles from './Home.module.css';
 
-// The routes the company actually runs, all leaving from the Netherlands.
-// Built from the shared island list, so the transit times quoted here and on
-// the destination pages can never disagree.
+// The routes the company actually runs, all leaving from the Netherlands, by
+// sea and by air. Built from the shared island list, so the sailing times and
+// flights quoted here and on the destination pages can never disagree.
 //
 // The coordinates are positions in the 900×470 drawing, not real latitude and
 // longitude — this is a schematic, and pretending otherwise would put the
@@ -21,6 +21,7 @@ const ROUTES = DESTINATIONS.map((island) => ({
   x: island.mapX,
   y: island.mapY,
   days: island.transitDays,
+  flights: island.flights,
 }));
 
 /** A gentle arc from origin to destination, bowed away from the straight line. */
@@ -152,14 +153,25 @@ export default function RouteMap() {
                 {t(ORIGIN.labelKey)} <span aria-hidden="true">→</span>{' '}
                 {t(shown.nameKey)}
               </p>
+              {/* One group per way of shipping: what it takes, then how long
+                  customs clearance adds on the island, which is the part
+                  people forget to count. */}
               <dl className={styles.mapPanelFacts}>
                 <div>
-                  <dt>{t('home.map.transit')}</dt>
-                  <dd>{t('home.map.days').replace('{days}', shown.days)}</dd>
+                  <dt>{t('home.map.sea')}</dt>
+                  <dd>{t('home.map.seaDays').replace('{days}', shown.days)}</dd>
+                  <dd className={styles.mapPanelNote}>
+                    {t('home.map.seaClearance')}
+                  </dd>
                 </div>
                 <div>
-                  <dt>{t('home.map.mode')}</dt>
-                  <dd>{t('home.map.sea')}</dd>
+                  <dt>{t('home.map.air')}</dt>
+                  {shown.flights.map((flight) => (
+                    <dd key={flight}>{t(`home.map.flights.${flight}`)}</dd>
+                  ))}
+                  <dd className={styles.mapPanelNote}>
+                    {t('home.map.airClearance')}
+                  </dd>
                 </div>
               </dl>
               <Link className={styles.mapPanelLink} to={`/destinations/${shown.slug}`}>

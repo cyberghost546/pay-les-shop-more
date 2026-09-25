@@ -317,6 +317,7 @@ class ListContractTests(DashboardContractTestCase):
                 "recipient_address",
                 "recipient_city",
                 "recipient_phone",
+                "recipient_crib_number",
                 "contents",
                 "contents_attached",
                 "quantity",

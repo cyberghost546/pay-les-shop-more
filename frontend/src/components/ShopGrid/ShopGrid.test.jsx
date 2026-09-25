@@ -1,28 +1,63 @@
-// The sliding shop rows. What is worth pinning down is the wiring rather than
+// The sliding shop row. What is worth pinning down is the wiring rather than
 // the styling: that the shops the office maintains are all there, each one
-// linking out to its own Dutch storefront, and that the "all shops" button
+// linking out to its own Dutch storefront, and that the "all shops" link
 // still leads somewhere real.
 //
-// These render without a server, so what they see is the bundled fallback in
-// src/data/shops.js - which is the point of that fallback existing.
+// These render without a server - the shop list request is refused unless a
+// test answers it - so what they see is the bundled fallback in
+// src/data/shops.js, which is the point of that fallback existing.
 //
 // jsdom reports an English browser, so these read the English dictionary.
 
-import { screen } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { screen, waitFor } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { renderWithProviders } from '../../test/utils';
 import { SHOPS, displayLogo } from '../../data/shops';
+import { listShops } from '../../api/shops';
 import ShopGrid from './ShopGrid';
 
+vi.mock('../../api/shops', async (importOriginal) => {
+  const actual = await importOriginal();
+  return { ...actual, listShops: vi.fn() };
+});
+
 describe('ShopGrid', () => {
+  beforeEach(() => {
+    listShops.mockReset();
+    listShops.mockRejectedValue(new Error('offline'));
+  });
+
   it('shows every shop, in the order the office arranged them', () => {
     renderWithProviders(<ShopGrid />);
 
     const named = screen.getAllByRole('img').map((img) => img.getAttribute('alt'));
 
-    // Split across two rows, so the order runs down the first row and then
-    // the second rather than straight across.
-    expect(new Set(named)).toEqual(new Set(SHOPS.map((shop) => shop.name)));
+    // One row, so the running order reads straight across.
+    expect(named).toEqual(SHOPS.map((shop) => shop.name));
+  });
+
+  it('fills a short list without announcing any shop twice', async () => {
+    listShops.mockResolvedValue([
+      { id: 1, name: 'Alpha', url: 'https://alpha.example/', logo: null },
+      { id: 2, name: 'Beta', url: 'https://beta.example/', logo: null },
+    ]);
+    const { container } = renderWithProviders(<ShopGrid />);
+
+    // Two shops come nowhere near filling the row's window, so the row
+    // repeats them until they do...
+    await waitFor(() =>
+      expect(screen.getAllByText('Alpha').length).toBeGreaterThan(2),
+    );
+    expect(container.querySelectorAll('li').length).toBeGreaterThan(4);
+
+    // ...but a screen reader hears each shop once, and tab reaches it once.
+    expect(screen.getAllByRole('link', { name: /Alpha/ })).toHaveLength(1);
+    expect(screen.getAllByRole('link', { name: /Beta/ })).toHaveLength(1);
+    expect(
+      [...container.querySelectorAll('li a')].filter(
+        (link) => link.getAttribute('tabindex') !== '-1',
+      ),
+    ).toHaveLength(2);
   });
 
   it('prefers a long logo where a shop has one', () => {
@@ -50,18 +85,17 @@ describe('ShopGrid', () => {
     const { container } = renderWithProviders(<ShopGrid />);
 
     // The track is doubled so the slide can loop without a seam, so the
-    // markup really does hold twelve cards...
-    // Each row repeats its shops until it fills its window, then again for
-    // the loop - so the markup holds well over one copy of the list.
+    // markup holds well over one copy of the list...
     expect(container.querySelectorAll('li').length).toBeGreaterThan(
       SHOPS.length,
     );
 
-    // ...but a screen reader is told about six, and only six are reachable
-    // by tab. Hearing or tabbing the same shops twice would be a bug.
+    // ...but a screen reader is told about each shop once, and only those
+    // are reachable by tab. Hearing or tabbing the same shops twice would be
+    // a bug.
     expect(screen.getAllByRole('img')).toHaveLength(SHOPS.length);
-    // Scoped to the cards: the "See all shops" button below them is an
-    // anchor too, and is meant to be tabbable.
+    // Scoped to the cards: the "See all shops" link below them is an anchor
+    // too, and is meant to be tabbable.
     expect(
       [...container.querySelectorAll('li a')].filter(
         (link) => link.getAttribute('tabindex') !== '-1',

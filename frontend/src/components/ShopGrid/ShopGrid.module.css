@@ -1,8 +1,8 @@
 /* src/components/ShopGrid/ShopGrid.module.css
  *
- * The shop panel, sitting beside the hero copy on the hero's own navy. It
- * brings no background of its own - the hero supplies that - so the white
- * cards read as the only bright thing in the column, which is the point.
+ * The shop strip, sliding past under the hero copy on the hero's own navy.
+ * It brings no background of its own - the hero supplies that - so the white
+ * cards read as the only bright thing in the band, which is the point.
  *
  * The restraint is deliberate: generous whitespace, one accent colour, and
  * hover effects small enough to read as quality rather than decoration.
@@ -13,31 +13,21 @@
   --cyan-bright: #38bdf8;
 
   color: #ffffff;
+  text-align: center;
 }
 
 /* ------------------------------------------------------------------ head */
 
-.head {
-  margin: 0 0 1.5rem;
-}
-
+/* A small caption over the logos, not a headline: the hero's own title is
+   right above it. Still the section's h2, which is what names it. */
 .title {
-  margin: 0 0 0.6rem;
-  /* Second to the hero's h1, and sized to say so. */
-  font-size: clamp(1.05rem, 1.6vw, 1.3rem);
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  line-height: 1.35;
+  margin: 0 0 1.25rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  line-height: 1.4;
   text-transform: uppercase;
-}
-
-.lead {
-  margin: 0;
-  font-size: 0.92rem;
-  line-height: 1.6;
-  /* Light enough to sit under the title without competing with it, bright
-     enough to stay legible on the navy. */
-  color: rgba(226, 232, 240, 0.82);
+  color: rgba(226, 232, 240, 0.72);
 }
 
 /* ----------------------------------------------------------------- cards */
@@ -46,28 +36,26 @@
    arrives and leaves instead of being clipped at a hard border. */
 .marquee {
   position: relative;
+  max-width: 1400px;
+  margin: 0 auto;
   overflow: hidden;
   mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
   -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
 }
 
-/* One row: the two copies of its shops, side by side. Sliding exactly half
+/* The row: the two copies of its shops, side by side. Sliding exactly half
    the track lands the second copy where the first began, so the loop has no
-   seam. The duration comes from the component, which is what sets the two
-   rows travelling at different speeds. */
+   seam. The duration comes from the component, which sets it from the
+   number of cards so the pace stays the same however many there are. */
 .track {
   display: flex;
   width: max-content;
   gap: 0.75rem;
   margin: 0;
-  padding: 0;
+  /* Room above for a card lifting on hover, inside the window's clip. */
+  padding: 4px 0;
   list-style: none;
-  animation: slide 26s linear infinite;
-}
-
-/* The gap between the two rows. */
-.track + .track {
-  margin-top: 0.75rem;
+  animation: slide 32s linear infinite;
 }
 
 @keyframes slide {
@@ -81,8 +69,8 @@
   }
 }
 
-/* Both rows stop while somebody is reading either, or tabbing through one. A
-   row that keeps moving under the pointer is a row whose links are hard to
+/* The row stops while somebody is reading it, or tabbing through it. A row
+   that keeps moving under the pointer is a row whose links are hard to
    click. */
 .marquee:hover .track,
 .marquee:focus-within .track {
@@ -93,8 +81,9 @@
   display: flex;
   /* Fixed, because the track is laid out on its intrinsic width: a card that
      sized itself to its logo would make the two halves different lengths and
-     the loop would drift. */
-  flex: 0 0 182px;
+     the loop would drift. Kept tight around the logo, so the card reads as a
+     frame for it rather than a white panel with a small mark in the middle. */
+  flex: 0 0 158px;
 }
 
 .card {
@@ -104,9 +93,9 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 0.6rem;
-  min-height: 132px;
-  padding: 1rem 0.6rem;
+  gap: 0.45rem;
+  min-height: 108px;
+  padding: 0.75rem 0.55rem;
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 14px;
   background: #ffffff;
@@ -137,7 +126,7 @@
   /* Tall enough that a square mark like Coolblue's is not dwarfed by a wide
      wordmark like MediaMarkt's - a square logo is capped by the well's
      height, a wide one by its width. */
-  height: 64px;
+  height: 58px;
 }
 
 .logo {
@@ -202,43 +191,38 @@
 
 /* ------------------------------------------------------------------- cta */
 
+/* A link rather than a button: the hero's two buttons are right above, and
+   a third would compete with them for the same click. */
 .cta {
-  display: block;
-  /* The strip that used to sit here is gone, so the button carries the space
-     off the cards itself. */
-  margin-top: 1.75rem;
-  padding: 0.85rem 1.5rem;
-  border-radius: 10px;
-  background: var(--cyan);
-  color: #04182f;
+  display: inline-block;
+  margin-top: 1.4rem;
+  color: var(--brand-yellow);
   font-size: 0.95rem;
   font-weight: 700;
-  text-align: center;
   text-decoration: none;
-  transition: background 0.24s ease, transform 0.24s ease, box-shadow 0.24s ease;
 }
 
 .cta:hover,
 .cta:focus-visible {
-  background: var(--cyan-bright);
-  transform: translateY(-2px);
-  box-shadow: 0 14px 30px -14px rgba(56, 189, 248, 0.85);
+  text-decoration: underline;
+  text-underline-offset: 4px;
 }
 
 .cta:focus-visible {
   outline: 3px solid #ffffff;
   outline-offset: 3px;
+  border-radius: 4px;
 }
 
 /* --------------------------------------------------------- narrow screens */
 
 @media (max-width: 720px) {
   .item {
-    flex-basis: 156px;
+    flex-basis: 138px;
   }
 
   .card {
-    min-height: 112px;
+    min-height: 96px;
   }
 
   /* No hover on a touch screen, so the call to action is simply always
@@ -262,22 +246,15 @@
     overflow-x: auto;
   }
 
-  .track + .track {
-    margin-top: 0.5rem;
-  }
-
   .card,
   .logo,
   .cardCta,
-  .cardArrow,
-  .cta {
+  .cardArrow {
     transition: none;
   }
 
   .card:hover,
   .card:focus-visible,
-  .cta:hover,
-  .cta:focus-visible,
   .card:hover .logo,
   .card:focus-visible .logo {
     transform: none;

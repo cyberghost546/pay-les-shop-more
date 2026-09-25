@@ -26,6 +26,8 @@ const SERVICES = [
   { id: 'consolidation', to: '/services', icon: 'boxes' },
   { id: 'doorToDoor', to: '/destinations', icon: 'truck' },
   { id: 'customs', to: '/services', icon: 'document' },
+  // Signed-out visitors are asked to log in first: tracking lives in the
+  // customer's account.
   { id: 'tracking', to: '/tracking', icon: 'pin' },
   { id: 'business', to: '/contact', icon: 'building' },
 ];
@@ -76,13 +78,16 @@ const ICONS = {
 };
 
 /** The stages of a shipment, for the explainer. Labels come from the API on
- *  the tracking page; here there is no shipment, so they are translated. */
+ *  the tracking page; here there is no shipment, so they are translated.
+ *  Ordered, delivered to and collected at our warehouse, in transit, arrived,
+ *  ready: the customer buys for themselves, so the journey starts at their
+ *  order rather than at a payment to us. */
 const EXPLAINER_STAGES = [
-  'paid',
-  'purchased',
+  'ordered',
+  'collected',
   'inTransit',
   'arrived',
-  'delivered',
+  'ready',
 ];
 
 // The three sentences that say what this company does, shown in the hero so a
@@ -162,8 +167,8 @@ export default function Home() {
             </div>
           </div>
 
-          {/* The shops customers order from, and what happens after the
-              order. The shops are in src/data/shops.js. */}
+          {/* Under the copy, the full width of the hero: the shops customers
+              order from, sliding past. The shops are in src/data/shops.js. */}
           <div className={styles.visual}>
             <ShopGrid />
           </div>
@@ -181,9 +186,13 @@ export default function Home() {
       {/* 3. Live statistics ---------------------------------------------- */}
       <StatsBand />
 
-      {/* 4. How it works — the existing Steps component, unchanged, which
-          already tells this story in three languages. */}
-      <Section className={`${styles.plain} ${styles.anchor}`} id="how">
+      {/* 4. How to order — the client's own five steps, in the design they
+          sent. Wider than the other sections: five bars side by side need
+          the room. */}
+      <Section
+        className={`${styles.plain} ${styles.anchor} ${styles.wide}`}
+        id="how"
+      >
         <Steps />
       </Section>
 

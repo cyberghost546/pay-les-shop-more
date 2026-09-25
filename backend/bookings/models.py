@@ -119,6 +119,10 @@ class Booking(models.Model):
     # The paper form has a box for it, but the agent phones rather than writes,
     # so an address on the island is enough to complete a delivery without it.
     recipient_email = models.EmailField(blank=True)
+    # The recipient's Crib number, their tax number on the island. Optional,
+    # like the e-mail: a sender often does not know it, and the shipment can
+    # be booked without it.
+    recipient_crib_number = models.CharField(max_length=30, blank=True)
 
     # ---- the consignment ------------------------------------------------
 
@@ -129,7 +133,12 @@ class Booking(models.Model):
         max_length=10, choices=Payment.choices, default=Payment.BANK
     )
 
-    quantity = models.PositiveIntegerField(validators=[MinValueValidator(1)])
+    # Empty when the sender does not know yet. Whoever orders online cannot
+    # tell how many parcels the shop will send it in; the count is only
+    # certain once they have all reached the warehouse.
+    quantity = models.PositiveIntegerField(
+        null=True, blank=True, validators=[MinValueValidator(1)]
+    )
     unit = models.CharField(max_length=10, choices=Unit.choices, default=Unit.BOXES)
 
     contents = models.TextField(blank=True)

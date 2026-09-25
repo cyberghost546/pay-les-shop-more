@@ -161,15 +161,15 @@
 .link {
   padding: 0.5rem 0.9rem;
   border-radius: 4px;
-  background: #29abe2;
-  color: #ffffff;
+  background: var(--brand-yellow);
+  color: var(--brand-ink);
   font-size: 0.875rem;
   font-weight: 700;
   text-decoration: none;
 }
 
 .link:hover {
-  background: #1d94c7;
+  background: var(--brand-yellow-light);
 }
 
 /* Quiet by design: it should be findable, not competing with the two

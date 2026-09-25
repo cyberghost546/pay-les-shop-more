@@ -3,6 +3,20 @@
      renders while the webfont loads, and if it fails to load at all. */
   --font-sans: 'Poppins', system-ui, -apple-system, 'Segoe UI', Roboto,
     sans-serif;
+
+  /* The site's colours: blue and white as the ground, a light yellow as the
+     accent. Yellow goes on the main buttons, small labels, numbered badges
+     and highlights, always with navy on it. It is never the colour of text on
+     white, where it is far too light to read.
+       light   hover, a shade lighter still
+       pale    washes behind icons, and a button that is not ready yet
+       deep    edges and lines, where the light yellow meets white and would
+               otherwise all but disappear into it */
+  --brand-yellow: #fde047;
+  --brand-yellow-light: #fef08a;
+  --brand-yellow-pale: #fef9c3;
+  --brand-yellow-deep: #eab308;
+  --brand-ink: #0b2545;
 }
 
 body {

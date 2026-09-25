@@ -41,7 +41,7 @@
   font-weight: 700;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: #38bdf8;
+  color: var(--brand-yellow);
 }
 
 .title {
@@ -310,8 +310,8 @@
   padding: 0.95rem 2.5rem;
   border: 0;
   border-radius: 10px;
-  background: var(--blue);
-  color: #ffffff;
+  background: var(--brand-yellow);
+  color: var(--brand-ink);
   font: inherit;
   font-size: 1.02rem;
   font-weight: 700;
@@ -320,12 +320,14 @@
 }
 
 .submit:hover:not(:disabled) {
-  background: #1d4ed8;
+  background: var(--brand-yellow-light);
   transform: translateY(-1px);
 }
 
 .submit:disabled {
-  background: #93b4f5;
+  /* The yellow, washed out: still the same button, plainly not ready. */
+  background: var(--brand-yellow-pale);
+  color: #5b6b80;
   cursor: not-allowed;
 }
 
@@ -414,15 +416,15 @@
   display: inline-block;
   padding: 0.8rem 1.75rem;
   border-radius: 10px;
-  background: var(--blue);
-  color: #ffffff;
+  background: var(--brand-yellow);
+  color: var(--brand-ink);
   font-size: 0.98rem;
   font-weight: 700;
   text-decoration: none;
 }
 
 .doneLink:hover {
-  background: #1d4ed8;
+  background: var(--brand-yellow-light);
 }
 
 /* --------------------------------------------------------- narrow screens */

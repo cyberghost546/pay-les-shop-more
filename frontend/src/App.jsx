@@ -16,7 +16,6 @@ import { useAuth } from './auth/useAuth';
 // home page never downloads the profile forms. On a slow connection the
 // Suspense fallback below is what they see while the chunk arrives.
 const Home = lazy(() => import('./pages/Home/Home'));
-const Tracking = lazy(() => import('./pages/Tracking/Tracking'));
 const Booking = lazy(() => import('./pages/Booking/Booking'));
 const Services = lazy(() => import('./pages/Services/Services'));
 const Tutorial = lazy(() => import('./pages/Tutorial/Tutorial'));
@@ -120,7 +119,14 @@ export default function App() {
         <Suspense fallback={<Loading />}>
           <Routes>
             <Route path="/" element={<Home />} />
-            <Route path="/tracking" element={<Tracking />} />
+            {/* Track & Trace is a card in the customer's account now: a
+                tracking number alone is not enough to follow a shipment, or
+                anyone holding one could. The address stays, because the
+                shipment e-mails link to it; /profile does the sign-in check. */}
+            <Route
+              path="/tracking"
+              element={<Navigate to="/profile#tracking" replace />}
+            />
             <Route path="/booking" element={<Booking />} />
             <Route path="/services" element={<Services />} />
             {/* The guided walkthrough, linked from the header and the home page. */}

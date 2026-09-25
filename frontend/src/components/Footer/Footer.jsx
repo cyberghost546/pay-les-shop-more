@@ -1,15 +1,17 @@
 import { NavLink } from 'react-router-dom';
+import { useAuth } from '../../auth/useAuth';
 import { useLanguage } from '../../i18n/useLanguage';
 import styles from './Footer.module.css';
 
 // Headings and labels are translation keys; hrefs are not translated.
+// `signedIn` links only show to somebody signed in, as in the header.
 const FOOTER_LINKS = [
   {
     heading: 'footer.navigation',
     links: [
       { key: 'nav.home', href: '/' },
       { key: 'nav.services', href: '/services' },
-      { key: 'nav.tracking', href: '/tracking' },
+      { key: 'nav.tracking', href: '/tracking', signedIn: true },
       { key: 'nav.booking', href: '/booking' },
       { key: 'nav.calculator', href: '/calculator' },
       { key: 'nav.contact', href: '/contact' },
@@ -42,6 +44,7 @@ const SOCIAL_LINKS = [
 export default function Footer() {
   const year = new Date().getFullYear();
   const { t } = useLanguage();
+  const { isAuthenticated } = useAuth();
 
   return (
     <footer className={styles.footer}>
@@ -76,7 +79,7 @@ export default function Footer() {
               <div key={col.heading} className={styles.column}>
                 <h3 className={styles.heading}>{t(col.heading)}</h3>
                 <ul className={styles.linkList}>
-                  {col.links.map((link) => (
+                  {col.links.filter((link) => !link.signedIn || isAuthenticated).map((link) => (
                     <li key={link.href}>
                       <NavLink
                         to={link.href}

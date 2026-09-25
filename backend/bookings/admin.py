@@ -33,7 +33,7 @@ class BookingAdmin(admin.ModelAdmin):
         "sender_postal_code", "sender_city", "sender_phone", "sender_email",
         "recipient_first_name", "recipient_last_name", "recipient_address",
         "recipient_city", "recipient_phone", "recipient_email",
-        "freight", "destination", "destination_other", "packing", "payment",
+        "recipient_crib_number", "freight", "destination", "destination_other", "packing", "payment",
         "quantity", "unit", "contents", "contents_attached", "value_eur",
         "vehicle", "emigration", "id_present", "deregistered",
         "deregistration_present", "insured", "insured_value_eur", "notes",

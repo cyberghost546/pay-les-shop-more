@@ -31,7 +31,7 @@
   font-size: clamp(2rem, 5vw, 2.9rem);
   font-weight: 800;
   line-height: 1;
-  color: #38bdf8;
+  color: var(--brand-yellow);
   /* Stops the digits jittering sideways while the number counts up. */
   font-variant-numeric: tabular-nums;
 }

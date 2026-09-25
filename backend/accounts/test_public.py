@@ -1,7 +1,8 @@
-"""Tests for the public tracking and statistics endpoints.
+"""Tests for the tracking and statistics endpoints.
 
-What carries the weight: that an anonymous caller learns where a shipment is
-and nothing about who is receiving it.
+What carries the weight: that only a shipment's own customer can follow it -
+not a stranger holding its tracking number - and that what they learn is
+where it is, and nothing about who is receiving it.
 """
 
 from datetime import date
@@ -36,11 +37,14 @@ class TrackingTests(ApiTestCase):
             status=Package.Status.IN_TRANSIT,
             estimated_arrival=date(2026, 10, 1),
         )
+        # Every test below looks the shipment up as its own customer, unless
+        # it says otherwise.
+        self.client.force_authenticate(self.user)
 
     def url(self, number="PLSM-1234"):
         return reverse("track", args=[number])
 
-    def test_anyone_can_look_up_a_shipment(self):
+    def test_the_customer_can_look_up_their_shipment(self):
         response = self.client.get(self.url())
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -48,6 +52,41 @@ class TrackingTests(ApiTestCase):
         self.assertEqual(response.data["status"], "in_transit")
         self.assertEqual(response.data["destination"], "Curaçao")
         self.assertEqual(response.data["progress"], 60)
+
+    def test_a_signed_out_visitor_cannot_track_anything(self):
+        """A tracking number is printed on paperwork and forwarded in e-mails.
+        Holding one is not enough to follow the shipment."""
+        self.client.force_authenticate(None)
+
+        response = self.client.get(self.url())
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertNotIn("PLSM-1234", response.content.decode())
+
+    def test_another_customers_shipment_is_not_found(self):
+        """The same 404 as a number that does not exist, so the answer does
+        not even confirm that it does."""
+        self.client.force_authenticate(
+            make_user(username="stranger", email="stranger@example.com")
+        )
+
+        response = self.client.get(self.url())
+
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEqual(
+            response.data, self.client.get(self.url("PLSM-DOES-NOT-EXIST")).data
+        )
+
+    def test_the_office_can_look_up_any_shipment(self):
+        office = make_user(username="office", email="office@example.com")
+        office.is_staff = True
+        office.save()
+        self.client.force_authenticate(office)
+
+        response = self.client.get(self.url())
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["tracking_number"], "PLSM-1234")
 
     def test_it_reveals_nothing_about_the_recipient(self):
         """The whole reason this endpoint is written by hand rather than
@@ -141,6 +180,12 @@ class TrackingTests(ApiTestCase):
         left, and its last line is the country."""
         self.user.anonymise()
         self.package.refresh_from_db()
+        # An erased customer cannot sign in any more; the office still looks
+        # their shipments up.
+        office = make_user(username="office", email="office@example.com")
+        office.is_staff = True
+        office.save()
+        self.client.force_authenticate(office)
 
         data = self.client.get(self.url()).data
         self.assertEqual(data["destination"], "Curaçao")

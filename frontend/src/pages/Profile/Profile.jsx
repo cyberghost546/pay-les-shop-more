@@ -1,6 +1,6 @@
 // src/pages/Profile/Profile.jsx
 import { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   USING_PLACEHOLDER_DATA,
   changePassword,
@@ -16,6 +16,7 @@ import { AUTH_ERRORS } from '../../api/auth';
 import { useAuth } from '../../auth/useAuth';
 import Loading from '../../components/Loading/Loading';
 import ConnectionError from '../../components/ConnectionError/ConnectionError';
+import TrackingPanel from '../../components/TrackingPanel/TrackingPanel';
 import { useLanguage } from '../../i18n/useLanguage';
 import styles from './Profile.module.css';
 import { sanitizePhone } from '../../utils/phone';
@@ -97,6 +98,13 @@ function SectionIcon({ name }) {
         <circle cx="12" cy="9.5" r="2.6" />
       </>
     ),
+    tracking: (
+      <>
+        <circle cx="10.5" cy="10.5" r="6" />
+        <path d="m15 15 5.5 5.5" />
+        <path d="M8 10.5h5M10.5 8v5" />
+      </>
+    ),
     shipments: (
       <>
         <path d="M3 8.5 12 4l9 4.5v7L12 20l-9-4.5Z" />
@@ -159,6 +167,7 @@ function SectionIcon({ name }) {
 // The order they appear in, for the side navigation.
 const SECTIONS = [
   { id: 'details', labelKey: 'profile.sections.details' },
+  { id: 'tracking', labelKey: 'profile.sections.tracking' },
   { id: 'shipments', labelKey: 'profile.sections.shipments' },
   { id: 'invoices', labelKey: 'profile.sections.invoices' },
   { id: 'receipts', labelKey: 'profile.sections.receipts' },
@@ -174,6 +183,7 @@ export default function Profile() {
   // has to republish it, or the header goes on greeting the old name.
   const { signOut, setUser } = useAuth();
   const navigate = useNavigate();
+  const { hash } = useLocation();
 
   const [profile, setProfile] = useState(null);
   const [details, setDetails] = useState(null);
@@ -250,6 +260,17 @@ export default function Profile() {
       cancelled = true;
     };
   }, [attempt]);
+
+  // Arriving from another page with a section in the address - the header's
+  // Track & Trace link, the old /tracking address - lands on that card. The
+  // browser's own jump fires before the profile has loaded, when the cards
+  // are not on the page yet, so it is made again once they are.
+  useEffect(() => {
+    if (loadState !== 'ready' || !hash) return;
+    document
+      .getElementById(decodeURIComponent(hash.slice(1)))
+      ?.scrollIntoView({ block: 'start' });
+  }, [loadState, hash]);
 
   // Back to the spinner, then bump `attempt` to re-run the effect above.
   function retry() {
@@ -591,6 +612,18 @@ export default function Profile() {
 
               {statusFor('details')}
             </form>
+          </section>
+
+          {/* Track & Trace lives here, in the account, rather than on a page
+              of its own: a tracking number alone is not enough to follow a
+              shipment, and the lookup only finds this customer's own. */}
+          <section className={styles.card} id="tracking">
+            <h2 className={styles.cardTitle}>
+              <SectionIcon name="tracking" />
+              {t('profile.sections.tracking')}
+            </h2>
+
+            <TrackingPanel variant="inline" />
           </section>
 
           

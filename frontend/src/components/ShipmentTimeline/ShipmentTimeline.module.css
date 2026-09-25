@@ -2,7 +2,11 @@
 
 .list {
   --line: #dbe3ec;
-  --done: #0ea5e9;
+  /* Done in the accent yellow, the current stage in navy. The light yellow
+     all but disappears against white, so what is done also takes the deeper
+     yellow for its outline and the line joining it to the next stage. */
+  --done: var(--brand-yellow);
+  --done-edge: var(--brand-yellow-deep);
   --active: #0b2545;
 
   display: grid;
@@ -41,7 +45,7 @@
 /* A completed step colours the rail leaving it, so the finished part of the
    journey reads as one continuous line. */
 .done::before {
-  background: var(--done);
+  background: var(--done-edge);
 }
 
 .marker {
@@ -79,8 +83,10 @@
 }
 
 .done .marker {
-  border-color: var(--done);
+  border-color: var(--done-edge);
   background: var(--done);
+  /* The tick: navy, since white would vanish into the yellow. */
+  color: var(--brand-ink);
 }
 
 .active .marker {

@@ -175,9 +175,6 @@ export const translations = {
       },
     },
     tracking: {
-      pageTitle: 'Volg uw zending',
-      pageLead:
-        'Vul het trackingnummer in dat u van ons heeft ontvangen om te zien waar uw zending is.',
       title: 'Volg uw zending',
       subtitle: 'Vul uw trackingnummer in om de status te zien.',
       label: 'Trackingnummer',
@@ -193,7 +190,7 @@ export const translations = {
       progress: 'Voortgang van de zending',
       notKnown: 'Nog niet bekend',
       privacyNote:
-        'Op deze pagina tonen wij alleen de status en de bestemming. Log in op uw account voor de volledige gegevens van uw zending.',
+        'Hier ziet u de status en de bestemming. De volledige gegevens van uw zending vindt u onder Mijn zendingen.',
       locked: {
         title: 'Zending is onderweg',
         body: 'Deze zending is al verstuurd en kan niet meer worden gewijzigd. Nieuwe aankopen worden als aparte zending verstuurd, met een eigen trackingnummer.',
@@ -203,7 +200,7 @@ export const translations = {
       errors: {
         required: 'Vul een trackingnummer in.',
         notFound:
-          'Wij konden geen zending vinden met dit trackingnummer. Controleer het nummer en probeer het opnieuw.',
+          'Wij konden in uw account geen zending vinden met dit trackingnummer. Controleer het nummer en probeer het opnieuw.',
         tooMany: 'Te veel zoekopdrachten. Probeer het over een uur opnieuw.',
         offline: 'Zoeken lukt nu niet. Probeer het later opnieuw.',
       },
@@ -234,7 +231,10 @@ export const translations = {
       phone: 'Telefoonnummer',
       email: 'E-mailadres',
       emailOptional: 'E-mailadres (optioneel)',
+      cribOptional: 'Crib-nummer (optioneel)',
       quantity: 'Aantal',
+      quantityHint:
+        'Weet u nog niet uit hoeveel pakketten uw bestelling bestaat? Laat dit veld dan leeg: wij tellen de pakketten zodra ze bij ons binnen zijn.',
       unit: 'Soort',
       units: { boxes: 'Dozen', pallets: 'Pallets', colli: 'Colli' },
       contents: 'Inhoud',
@@ -277,7 +277,7 @@ export const translations = {
         required: 'Dit veld is verplicht.',
         email: 'Dit e-mailadres lijkt niet te kloppen.',
         phone: 'Dit telefoonnummer lijkt niet te kloppen.',
-        quantity: 'Vul een aantal van minimaal 1 in.',
+        quantity: 'Vul een aantal van minimaal 1 in, of laat het veld leeg.',
         value: 'Vul de waarde van de zending in.',
         contents: 'Beschrijf de inhoud, of geef aan dat u de paklijst apart meestuurt.',
         insuredValue: 'Vul de te verzekeren waarde in.',
@@ -306,6 +306,7 @@ export const translations = {
       sections: {
         details: 'Persoonlijke gegevens',
         address: 'Bezorgadres',
+        tracking: 'Track & Trace',
         shipments: 'Mijn zendingen',
         invoices: 'Mijn facturen',
         receipts: 'Mijn bonnen',
@@ -425,11 +426,11 @@ export const translations = {
       otherLead:
         'Wij verzenden ook naar de landen hieronder. Deze bestemmingen hebben geen eigen pagina, maar wij regelen uw zending er net zo goed naartoe — vraag ons naar de mogelijkheden en de kosten.',
       otherCta: 'Vraag naar deze bestemming',
-      eyebrow: 'Van winkelmandje tot voordeur',
+      eyebrow: 'Van bestelling tot voordeur',
       step: 'Stap',
       howTitle: 'Zo komt uw bestelling op {island}',
       howSubtitle:
-        'U kiest de producten, wij doen de rest. Twee stappen liggen bij u, twee bij ons.',
+        'U koopt zelf in, wij verzorgen de verzending. Twee stappen liggen bij u, twee bij ons.',
       indexTitle: 'Onze bestemmingen',
       indexSubtitle:
         'Wij varen op vijf bestemmingen. Kies er een om te zien hoe lang de reis duurt en wat u kunt verwachten.',
@@ -451,21 +452,21 @@ export const translations = {
         handoverValue: 'Onze agent neemt contact op',
       },
       stages: {
-        basket: {
-          title: 'Zet uw winkelmandje klaar',
-          body: 'Zoek uit wat u nodig heeft bij een Nederlandse webshop en leg het in het mandje. Afrekenen hoeft nog niet — dat doen wij straks voor u.',
-        },
-        list: {
-          title: 'Stuur ons de lijst',
-          body: 'Een foto of schermafbeelding van het mandje is genoeg. Heeft u liever geen bestand? Typ dan gewoon op in het formulier hieronder wat u zoekt.',
-        },
         quote: {
-          title: 'U krijgt een prijs van ons',
-          body: 'Wij rekenen uit wat de producten zonder btw kosten en wat de verzending naar {island} erbij komt. Eén bedrag, vooraf, zonder verrassingen achteraf.',
+          title: 'Vraag een offerte aan',
+          body: 'Laat ons weten wat u wilt versturen. U ontvangt van ons een indicatieve offerte voor de verzending naar {island}.',
         },
-        delivery: {
-          title: 'Wij kopen in en verschepen',
-          body: 'Zodra u akkoord bent, bestellen wij de producten en laden wij ze op de eerstvolgende boot naar {port}. Onze agent daar belt u zodra de zending er is.',
+        purchase: {
+          title: 'U koopt zelf in',
+          body: 'U bestelt en betaalt uw aankopen zelf en laat ze afleveren op ons magazijnadres in Nederland. Meld de zending daarna bij ons aan met de boekingsbon.',
+        },
+        ship: {
+          title: 'Wij verschepen',
+          body: 'Wij ontvangen uw pakketten, meten en wegen ze en versturen ze per zeevracht of luchtvracht naar {island}.',
+        },
+        deliver: {
+          title: 'Wij klaren in en leveren af',
+          body: 'Wij verzorgen de inklaring op {island}. Zodra uw zending gereed is, neemt onze agent contact met u op voor de aflevering.',
         },
       },
       faq: {
@@ -474,29 +475,29 @@ export const translations = {
         contact: 'Stel hem gerust',
         what: {
           q: 'Wat kan ik laten verzenden?',
-          a: 'Vrijwel alles wat een Nederlandse webshop verkoopt: kleding, elektronica, huishoudelijke apparaten, gereedschap, meubels. Gevaarlijke stoffen, verse levensmiddelen en accu’s los verzenden lukt niet.',
+          a: 'Vrijwel alles: kleding, elektronica, huishoudelijke apparaten, gereedschap en meubels. Gevaarlijke stoffen, verse levensmiddelen en losse accu’s kunnen niet mee.',
         },
         cost: {
           q: 'Waar hangt de prijs van af?',
-          a: 'Van het gewicht en het volume van de zending, en van de waarde van de producten. Vraag een offerte aan en u weet het bedrag voordat u iets betaalt.',
+          a: 'Van het gewicht en het volume van uw zending, en van de verzendwijze: zeevracht of luchtvracht. Onze offerte is altijd indicatief; het definitieve bedrag hangt af van wat wij bij ontvangst in ons magazijn meten en wegen.',
         },
         time: {
           q: 'Hoe lang duurt het?',
-          a: 'Reken op ongeveer {days} dagen varen naar {port}, vanaf het moment dat de producten bij ons binnen zijn. Bestellen bij de webshop kost daarvoor nog een paar dagen.',
+          a: 'Per zeevracht is de vaartijd naar {port} ongeveer {days} dagen; daarna duurt de inklaring circa anderhalve week. Per luchtvracht gaat het sneller: lever uiterlijk donderdag 12:00 aan, dan vliegt uw zending in het weekend en duurt de inklaring circa 3–4 dagen.',
         },
         customs: {
           q: 'Moet ik zelf iets met de douane regelen?',
-          a: 'Nee. Wij maken de documenten in orde en handelen de douane af. Invoerrechten op de bestemming staan los daarvan; wat er te betalen valt, staat in uw offerte.',
+          a: 'Nee. Wij maken de documenten in orde en handelen de douane af. Invoerrechten op de bestemming staan daar los van; uw offerte geeft er een indicatie van.',
         },
         oversize: {
-          q: 'En grote of zware spullen?',
-          a: 'Die kunnen mee. Bij meubels, witgoed of iets van formaat kijken wij per geval wat de beste manier is. Vermeld de afmetingen in uw aanvraag.',
+          q: 'En spullen van groot formaat?',
+          a: 'Die kunnen mee. Wij kijken per geval wat de beste verschepingswijze is. Vermeld de afmetingen in uw aanvraag.',
         },
       },
       quote: {
         title: 'Offerte aanvragen',
         intro:
-          'Laat ons weten wat u wilt bestellen, dan rekenen wij uit wat het kost om het naar u toe te sturen.',
+          'Laat ons weten wat u wilt versturen, dan rekenen wij uit wat de verzending naar u toe kost. Onze offertes zijn altijd indicatief.',
         forIsland: 'Offerte voor',
         optional: '(optioneel)',
         orDrop: 'of sleep het hierheen',
@@ -513,7 +514,7 @@ export const translations = {
         removeFile: 'Bestand verwijderen',
         message: 'Uw bericht',
         messagePlaceholder:
-          'Beschrijf wat u zoekt, of laat ons weten waar wij op moeten letten.',
+          'Beschrijf wat u wilt versturen, of laat ons weten waar wij op moeten letten.',
         send: 'Aanvraag versturen',
         sending: 'Bezig met versturen…',
         errors: {
@@ -526,7 +527,7 @@ export const translations = {
           invalid: 'Controleer de ingevulde gegevens.',
           tooMany: 'Te veel aanvragen verstuurd. Probeer het over een uur opnieuw.',
         },
-        sent: 'Bedankt! Uw aanvraag is verstuurd — u ontvangt zo snel mogelijk een offerte.',
+        sent: 'Bedankt! Uw aanvraag is verstuurd — u ontvangt zo snel mogelijk een indicatieve offerte.',
         notImplemented:
           'Het offerteformulier is nog niet gekoppeld: er is nog geen server om de aanvraag naartoe te sturen.',
       },
@@ -557,7 +558,6 @@ export const translations = {
       },
       shops: {
         title: 'BESTEL BIJ JOUW FAVORIETE WINKELS',
-        lead: 'Bestel eenvoudig bij populaire webshops. Onze agent op het eiland zorgt ervoor dat je bestelling bij jou thuis of op het werk wordt bezorgd.',
         visit: 'Bekijk winkel',
         cta: 'Bekijk alle winkels',
       },
@@ -575,10 +575,17 @@ export const translations = {
         lead: 'Beweeg over een bestemming om de route en de vaartijd te zien.',
         origin: 'Nederland',
         hint: 'Kies een bestemming op de kaart om de route te bekijken.',
-        transit: 'Gemiddelde vaartijd',
-        days: 'ongeveer {days} dagen',
-        mode: 'Vervoer',
-        sea: 'Zeevracht, wekelijks',
+        sea: 'Zeevracht',
+        seaDays: '{days} dagen vaartijd',
+        seaClearance: 'Inklaring circa anderhalve week',
+        air: 'Luchtvracht',
+        // The latest moment to hand a shipment in, and when it flies. Which
+        // of these an island has is listed in src/data/destinations.js.
+        flights: {
+          thursdayWeekend: 'Uiterste aanlevertijd donderdag 12:00 — vliegt in het weekend',
+          mondayWednesday: 'Uiterste aanlevertijd maandag 12:00 — vliegt woensdag',
+        },
+        airClearance: 'Inklaring circa 3–4 dagen',
         more: 'Bekijk deze bestemming',
       },
       services: {
@@ -604,7 +611,7 @@ export const translations = {
         },
         tracking: {
           title: 'Track & trace',
-          body: 'Volg uw zending met uw trackingnummer, van vertrek tot aflevering.',
+          body: 'Volg uw zendingen in uw account, van vertrek tot aflevering.',
         },
         business: {
           title: 'Zakelijk verzenden',
@@ -614,13 +621,13 @@ export const translations = {
       journey: {
         eyebrow: 'Van bestelling tot deur',
         title: 'Wat er met uw zending gebeurt',
-        lead: 'Elke zending doorloopt dezelfde stappen. U ziet altijd waar die zich bevindt.',
+        lead: 'Elke zending doorloopt dezelfde stappen. In uw account ziet u altijd waar die zich bevindt.',
         stages: {
-          paid: 'Betaald',
-          purchased: 'Producten ingekocht',
-          inTransit: 'Onderweg',
+          ordered: 'Besteld',
+          collected: 'Geleverd/Verzamelen',
+          inTransit: 'In transit',
           arrived: 'Aangekomen op bestemming',
-          delivered: 'Afgeleverd',
+          ready: 'Gereed',
         },
       },
       cta2: {
@@ -637,13 +644,16 @@ export const translations = {
         videoLabel: 'Video afspelen',
         videoSlot: 'Video — voeg de poster en de embed toe',
       },
+      // "How to order": the five steps of the client's own design.
       steps: {
-        title: 'Stappenplan voor pakketten afleveren en versturen',
-        step: 'Stap',
-        one: 'Bij aflevering dient een boekingsbon ingevuld te worden en een paklijst overhandigt te worden.',
-        two: 'Verwerking van gegevens en opmaak factuur.',
-        three: 'Na laden en vertrek boot, ontvangst van bevestigingsmail met details.',
-        four: 'Agent op bestemming neemt contact op met de ontvanger voor de afhandeling.',
+        title: 'Zo bestelt u',
+        account: 'Maak een account aan',
+        shop: 'Shop en betaal minder',
+        // ­ is a soft hyphen: the long word breaks there when the bar is
+        // too narrow for it, and shows no hyphen when it is not.
+        payment: 'Vul de juiste betaal­gegevens in',
+        documents: 'Upload uw documenten',
+        pickup: 'Haal uw bestellingen op',
       },
       shopAndShip: {
         title: 'Shop and ship naar Bonaire en Curaçao',
@@ -666,7 +676,7 @@ export const translations = {
     services: {
       hero: {
         title: 'Onze diensten',
-        lead: 'Ontdek onze diensten en partners op Aruba, Bonaire en Curaçao.',
+        lead: 'Ontdek onze diensten voor Aruba, Bonaire en Curaçao.',
       },
       islandsLabel: 'Onze eilanden',
       companies: {
@@ -674,6 +684,36 @@ export const translations = {
         lead: 'De partners waarmee wij samenwerken om uw zending op het eiland te krijgen.',
         placeholder: 'Naam',
         cta: 'Bekijk service',
+      },
+      // What the company itself does. {min} and {max} are the shortest and
+      // longest sailing times, filled in from src/data/destinations.js.
+      offer: {
+        title: 'Wat wij voor u doen',
+        lead: 'Van ons magazijn in Nederland tot de aflevering op het eiland.',
+        sea: {
+          title: 'Zeevracht',
+          body: 'Voor grote, zware of volumineuze zendingen. De vaartijd is {min} tot {max} dagen, afhankelijk van het eiland.',
+        },
+        air: {
+          title: 'Luchtvracht',
+          body: 'Heeft u haast? Per luchtvracht is uw zending sneller op het eiland: lever uiterlijk donderdag 12:00 aan en uw zending vliegt in het weekend.',
+        },
+        warehouse: {
+          title: 'Ontvangen en samenvoegen',
+          body: 'Wij ontvangen uw pakketten in ons magazijn in Nederland, meten en wegen ze en voegen ze samen tot één zending.',
+        },
+        customs: {
+          title: 'Douane en inklaring',
+          body: 'Wij verzorgen de documenten en de inklaring op het eiland: circa anderhalve week bij zeevracht, circa 3–4 dagen bij luchtvracht.',
+        },
+        delivery: {
+          title: 'Aflevering op het eiland',
+          body: 'Zodra uw zending gereed is, neemt onze agent contact met u op om de aflevering te regelen.',
+        },
+        moving: {
+          title: 'Verhuizen en zakelijk',
+          body: 'Emigreert u, of verstuurt u zakelijk? Ook verhuisgoed, pallets en grotere colli verschepen wij. Vraag gerust naar de mogelijkheden.',
+        },
       },
       contactCta: {
         title: 'Benieuwd wat wij voor u kunnen betekenen?',
@@ -684,7 +724,6 @@ export const translations = {
       breadcrumb: 'Diensten',
       sectionTitle: 'Onze diensten',
       forIsland: 'Onze diensten voor',
-      brandsTitle: 'Onze merken',
       lead: 'Van uw bestelling bij een Nederlandse webshop tot de aflevering bij u thuis op het eiland.',
       islandsTitle: 'Waar wij naartoe verzenden',
       islandsLead: 'Kies uw bestemming om te zien hoe het werkt en een offerte aan te vragen.',
@@ -976,7 +1015,7 @@ export const translations = {
         services: {
           title: 'Onze diensten',
           body:
-            'Per eiland ziet u wat wij aanbieden en bij welke winkels onze klanten bestellen. U kunt bij vrijwel elke Nederlandse webshop bestellen.',
+            'Hier ziet u wat wij voor u doen, van zeevracht en luchtvracht tot de aflevering op het eiland, en bij welke winkels onze klanten bestellen.',
           bullets: [
             'Kies uw bestemming voor de details van dat eiland.',
             'Twijfelt u over een product? Vraag het ons vooraf.',
@@ -998,7 +1037,7 @@ export const translations = {
             'Vul uw trackingcode in en u ziet waar uw zending is: bij ons in het magazijn, onderweg, of klaar voor aflevering.',
           bullets: [
             'De code staat in de e-mail die u van ons kreeg.',
-            'Bent u ingelogd? Dan staan al uw zendingen in uw account.',
+            'U ziet hier alleen de zendingen die bij uw account horen.',
           ],
         },
         destinations: {
@@ -1014,7 +1053,7 @@ export const translations = {
         profile: {
           title: 'Uw account',
           body:
-            'Uw gegevens, adressen, zendingen en facturen staan hier bij elkaar.',
+            'Uw gegevens, adressen, zendingen en facturen staan hier bij elkaar, net als Track & Trace.',
           bullets: [
             'Houd uw afleveradres actueel — daar gaat uw zending naartoe.',
             'Facturen en pakbonnen kunt u hier downloaden.',
@@ -1080,7 +1119,7 @@ export const translations = {
         quote: {
           title: 'Vraag een offerte aan',
           body:
-            'Vertel ons wat u wilt versturen en naar welk eiland. U krijgt een prijs op maat, op basis van gewicht en volume.',
+            'Vertel ons wat u wilt versturen en naar welk eiland. U krijgt een indicatieve prijs op maat, op basis van gewicht en volume.',
           bullets: [
             'Kies uw bestemming: Aruba, Bonaire, Curaçao, Sint Maarten, Suriname of de Dominicaanse Republiek.',
             'Geef zo goed mogelijk door wat u verstuurt en hoe groot het is.',
@@ -1116,7 +1155,7 @@ export const translations = {
         track: {
           title: 'Volg uw zending',
           body:
-            'Zodra uw zending onderweg is, volgt u elke stap met Track & Trace of vanuit uw account.',
+            'Zodra uw zending onderweg is, volgt u elke stap met Track & Trace in uw account.',
           action: 'Volg uw zending',
         },
         delivery: {
@@ -1303,9 +1342,6 @@ export const translations = {
       },
     },
     tracking: {
-      pageTitle: 'Track your shipment',
-      pageLead:
-        'Enter the tracking number we sent you to see where your shipment is.',
       title: 'Track your shipment',
       subtitle: 'Enter your tracking number to see its status.',
       label: 'Tracking number',
@@ -1321,7 +1357,7 @@ export const translations = {
       progress: 'Shipment progress',
       notKnown: 'Not known yet',
       privacyNote:
-        'This page shows only the status and destination. Log in to your account for the full details of your shipment.',
+        'This shows the status and destination. You will find the full details of your shipment under My shipments.',
       locked: {
         title: 'Shipment sent',
         body: 'This shipment has already been sent and can no longer be changed. New purchases are sent as a separate shipment, with their own tracking number.',
@@ -1331,7 +1367,7 @@ export const translations = {
       errors: {
         required: 'Please enter a tracking number.',
         notFound:
-          'We could not find a shipment with that tracking number. Please check it and try again.',
+          'We could not find a shipment with that tracking number on your account. Please check it and try again.',
         tooMany: 'Too many searches. Please try again in an hour.',
         offline: 'Searching is not working right now. Please try again later.',
       },
@@ -1362,7 +1398,10 @@ export const translations = {
       phone: 'Phone number',
       email: 'E-mail address',
       emailOptional: 'E-mail address (optional)',
+      cribOptional: 'Crib number (optional)',
       quantity: 'Quantity',
+      quantityHint:
+        'Not sure yet how many parcels your order will arrive in? Leave this empty: we count the parcels once they reach us.',
       unit: 'Type',
       units: { boxes: 'Boxes', pallets: 'Pallets', colli: 'Colli' },
       contents: 'Contents',
@@ -1405,7 +1444,7 @@ export const translations = {
         required: 'This field is required.',
         email: 'That e-mail address does not look right.',
         phone: 'That phone number does not look right.',
-        quantity: 'Please enter a quantity of at least 1.',
+        quantity: 'Please enter a quantity of at least 1, or leave it empty.',
         value: 'Please enter the value of the shipment.',
         contents: 'Describe the contents, or tick that the packing list follows separately.',
         insuredValue: 'Please enter the value to insure.',
@@ -1434,6 +1473,7 @@ export const translations = {
       sections: {
         details: 'Personal details',
         address: 'Delivery address',
+        tracking: 'Track & Trace',
         shipments: 'My shipments',
         invoices: 'My invoices',
         receipts: 'My receipts',
@@ -1553,11 +1593,11 @@ export const translations = {
       otherLead:
         'We ship to the countries below as well. These destinations have no page of their own, but we arrange your shipment there just the same — ask us about the options and the cost.',
       otherCta: 'Ask about this destination',
-      eyebrow: 'From basket to front door',
+      eyebrow: 'From order to front door',
       step: 'Step',
       howTitle: 'How your order reaches {island}',
       howSubtitle:
-        'You choose the products, we handle the rest. Two steps are yours, two are ours.',
+        'You do the buying, we take care of the shipping. Two steps are yours, two are ours.',
       indexTitle: 'Our destinations',
       indexSubtitle:
         'We sail to five destinations. Pick one to see how long the crossing takes and what to expect.',
@@ -1579,21 +1619,21 @@ export const translations = {
         handoverValue: 'Our agent gets in touch',
       },
       stages: {
-        basket: {
-          title: 'Fill your basket',
-          body: 'Find what you need at a Dutch webshop and put it in the basket. No need to check out — we buy it for you later.',
-        },
-        list: {
-          title: 'Send us the list',
-          body: 'A photo or screenshot of the basket is enough. No file to hand? Just describe what you are after in the form below.',
-        },
         quote: {
-          title: 'We send you a price',
-          body: 'We work out what the products cost without VAT and what shipping to {island} adds. One figure, up front, with nothing to discover afterwards.',
+          title: 'Request a quote',
+          body: 'Tell us what you would like to ship. We send you an indicative quote for shipping it to {island}.',
         },
-        delivery: {
-          title: 'We buy and ship',
-          body: 'Once you agree, we order the products and load them onto the next boat to {port}. Our agent there calls you as soon as the shipment lands.',
+        purchase: {
+          title: 'You do the buying',
+          body: 'You order and pay for your purchases yourself and have them delivered to our warehouse address in the Netherlands. Then register the shipment with us using the booking form.',
+        },
+        ship: {
+          title: 'We ship',
+          body: 'We receive your parcels, measure and weigh them, and send them to {island} by sea freight or air freight.',
+        },
+        deliver: {
+          title: 'We clear customs and deliver',
+          body: 'We take care of customs clearance on {island}. As soon as your shipment is ready, our agent gets in touch with you to arrange delivery.',
         },
       },
       faq: {
@@ -1602,29 +1642,29 @@ export const translations = {
         contact: 'Ask us',
         what: {
           q: 'What can I have shipped?',
-          a: 'Almost anything a Dutch webshop sells: clothing, electronics, appliances, tools, furniture. Hazardous goods, fresh food and loose batteries are the exceptions.',
+          a: 'Almost anything: clothing, electronics, appliances, tools and furniture. Hazardous goods, fresh food and loose batteries are the exceptions.',
         },
         cost: {
           q: 'What does the price depend on?',
-          a: 'The weight and the volume of the shipment, and the value of the goods. Request a quote and you will know the figure before you pay anything.',
+          a: 'The weight and the volume of your shipment, and how it travels: sea freight or air freight. Our quotes are always indicative; the final figure depends on what we measure and weigh when it reaches our warehouse.',
         },
         time: {
           q: 'How long does it take?',
-          a: 'Around {days} days at sea to {port}, counted from when the goods reach us. Allow a few days on top for the webshop to deliver to us first.',
+          a: 'By sea freight the crossing to {port} takes about {days} days, and customs clearance then takes about a week and a half. Air freight is quicker: hand it in by Thursday 12:00, it flies at the weekend, and clearance takes about 3–4 days.',
         },
         customs: {
           q: 'Do I have to deal with customs myself?',
-          a: 'No. We prepare the paperwork and handle the customs side. Import duties at the destination are separate; whatever is payable is set out in your quote.',
+          a: 'No. We prepare the paperwork and handle the customs side. Import duties at the destination are separate; your quote gives an indication of them.',
         },
         oversize: {
-          q: 'What about large or heavy items?',
-          a: 'They can travel. For furniture, white goods or anything sizeable we look at the best route case by case — include the dimensions in your request.',
+          q: 'What about large items?',
+          a: 'They can travel. We look case by case at the best way to ship them. Include the dimensions in your request.',
         },
       },
       quote: {
         title: 'Request a quote',
         intro:
-          'Tell us what you would like to order and we will work out what it costs to get it to you.',
+          'Tell us what you would like to ship and we will work out what it costs to get it to you. Our quotes are always indicative.',
         forIsland: 'Quote for',
         optional: '(optional)',
         orDrop: 'or drop it here',
@@ -1641,7 +1681,7 @@ export const translations = {
         removeFile: 'Remove file',
         message: 'Your message',
         messagePlaceholder:
-          'Describe what you are looking for, or tell us anything we should know.',
+          'Describe what you would like to ship, or tell us anything we should know.',
         send: 'Send request',
         sending: 'Sending…',
         errors: {
@@ -1654,7 +1694,7 @@ export const translations = {
           invalid: 'Please check the details you entered.',
           tooMany: 'Too many requests sent. Please try again in an hour.',
         },
-        sent: 'Thank you! Your request has been sent — you will receive a quote as soon as possible.',
+        sent: 'Thank you! Your request has been sent — you will receive an indicative quote as soon as possible.',
         notImplemented:
           'The quote form is not connected yet: there is no server to send the request to.',
       },
@@ -1685,7 +1725,6 @@ export const translations = {
       },
       shops: {
         title: 'ORDER FROM YOUR FAVOURITE SHOPS',
-        lead: 'Order easily from popular webshops. Our agent on the island makes sure your order is delivered to your home or your workplace.',
         visit: 'Visit shop',
         cta: 'See all shops',
       },
@@ -1703,10 +1742,15 @@ export const translations = {
         lead: 'Hover over a destination to see the route and how long it takes.',
         origin: 'Netherlands',
         hint: 'Choose a destination on the map to see the route.',
-        transit: 'Average transit time',
-        days: 'about {days} days',
-        mode: 'Transport',
-        sea: 'Sea freight, weekly',
+        sea: 'Sea freight',
+        seaDays: '{days} days at sea',
+        seaClearance: 'Customs clearance about a week and a half',
+        air: 'Air freight',
+        flights: {
+          thursdayWeekend: 'Hand in by Thursday 12:00 — flies at the weekend',
+          mondayWednesday: 'Hand in by Monday 12:00 — flies on Wednesday',
+        },
+        airClearance: 'Customs clearance about 3–4 days',
         more: 'See this destination',
       },
       services: {
@@ -1732,7 +1776,7 @@ export const translations = {
         },
         tracking: {
           title: 'Track and trace',
-          body: 'Follow your shipment with your tracking number, from departure to delivery.',
+          body: 'Follow your shipments in your account, from departure to delivery.',
         },
         business: {
           title: 'Business shipping',
@@ -1742,13 +1786,13 @@ export const translations = {
       journey: {
         eyebrow: 'From order to door',
         title: 'What happens to your shipment',
-        lead: 'Every shipment goes through the same stages, and you can always see which one it is at.',
+        lead: 'Every shipment goes through the same stages, and your account always shows which one it is at.',
         stages: {
-          paid: 'Paid',
-          purchased: 'Products purchased',
+          ordered: 'Ordered',
+          collected: 'Delivered/Collecting',
           inTransit: 'In transit',
           arrived: 'Arrived at destination',
-          delivered: 'Delivered',
+          ready: 'Ready',
         },
       },
       cta2: {
@@ -1766,12 +1810,12 @@ export const translations = {
         videoSlot: 'Video — add the poster and the embed',
       },
       steps: {
-        title: 'Step by step: delivering and sending parcels',
-        step: 'Step',
-        one: 'On delivery a booking form must be completed and a packing list handed over.',
-        two: 'Processing of the details and preparation of the invoice.',
-        three: 'After loading and the ship’s departure, you receive a confirmation e-mail with the details.',
-        four: 'An agent at the destination contacts the recipient to arrange handover.',
+        title: 'How to order',
+        account: 'Create an account',
+        shop: 'Shop and Pay Less',
+        payment: 'Fill in the correct payment details',
+        documents: 'Upload your documents',
+        pickup: 'Pick up your orders',
       },
       shopAndShip: {
         title: 'Shop and ship to Bonaire and Curaçao',
@@ -1794,7 +1838,7 @@ export const translations = {
     services: {
       hero: {
         title: 'Our services',
-        lead: 'Discover our services and partners on Aruba, Bonaire and Curaçao.',
+        lead: 'Discover our services for Aruba, Bonaire and Curaçao.',
       },
       islandsLabel: 'Our islands',
       companies: {
@@ -1802,6 +1846,34 @@ export const translations = {
         lead: 'The partners we work with to get your shipment onto the island.',
         placeholder: 'Name',
         cta: 'View service',
+      },
+      offer: {
+        title: 'What we do for you',
+        lead: 'From our warehouse in the Netherlands to delivery on the island.',
+        sea: {
+          title: 'Sea freight',
+          body: 'For large, heavy or bulky shipments. The crossing takes {min} to {max} days, depending on the island.',
+        },
+        air: {
+          title: 'Air freight',
+          body: 'In a hurry? By air your shipment reaches the island sooner: hand it in by Thursday 12:00 and it flies at the weekend.',
+        },
+        warehouse: {
+          title: 'Receiving and consolidation',
+          body: 'We receive your parcels at our warehouse in the Netherlands, measure and weigh them, and combine them into one shipment.',
+        },
+        customs: {
+          title: 'Customs and clearance',
+          body: 'We take care of the paperwork and the customs clearance on the island: about a week and a half for sea freight, about 3–4 days for air freight.',
+        },
+        delivery: {
+          title: 'Delivery on the island',
+          body: 'As soon as your shipment is ready, our agent gets in touch with you to arrange delivery.',
+        },
+        moving: {
+          title: 'Moving and business',
+          body: 'Emigrating, or shipping for your business? We also ship household goods, pallets and larger consignments. Just ask about the options.',
+        },
       },
       contactCta: {
         title: 'Wondering what we can do for you?',
@@ -1812,7 +1884,6 @@ export const translations = {
       breadcrumb: 'Services',
       sectionTitle: 'Our services',
       forIsland: 'Our services for',
-      brandsTitle: 'Our brands',
       lead: 'From your order at a Dutch webshop to delivery at your door on the island.',
       islandsTitle: 'Where we ship',
       islandsLead: 'Choose your destination to see how it works and request a quote.',
@@ -2088,7 +2159,7 @@ export const translations = {
         services: {
           title: 'Our services',
           body:
-            'Per island you can see what we offer and which shops our customers order from. You can order from almost any Dutch webshop.',
+            'Here you can see what we do for you, from sea and air freight to delivery on the island, and which shops our customers order from.',
           bullets: [
             'Choose your destination for the details of that island.',
             'Unsure about a product? Ask us before you order.',
@@ -2110,7 +2181,7 @@ export const translations = {
             'Enter your tracking code and you see where your shipment is: with us in the warehouse, on its way, or ready for delivery.',
           bullets: [
             'The code is in the e-mail we sent you.',
-            'Signed in? Then all your shipments are listed in your account.',
+            'Only the shipments on your account can be tracked here.',
           ],
         },
         destinations: {
@@ -2126,7 +2197,7 @@ export const translations = {
         profile: {
           title: 'Your account',
           body:
-            'Your details, addresses, shipments and invoices are all kept here.',
+            'Your details, addresses, shipments and invoices are all kept here, and so is Track & Trace.',
           bullets: [
             'Keep your delivery address current — that is where your shipment goes.',
             'Invoices and packing slips can be downloaded here.',
@@ -2192,7 +2263,7 @@ export const translations = {
         quote: {
           title: 'Ask for a quote',
           body:
-            'Tell us what you want to send and which island it is going to. You get a price of your own, based on weight and volume.',
+            'Tell us what you want to send and which island it is going to. You get an indicative price of your own, based on weight and volume.',
           bullets: [
             'Choose your destination: Aruba, Bonaire, Curaçao, Sint Maarten, Suriname or the Dominican Republic.',
             'Describe as closely as you can what you are sending and how large it is.',
@@ -2228,7 +2299,7 @@ export const translations = {
         track: {
           title: 'Follow your shipment',
           body:
-            'Once your shipment is on its way, you follow every step with Track & Trace or from your account.',
+            'Once your shipment is on its way, you follow every step with Track & Trace in your account.',
           action: 'Track your shipment',
         },
         delivery: {
@@ -2415,9 +2486,6 @@ export const translations = {
       },
     },
     tracking: {
-      pageTitle: 'Sigui bo enbio',
-      pageLead:
-        'Yena e number di tracking ku nos a manda bo pa mira unda bo enbio ta.',
       title: 'Sigui bo enbio',
       subtitle: 'Yena bo number di tracking pa mira e status.',
       label: 'Number di tracking',
@@ -2433,7 +2501,7 @@ export const translations = {
       progress: 'Progreso di e enbio',
       notKnown: 'Ainda no konosí',
       privacyNote:
-        'E página aki ta mustra solamente e status i e destinashon. Log in den bo kuenta pa e detayenan kompleto di bo enbio.',
+        'Akinan bo ta mira e status i e destinashon. E detayenan kompleto di bo enbio ta bou di Mi enbionan.',
       locked: {
         title: 'Enbio ta na kaminda',
         body: 'E enbio aki a sali kaba i no por wòrdu kambiá mas. Kompranan nobo ta bai komo un enbio separá, ku su mes number di tracking.',
@@ -2443,7 +2511,7 @@ export const translations = {
       errors: {
         required: 'Yena un number di tracking.',
         notFound:
-          'Nos no por a haña un enbio ku e number di tracking aki. Chèk e number i purba atrobe.',
+          'Nos no por a haña un enbio ku e number di tracking aki den bo kuenta. Chèk e number i purba atrobe.',
         tooMany: 'Muchu búskeda. Purba atrobe den un ora.',
         offline: 'Buskamentu no ta funshoná awor. Purba atrobe mas lat.',
       },
@@ -2474,7 +2542,10 @@ export const translations = {
       phone: 'Number di telefon',
       email: 'Direkshon di e-mail',
       emailOptional: 'Direkshon di e-mail (opshonal)',
+      cribOptional: 'Number di Crib (opshonal)',
       quantity: 'Kantidat',
+      quantityHint:
+        'Bo no sa ainda di kuantu pakete bo òrdu ta konsistí? Laga e kampo aki bashí: nos ta konta e paketenan ora nan yega serka nos.',
       unit: 'Tipo',
       units: { boxes: 'Kaha', pallets: 'Pallet', colli: 'Colli' },
       contents: 'Kontenido',
@@ -2517,7 +2588,7 @@ export const translations = {
         required: 'E kampo aki ta obligatorio.',
         email: 'E direkshon di e-mail aki no ta parse korekto.',
         phone: 'E number di telefon aki no ta parse korekto.',
-        quantity: 'Pone un kantidat di por lo ménos 1.',
+        quantity: 'Pone un kantidat di por lo ménos 1, òf laga e kampo bashí.',
         value: 'Pone e balor di e enbio.',
         contents: 'Deskribí e kontenido, of marka ku e lista ta bin separá.',
         insuredValue: 'Pone e balor pa sigurá.',
@@ -2546,6 +2617,7 @@ export const translations = {
       sections: {
         details: 'Datonan personal',
         address: 'Adres di entrega',
+        tracking: 'Track & Trace',
         shipments: 'Mi enbionan',
         invoices: 'Mi fakturanan',
         receipts: 'Mi bonnan',
@@ -2665,11 +2737,11 @@ export const translations = {
       otherLead:
         'Nos ta manda tambe pa e paisnan aki bou. E destinashonnan aki no tin nan mes página, pero nos ta reglar bo envio pa ayá mesíå bon — puntra nos tokante e posibilidatnan i e kosto.',
       otherCta: 'Puntra tokante e destinashon aki',
-      eyebrow: 'For di makutu te na porta',
+      eyebrow: 'For di òrdu te na porta',
       step: 'Paso',
       howTitle: 'Kon bo òrdu ta yega {island}',
       howSubtitle:
-        'Bo ta skohe e produktonan, nos ta hasi e resto. Dos paso ta di bo, dos ta di nos.',
+        'Bo mes ta kumpra, nos ta sòru pa e enbio. Dos paso ta di bo, dos ta di nos.',
       indexTitle: 'Nos destinashonnan',
       indexSubtitle:
         'Nos ta nabegá pa sinku destinashon. Skohe un pa mira kuantu tempu e biahe ta tuma i kiko bo por spera.',
@@ -2691,21 +2763,21 @@ export const translations = {
         handoverValue: 'Nos agente ta yama bo',
       },
       stages: {
-        basket: {
-          title: 'Yena bo makutu',
-          body: 'Buska loke bo tin mester na un webshop hulandes i pone e den e makutu. No tin nodi di paga — nos ta kumpré pa bo despues.',
-        },
-        list: {
-          title: 'Manda nos e lista',
-          body: 'Un foto of screenshot di e makutu ta sufisiente. No tin un file? Skirbi den e formulario akibou kiko bo ta buska.',
-        },
         quote: {
-          title: 'Nos ta manda bo un preis',
-          body: 'Nos ta kalkulá kiko e produktonan ta kosta sin BTW i kiko e enbio pa {island} ta agregá. Un solo suma, di antemano, sin sorpresa despues.',
+          title: 'Pidi un preisnota',
+          body: 'Konta nos kiko bo ke manda. Nos ta manda bo un preisnota indikativo pa e enbio pa {island}.',
         },
-        delivery: {
-          title: 'Nos ta kumpra i manda',
-          body: 'Ora bo ta di akuerdo, nos ta bestel e produktonan i karga nan riba e siguiente boto pa {port}. Nos agente einan ta yama bo ora e enbio yega.',
+        purchase: {
+          title: 'Bo mes ta kumpra',
+          body: 'Bo mes ta hasi e òrdu i paga pa bo kompranan, i laga entregá nan na nos adrès di warehouse na Hulanda. Despues registrá e enbio serka nos ku e formulario di boeking.',
+        },
+        ship: {
+          title: 'Nos ta manda',
+          body: 'Nos ta risibí bo paketenan, midi i pisa nan, i manda nan pa {island} pa fleta pa laman òf fleta pa aire.',
+        },
+        deliver: {
+          title: 'Nos ta desaduaná i entregá',
+          body: 'Nos ta hasi e trámite di aduana na {island}. Asina bo enbio ta kla, nos agente ta tuma kontakto ku bo pa e entrega.',
         },
       },
       faq: {
@@ -2714,29 +2786,29 @@ export const translations = {
         contact: 'Puntra nos',
         what: {
           q: 'Kiko mi por manda?',
-          a: 'Kasi tur kos ku un webshop hulandes ta bende: paña, elektrónika, aparato, hèrmènt, mueble. Kos peligroso, kuminda fresku i bateria lòs ta e eksepshonnan.',
+          a: 'Kasi tur kos: paña, elektrónika, aparato, hèrmènt i mueble. Kos peligroso, kuminda fresku i bateria lòs ta e eksepshonnan.',
         },
         cost: {
           q: 'Di kiko e preis ta dependé?',
-          a: 'Di e peso i e volúmen di e enbio, i di e balor di e produktonan. Pidi un preis i bo ta sa e suma promé ku bo paga nada.',
+          a: 'Di e peso i e volúmen di bo enbio, i di kon e ta biaha: pa laman òf pa aire. Nos preisnota ta semper indikativo; e suma final ta dependé di loke nos ta midi i pisa ora e yega den nos warehouse.',
         },
         time: {
           q: 'Kuantu tempu e ta tuma?',
-          a: 'Mas o ménos {days} dia riba laman pa {port}, kontá for di ora e produktonan yega serka nos. Konta ku algun dia mas pa e webshop entregá na nos promé.',
+          a: 'Pa fleta pa laman e biahe pa {port} ta tuma mas o ménos {days} dia; despues e trámite di aduana ta tuma mas o ménos un siman i mei. Pa fleta pa aire e ta bai mas lihé: entregá e lo mas tardá djaweps 12:00, e ta bula den fin di siman i e trámite di aduana ta tuma mas o ménos 3–4 dia.',
         },
         customs: {
           q: 'Mi mester regla algu ku aduana?',
-          a: 'Nò. Nos ta prepará e papelnan i ta hasi e trámite di aduana. Derecho di importashon na destinashon ta separá; loke bo mester paga ta pará den bo preis.',
+          a: 'Nò. Nos ta prepará e papelnan i ta hasi e trámite di aduana. Derecho di importashon na destinashon ta separá; bo preisnota ta duna un indikashon di nan.',
         },
         oversize: {
-          q: 'I kos grandi of pisá?',
-          a: 'Nan por biaha. Pa mueble, apparato grandi of kualke kos di tamaño nos ta wak kaso pa kaso kiko ta e mihó manera — pone e mèdintan den bo petishon.',
+          q: 'I kos di tamaño grandi?',
+          a: 'Nan por biaha. Nos ta wak kaso pa kaso kiko ta e mihó manera pa manda nan. Pone e mèdintan den bo petishon.',
         },
       },
       quote: {
         title: 'Pidi un preisnota',
         intro:
-          'Konta nos kiko bo ke bestel i nos ta kalkulá kiko e ta kosta pa manda esaki pa bo.',
+          'Konta nos kiko bo ke manda i nos ta kalkulá kiko e ta kosta pa manda esaki pa bo. Nos preisnotanan ta semper indikativo.',
         forIsland: 'Preisnota pa',
         optional: '(opshonal)',
         orDrop: 'of lag\'e kai akinan',
@@ -2753,7 +2825,7 @@ export const translations = {
         removeFile: 'Kita dokumento',
         message: 'Bo mensahe',
         messagePlaceholder:
-          'Deskribí kiko bo ta buska, of bisa nos kiko nos mester sa.',
+          'Deskribí kiko bo ke manda, of bisa nos kiko nos mester sa.',
         send: 'Manda petishon',
         sending: 'Ta manda…',
         errors: {
@@ -2766,7 +2838,7 @@ export const translations = {
           invalid: 'Kontrolá e datonan ku bo a yena.',
           tooMany: 'Muchu petishon mandá. Purba atrobe den un ora.',
         },
-        sent: 'Danki! Bo petishon a wòrdu mandá — bo ta risibí un preisnota mas pronto posibel.',
+        sent: 'Danki! Bo petishon a wòrdu mandá — bo ta risibí un preisnota indikativo mas pronto posibel.',
         notImplemented:
           'E formulario di preisnota ainda no ta konektá: no tin un server pa manda e petishon.',
       },
@@ -2797,7 +2869,6 @@ export const translations = {
       },
       shops: {
         title: 'HASI BO ÒRDU NA BO TIENDANAN FAVORITO',
-        lead: 'Hasi bo òrdu fásil na webshopnan populár. Nos agente riba e isla ta sòru pa bo òrdu yega na bo kas of na trabou.',
         visit: 'Mira tienda',
         cta: 'Mira tur tienda',
       },
@@ -2815,10 +2886,15 @@ export const translations = {
         lead: 'Pasa riba un destinashon pa mira e ruta i kuantu tempu e ta tuma.',
         origin: 'Hulanda',
         hint: 'Skohe un destinashon riba e mapa pa mira e ruta.',
-        transit: 'Tempu di biahe promedio',
-        days: 'mas o ménos {days} dia',
-        mode: 'Transporte',
-        sea: 'Fleta pa laman, tur siman',
+        sea: 'Fleta pa laman',
+        seaDays: '{days} dia riba laman',
+        seaClearance: 'Trámite di aduana mas o ménos un siman i mei',
+        air: 'Fleta pa aire',
+        flights: {
+          thursdayWeekend: 'Entregá lo mas tardá djaweps 12:00 — ta bula den fin di siman',
+          mondayWednesday: 'Entregá lo mas tardá djaluna 12:00 — ta bula djárason',
+        },
+        airClearance: 'Trámite di aduana mas o ménos 3–4 dia',
         more: 'Mira e destinashon aki',
       },
       services: {
@@ -2844,7 +2920,7 @@ export const translations = {
         },
         tracking: {
           title: 'Track & trace',
-          body: 'Sigui bo enbio ku bo number di tracking, for di salida te na entrega.',
+          body: 'Sigui bo enbionan den bo kuenta, for di salida te na entrega.',
         },
         business: {
           title: 'Enbio komersial',
@@ -2854,13 +2930,13 @@ export const translations = {
       journey: {
         eyebrow: 'For di òrdu te na porta',
         title: 'Kiko ta pasa ku bo enbio',
-        lead: 'Tur enbio ta pasa dor di e mesun etapanan, i semper bo por mira na kua e ta.',
+        lead: 'Tur enbio ta pasa dor di e mesun etapanan, i den bo kuenta semper bo por mira na kua e ta.',
         stages: {
-          paid: 'Pagá',
-          purchased: 'Produktonan kumprá',
+          ordered: 'Ordená',
+          collected: 'Entregá/Hunta',
           inTransit: 'Na kaminda',
           arrived: 'A yega na destinashon',
-          delivered: 'Entregá',
+          ready: 'Kla',
         },
       },
       cta2: {
@@ -2878,12 +2954,12 @@ export const translations = {
         videoSlot: 'Video — agregá e poster i e embed',
       },
       steps: {
-        title: 'Plan di paso pa entregá i manda pakete',
-        step: 'Paso',
-        one: 'Ora di entrega mester yena un bon di boeking i entregá un lista di paketenan.',
-        two: 'Prosesamentu di e datonan i prepará e faktura.',
-        three: 'Despues di karga i salida di e boto, bo ta risibí un e-mail di konfirmashon ku e detayenan.',
-        four: 'Un agente na destinashon ta tuma kontakto ku e risibidó pa e entrega.',
+        title: 'Kon pa hasi bo òrdu',
+        account: 'Traha un kuenta',
+        shop: 'Kumpra i paga ménos',
+        payment: 'Yena e detayenan di pago korekto',
+        documents: 'Manda bo dokumentonan',
+        pickup: 'Buska bo òrdunan',
       },
       shopAndShip: {
         title: 'Shop and ship pa Boneiru i Kòrsou',
@@ -2906,7 +2982,7 @@ export const translations = {
     services: {
       hero: {
         title: 'Nos servisionan',
-        lead: 'Deskubrí nos servisionan i sosionan na Aruba, Boneiru i Kòrsou.',
+        lead: 'Deskubrí nos servisionan pa Aruba, Boneiru i Kòrsou.',
       },
       islandsLabel: 'Nos islanan',
       companies: {
@@ -2914,6 +2990,34 @@ export const translations = {
         lead: 'E sosionan ku nos ta traha kuné pa hiba bo envio na e isla.',
         placeholder: 'Nòmber',
         cta: 'Mira servisio',
+      },
+      offer: {
+        title: 'Kiko nos ta hasi pa bo',
+        lead: 'For di nos warehouse na Hulanda te na entrega riba e isla.',
+        sea: {
+          title: 'Fleta pa laman',
+          body: 'Pa enbionan grandi, pisá òf voluminoso. E biahe ta tuma {min} te {max} dia, dependiendo di e isla.',
+        },
+        air: {
+          title: 'Fleta pa aire',
+          body: 'Bo tin prisa? Pa aire bo enbio ta yega mas lihé na e isla: entregá e lo mas tardá djaweps 12:00 i e ta bula den fin di siman.',
+        },
+        warehouse: {
+          title: 'Risibí i hunta',
+          body: 'Nos ta risibí bo paketenan den nos warehouse na Hulanda, midi i pisa nan, i hunta nan den un solo enbio.',
+        },
+        customs: {
+          title: 'Aduana i papelnan',
+          body: 'Nos ta prepará e papelnan i ta hasi e trámite di aduana riba e isla: mas o ménos un siman i mei pa fleta pa laman, mas o ménos 3–4 dia pa fleta pa aire.',
+        },
+        delivery: {
+          title: 'Entrega riba e isla',
+          body: 'Asina bo enbio ta kla, nos agente ta tuma kontakto ku bo pa regla e entrega.',
+        },
+        moving: {
+          title: 'Muda i komersial',
+          body: 'Bo ta emigrá, òf bo ta manda pa bo negoshi? Nos ta manda tambe kosnan di kas, palet i kolinan mas grandi. Puntra nos tokante e posibilidatnan.',
+        },
       },
       contactCta: {
         title: 'Kurioso kiko nos por hasi pa bo?',
@@ -2924,7 +3028,6 @@ export const translations = {
       breadcrumb: 'Servisionan',
       sectionTitle: 'Nos servisionan',
       forIsland: 'Nos servisionan pa',
-      brandsTitle: 'Nos markanan',
       lead: 'For di bo òrdu na un webshop hulandes te na entrega na bo kas riba e isla.',
       islandsTitle: 'Unda nos ta manda',
       islandsLead: 'Skohe bo destinashon pa mira kon e ta funshoná i pidi un preis.',
@@ -3201,7 +3304,7 @@ export const translations = {
         services: {
           title: 'Nos servisionan',
           body:
-            'Pa kada isla bo ta mira kiko nos ta ofresé i na ki tiendanan nos klientenan ta hasi òrdu. Bo por hasi òrdu na kasi tur webshop hulandes.',
+            'Akinan bo ta mira kiko nos ta hasi pa bo, for di fleta pa laman i pa aire te na e entrega riba e isla, i na ki tiendanan nos klientenan ta hasi òrdu.',
           bullets: [
             'Skohe bo destinashon pa e detayenan di e isla ei.',
             'Bo tin duda tokante un produkto? Puntra nos promé.',
@@ -3223,7 +3326,7 @@ export const translations = {
             'Yena bo kódigo di tracking i bo ta mira unda bo enbio ta: serka nos den depósito, na kaminda, òf kla pa entrega.',
           bullets: [
             'E kódigo ta den e e-mail ku nos a manda bo.',
-            'Bo ta login? Anto tur bo enbionan ta den bo kuenta.',
+            'Akinan bo por sigui solamente e enbionan di bo kuenta.',
           ],
         },
         destinations: {
@@ -3239,7 +3342,7 @@ export const translations = {
         profile: {
           title: 'Bo kuenta',
           body:
-            'Bo datonan, adresnan, enbionan i fakturanan tur ta warda aki.',
+            'Bo datonan, adresnan, enbionan i fakturanan tur ta warda aki, i Track & Trace tambe.',
           bullets: [
             'Tene bo adres di entrega aktualisá — ta einan bo enbio ta bai.',
             'Bo por baha fakturanan i pakbon aki.',
@@ -3305,7 +3408,7 @@ export const translations = {
         quote: {
           title: 'Pidi un preis',
           body:
-            'Bisa nos kiko bo ke manda i pa ki isla. Bo ta risibí un preis na midí, basá riba peso i volúmen.',
+            'Bisa nos kiko bo ke manda i pa ki isla. Bo ta risibí un preis indikativo na midí, basá riba peso i volúmen.',
           bullets: [
             'Skohe bo destinashon: Aruba, Boneiru, Kòrsou, Sint Maarten, Sürnam òf Repúblika Dominikano.',
             'Bisa nos mas presis posibel kiko bo ta manda i ki grandi e ta.',
@@ -3341,7 +3444,7 @@ export const translations = {
         track: {
           title: 'Sigui bo enbio',
           body:
-            'Ora bo enbio ta na kaminda, bo ta sigui kada paso ku Track & Trace òf for di bo kuenta.',
+            'Ora bo enbio ta na kaminda, bo ta sigui kada paso ku Track & Trace den bo kuenta.',
           action: 'Sigui bo enbio',
         },
         delivery: {

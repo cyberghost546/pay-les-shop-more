@@ -8,6 +8,14 @@
  * is what makes six links read as one menu rather than nine loose words.
  */
 .header {
+  /* The bar's height at rest and once the page has moved. Both live here
+     because .condensed below needs the difference between them.
+     The rest height was 112px, which left a lot of empty air above and below
+     a 14px row. 84px is generous without the bar becoming the loudest thing
+     on screen. */
+  --bar-height: 84px;
+  --bar-height-condensed: 68px;
+
   position: sticky;
   top: 0;
   z-index: 100;
@@ -17,7 +25,9 @@
   -webkit-backdrop-filter: saturate(180%) blur(12px);
   backdrop-filter: saturate(180%) blur(12px);
   border-bottom: 1px solid #e8ecf1;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  /* margin-bottom on the same timing as .inner's min-height, so the two
+     always add up to the same height, frame by frame. */
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, margin-bottom 0.2s ease;
 }
 
 /* Once the page has moved, the bar separates itself from what slides under
@@ -26,6 +36,14 @@
 .condensed {
   border-bottom-color: transparent;
   box-shadow: 0 1px 3px rgba(11, 37, 69, 0.08), 0 8px 24px rgba(11, 37, 69, 0.06);
+  /* The height the bar gives up is handed back below it as margin, so the
+     page underneath keeps exactly the same length.
+     Without this, the page shook. On a page only a little taller than the
+     window (Track & Trace on a laptop screen), shrinking the bar shortened
+     the page, the browser pulled the scroll position back under the
+     condense threshold, the bar grew again, and scrolling on repeated the
+     loop, many times a second. */
+  margin-bottom: calc(var(--bar-height) - var(--bar-height-condensed));
 }
 
 .inner {
@@ -33,9 +51,7 @@
   max-width: 1600px;
   margin: 0 auto;
   padding: 0 clamp(1.25rem, 3vw, 2.75rem);
-  /* Was 112px, which left a lot of empty air above and below a 14px row.
-     84px is generous without the bar becoming the loudest thing on screen. */
-  min-height: 84px;
+  min-height: var(--bar-height);
 
   display: flex;
   align-items: center;
@@ -46,7 +62,7 @@
 
 /* Gives a little height back once the visitor is reading. */
 .condensed .inner {
-  min-height: 68px;
+  min-height: var(--bar-height-condensed);
 }
 
 /* Wordmark link back to the home page */
@@ -245,8 +261,8 @@
   padding: 0.55rem 1.15rem;
   border: 0;
   border-radius: 8px;
-  background: #2563eb;
-  color: #ffffff;
+  background: var(--brand-yellow);
+  color: var(--brand-ink);
   font: inherit;
   font-size: 0.875rem;
   font-weight: 600;
@@ -257,7 +273,7 @@
 }
 
 .primary:hover {
-  background: #1d4ed8;
+  background: var(--brand-yellow-light);
   transform: translateY(-1px);
 }
 
@@ -352,17 +368,18 @@
 
 /* Phones and tablets: collapse the nav behind the hamburger */
 @media (max-width: 1100px) {
-  .inner {
-    padding: 0 1rem;
-    /* A tall bar eats too much of a phone screen; keep it to 72 so the
-       backdrop offset above stays correct. */
-    min-height: 72px;
-    /* The sheet is positioned against this row */
-    flex-wrap: wrap;
+  /* A tall bar eats too much of a phone screen; keep it to 72 so the
+     backdrop offset above stays correct. It does not condense here, so
+     .condensed hands back no margin either. */
+  .header {
+    --bar-height: 72px;
+    --bar-height-condensed: 72px;
   }
 
-  .condensed .inner {
-    min-height: 72px;
+  .inner {
+    padding: 0 1rem;
+    /* The sheet is positioned against this row */
+    flex-wrap: wrap;
   }
 
   .menuButton {

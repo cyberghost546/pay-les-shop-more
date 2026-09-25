@@ -324,11 +324,10 @@
 .submit {
   padding: 0.9rem 2.25rem;
   border: 0;
-  /* The site's blue and its 10px radius, rather than a cyan pill that
-     appeared nowhere else. */
+  /* The site's main-button yellow and its 10px radius. */
   border-radius: 10px;
-  background: #2563eb;
-  color: #ffffff;
+  background: var(--brand-yellow);
+  color: var(--brand-ink);
   font: inherit;
   font-size: 1rem;
   font-weight: 700;
@@ -337,7 +336,7 @@
 }
 
 .submit:hover:not(:disabled) {
-  background: #1d4ed8;
+  background: var(--brand-yellow-light);
   transform: translateY(-1px);
 }
 

@@ -1,20 +1,22 @@
-"""Endpoints anyone on the internet may call, without an account.
+"""What the public site reads about shipments.
 
-Two of them, both read-only and both feeding the homepage: looking up one
-shipment by its tracking number, and the counts in the statistics band.
+Two endpoints, both read-only: looking up one shipment by its tracking
+number, and the counts in the homepage's statistics band. The counts are
+open to anyone; the lookup takes a signed-in customer.
 
 The rule that shapes this whole module: a tracking number is an identifier,
 not a credential. It is printed on paperwork, forwarded in e-mails and read
-out over the phone, and it is short enough to guess at. So what comes back
-here is the least that is still useful — where the package is in its journey
-and which island it is going to — and never who is receiving it, where they
-live, or what is inside.
+out over the phone, and it is short enough to guess at. So holding one is not
+enough to follow a shipment - the lookup only finds the caller's own - and
+what comes back is still the least that is useful: where the package is in
+its journey and which island it is going to, never who is receiving it,
+where they live, or what is inside.
 """
 
 from django.contrib.auth import get_user_model
 from django.db.models import Count, Q
 from rest_framework import serializers, status
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
@@ -75,7 +77,7 @@ def public_stage_index(package):
 
 
 class PublicPackageSerializer(serializers.ModelSerializer):
-    """What an anonymous caller may see about a shipment.
+    """What the tracking page may show about a shipment.
 
     Every field is listed by hand, and the list is short on purpose. Building
     this from `exclude` would quietly start publishing the delivery address
@@ -123,25 +125,34 @@ class PublicPackageSerializer(serializers.ModelSerializer):
 
 
 class TrackingView(APIView):
-    """GET /api/track/<tracking_number>/ — one shipment, minimal detail.
+    """GET /api/track/<tracking_number>/ — one of the caller's shipments.
 
-    404 for an unknown number, which is also what a guess gets. Throttled
-    tightly: without that, this is a way to walk the tracking-number space and
-    learn how many shipments exist and where they are going.
+    Signed in only, and only the caller's own shipments: until it was, anyone
+    with a tracking number - or a lucky guess at one - could follow somebody
+    else's parcel. The office can look up any shipment, as it can every
+    customer's paperwork.
+
+    404 for an unknown number, and the same 404 for somebody else's, so the
+    answer does not confirm that a number exists. Still throttled: a customer
+    refreshing their own shipment needs nowhere near the limit.
     """
 
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
     throttle_scope = "tracking"
     throttle_classes = [ScopedRateThrottle]
 
     def get(self, request, tracking_number):
-        package = (
-            Package.objects.select_related("delivery_address")
-            # Case-insensitive and trimmed, because this is typed in by hand
-            # from a label or an e-mail, often with a stray space.
-            .filter(tracking_number__iexact=tracking_number.strip())
-            .first()
-        )
+        packages = Package.objects.select_related("delivery_address")
+        # Narrowed before the number is looked at, so somebody else's
+        # shipment is never found at all rather than found and then refused.
+        if not request.user.is_staff:
+            packages = packages.filter(user=request.user)
+
+        # Case-insensitive and trimmed, because this is typed in by hand from
+        # a label or an e-mail, often with a stray space.
+        package = packages.filter(
+            tracking_number__iexact=tracking_number.strip()
+        ).first()
 
         if package is None:
             return Response(

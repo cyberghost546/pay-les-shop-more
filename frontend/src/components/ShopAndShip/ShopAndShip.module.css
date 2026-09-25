@@ -63,8 +63,8 @@
   align-self: flex-start;
   margin-top: auto;
   padding: 0.85rem 1.6rem;
-  background: #29abe2;
-  color: #0b2b3d;
+  background: var(--brand-yellow);
+  color: var(--brand-ink);
   font-size: 1rem;
   font-weight: 700;
   text-decoration: none;
@@ -72,7 +72,7 @@
 }
 
 .button:hover {
-  background: #1c93c6;
+  background: var(--brand-yellow-light);
 }
 
 .button:focus-visible {

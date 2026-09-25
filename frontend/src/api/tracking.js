@@ -1,11 +1,13 @@
 // src/api/tracking.js
 //
-// The two endpoints the homepage calls without anyone being signed in:
-// looking up a shipment, and the counts in the statistics band.
+// The two endpoints behind the public site's shipment features: looking up a
+// shipment, and the counts in the statistics band.
 //
-// The tracking lookup deliberately answers with very little — status,
-// destination island, progress — and never with the recipient or the address.
-// See backend/accounts/public.py for why.
+// The lookup needs a signed-in customer and only finds their own shipments;
+// someone else's tracking number answers exactly like one that does not
+// exist. It still answers with very little — status, destination island,
+// progress — and never with the recipient or the address. See
+// backend/accounts/public.py for why.
 
 import { API_ERRORS, ApiError, request } from './client';
 

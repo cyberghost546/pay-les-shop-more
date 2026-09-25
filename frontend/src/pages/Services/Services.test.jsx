@@ -1,6 +1,6 @@
 // The services page is six bands: the split banner, the yellow strip, the
-// three islands as photographs, the companies, the brands strip, and the
-// closing call to action.
+// three islands as photographs, what we do, the companies, and the closing
+// call to action.
 //
 // These check the shape rather than the styling. The thing most worth pinning
 // down is what the island cards must *not* carry: the design brief asks for a
@@ -48,9 +48,7 @@ describe('the services page', () => {
     renderWithProviders(<Services />, { route: '/services' });
 
     expect(
-      screen.getByText(
-        'Discover our services and partners on Aruba, Bonaire and Curaçao.',
-      ),
+      screen.getByText('Discover our services for Aruba, Bonaire and Curaçao.'),
     ).toBeInTheDocument();
   });
 
@@ -88,19 +86,62 @@ describe('the services page', () => {
     }
   });
 
+  it('lists what we do', () => {
+    renderWithProviders(<Services />, { route: '/services' });
+
+    // Scoped to the section: the company cards further down carry level-3
+    // headings too.
+    const offer = screen.getByRole('region', { name: 'What we do for you' });
+
+    const named = within(offer).getAllByRole('heading', { level: 3 });
+    expect(named.map((heading) => heading.textContent)).toEqual([
+      'Sea freight',
+      'Air freight',
+      'Receiving and consolidation',
+      'Customs and clearance',
+      'Delivery on the island',
+      'Moving and business',
+    ]);
+  });
+
+  it('quotes the sailing times the islands actually have', () => {
+    renderWithProviders(<Services />, { route: '/services' });
+
+    // Read from the island list, so a change there cannot leave this card
+    // promising a different crossing from the destination pages.
+    const days = DESTINATIONS.map((destination) => destination.transitDays);
+    const range = `${Math.min(...days)} to ${Math.max(...days)} days`;
+
+    expect(screen.getByText(new RegExp(range))).toBeInTheDocument();
+  });
+
   it('lays the shops out as a grid of cards', async () => {
     renderWithProviders(<Services />, { route: '/services' });
 
-    expect(
-      screen.getByRole('heading', { name: 'Companies and services' }),
-    ).toBeInTheDocument();
+    const companies = screen.getByRole('region', {
+      name: 'Companies and services',
+    });
 
     // The bundled list is what renders before - and instead of - an answer
     // from the API, so the grid is never empty even with no server behind it.
-    const named = await screen.findAllByRole('heading', { level: 3 });
+    const named = await within(companies).findAllByRole('heading', { level: 3 });
     expect(named.map((heading) => heading.textContent)).toEqual(
       SHOPS.map((shop) => shop.name),
     );
+  });
+
+  it('puts the companies under what we do', () => {
+    renderWithProviders(<Services />, { route: '/services' });
+
+    const offer = screen.getByRole('region', { name: 'What we do for you' });
+    const companies = screen.getByRole('region', {
+      name: 'Companies and services',
+    });
+
+    expect(
+      offer.compareDocumentPosition(companies) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
   });
 
   it('sends each shop card to that shop, safely', () => {
@@ -115,25 +156,6 @@ describe('the services page', () => {
       expect(link).toHaveAttribute('href', shop.href);
       // Without noopener the shop's page can reach back through window.opener.
       expect(link).toHaveAttribute('rel', expect.stringContaining('noopener'));
-    }
-  });
-
-  it('shows the brands strip', () => {
-    renderWithProviders(<Services />, { route: '/services' });
-
-    expect(
-      screen.getByRole('heading', { name: 'Our brands' }),
-    ).toBeInTheDocument();
-
-    // Scoped to the strip: the company cards above it carry names too.
-    const strip = screen.getByRole('group', { name: 'Our brands' });
-
-    // Each brand is named: by its logo's alt text, or in type without one.
-    for (const shop of SHOPS) {
-      const named = shop.logo
-        ? within(strip).getByRole('img', { name: shop.name })
-        : within(strip).getByText(shop.name);
-      expect(named).toBeInTheDocument();
     }
   });
 
