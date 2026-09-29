@@ -39,6 +39,10 @@ const LOGOS = {
   'MediaMarkt.png': ['mediamarkt', '#ffffff'],
   'action-logo.png': ['action', '#ffffff'],
   'Zalando.png': ['zalando', '#ffffff'],
+  // White letters on a black block with its bottom-left corner cut away.
+  // The cut-out is transparent and is flattened to white, which is what it
+  // is meant to show; trimming white leaves the block itself untouched.
+  'Karwei-Logo.png': ['karwei', '#ffffff'],
 
   // The wide "long" logos, used by the services page only - the home page
   // cards are small and square-ish, which suits the compact marks above.

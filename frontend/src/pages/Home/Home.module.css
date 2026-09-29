@@ -30,9 +30,8 @@
   overflow: hidden;
 }
 
-/* Under the title: the three islands, west to east, each on a light card
-   like the island cards on the services page - a soft grey rather than pure
-   white, so the white band in Bonaire's flag still shows. */
+/* Under the title: the ABC islands, each by its flag on a light card like
+   the island cards on the services page. */
 .heroIslands {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -83,20 +82,22 @@
   height: 42px;
 }
 
-.heroIslandMap {
+.heroIslandFlag {
   display: block;
-  max-width: 100%;
-  max-height: 100%;
   width: auto;
-  height: auto;
-  object-fit: contain;
-  /* Follows the coastline, where a box-shadow would draw a rectangle. */
-  filter: drop-shadow(0 6px 10px rgba(11, 37, 69, 0.2));
+  height: 34px;
+  max-width: 100%;
+  border-radius: 4px;
+  /* A hairline edge, so the white in Bonaire's flag does not melt into the
+     card. */
+  box-shadow:
+    0 0 0 1px rgba(11, 37, 69, 0.12),
+    0 4px 10px rgba(11, 37, 69, 0.18);
   transition: transform 0.35s ease;
 }
 
-.heroIslandCard:hover .heroIslandMap,
-.heroIslandCard:focus-visible .heroIslandMap {
+.heroIslandCard:hover .heroIslandFlag,
+.heroIslandCard:focus-visible .heroIslandFlag {
   transform: scale(1.06);
 }
 
@@ -663,8 +664,8 @@
 
   .heroIslandCard:hover,
   .heroIslandCard:focus-visible,
-  .heroIslandCard:hover .heroIslandMap,
-  .heroIslandCard:focus-visible .heroIslandMap {
+  .heroIslandCard:hover .heroIslandFlag,
+  .heroIslandCard:focus-visible .heroIslandFlag {
     transform: none;
   }
 

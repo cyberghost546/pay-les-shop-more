@@ -40,6 +40,7 @@ import bol from '../images/optimized/logos/bol.webp';
 import coolblue from '../images/optimized/logos/coolblue.webp';
 import hm from '../images/optimized/logos/hm.webp';
 import ikea from '../images/optimized/logos/ikea.webp';
+import karwei from '../images/optimized/logos/karwei.webp';
 import mediamarkt from '../images/optimized/logos/mediamarkt.webp';
 import zalando from '../images/optimized/logos/zalando.webp';
 
@@ -65,6 +66,7 @@ export const SHOPS = [
   { name: 'MediaMarkt', logo: mediamarkt, href: 'https://www.mediamarkt.nl/' },
   { name: 'Action', logo: action, href: 'https://www.action.com/nl-nl/' },
   { name: 'Zalando', logo: zalando, href: 'https://www.zalando.nl/' },
+  { name: 'Karwei', logo: karwei, tile: true, href: 'https://www.karwei.nl/' },
 ];
 
 /**
