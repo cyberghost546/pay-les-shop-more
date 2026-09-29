@@ -30,6 +30,68 @@
   overflow: hidden;
 }
 
+/* Over the eyebrow: the three islands, west to east, as flag-painted silhouettes, side by
+   side and gently floating, each with its name under it. */
+.heroIslands {
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  gap: 1.25rem;
+  margin: 0 0 1.25rem;
+}
+
+.heroIsland {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0;
+}
+
+.heroIslandMap {
+  display: block;
+  width: auto;
+  /* Follows the coastline, where a box-shadow would draw a rectangle. */
+  filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.45));
+  animation: heroIslandFloat 4s ease-in-out infinite;
+}
+
+/* Aruba and Curaçao lie long and low, Bonaire stands tall: each sized so
+   the three look about as big as each other. */
+.heroIslandAruba {
+  height: 60px;
+  /* A third of the way through the float, so the three bob in turn. */
+  animation-delay: -1.33s;
+}
+
+.heroIslandCuracao {
+  height: 52px;
+}
+
+.heroIslandBonaire {
+  height: 76px;
+  animation-delay: -2.67s;
+}
+
+.heroIslandName {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #ffffff;
+  opacity: 0.85;
+}
+
+@keyframes heroIslandFloat {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
 /* One centred column: the copy, and under it the shops sliding past the
    full width of the hero. */
 .heroInner {
@@ -581,6 +643,10 @@
   }
 
   .mapHalo {
+    animation: none;
+  }
+
+  .heroIslandMap {
     animation: none;
   }
 

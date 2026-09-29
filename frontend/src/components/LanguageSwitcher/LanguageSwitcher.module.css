@@ -18,6 +18,28 @@
   box-shadow: -4px 0 18px rgba(5, 7, 10, 0.18);
 }
 
+/* Folded: just the flag in use, on a smaller tab, so it covers as little of
+   the page as it can. */
+.folded {
+  padding: 0.45rem;
+}
+
+/* Opening: the rail grows out from the edge it is fixed to. */
+.opened {
+  animation: railOpen 0.18s ease-out;
+}
+
+@keyframes railOpen {
+  from {
+    opacity: 0;
+    clip-path: inset(0 0 0 100%);
+  }
+  to {
+    opacity: 1;
+    clip-path: inset(0 0 0 0);
+  }
+}
+
 .circle {
   display: flex;
   align-items: center;
@@ -94,6 +116,10 @@
     border-radius: 12px 0 0 0;
   }
 
+  .folded {
+    padding: 0.4rem;
+  }
+
   .circle {
     width: 40px;
     height: 40px;
@@ -102,6 +128,10 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .opened {
+    animation: none;
+  }
+
   .circle {
     transition: none;
   }

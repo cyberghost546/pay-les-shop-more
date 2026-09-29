@@ -13,6 +13,9 @@ import Steps from '../../components/Steps/Steps';
 import ShopAndShip from '../../components/ShopAndShip/ShopAndShip';
 import ShopGrid from '../../components/ShopGrid/ShopGrid';
 import RouteMap from './RouteMap';
+import arubaFlagMap from '../../images/Flag_map_of_Aruba.webp';
+import curacaoFlagMap from '../../images/Flag_map_of_Curacao.webp';
+import bonaireFlagMap from '../../images/Flag_map_of_Bonaire.png';
 import { useAuth } from '../../auth/useAuth';
 import { useInViewport } from '../../hooks/useInViewport';
 import { useLanguage } from '../../i18n/useLanguage';
@@ -122,6 +125,40 @@ export default function Home() {
       <div className={styles.hero}>
         <div className={styles.heroInner}>
           <div className={styles.heroCopy}>
+            {/* The three islands, each in the shape of its coast and painted
+                in its own flag, floating over the line that names them. It
+                draws the eye to that line and says the same thing, so it is
+                hidden from screen readers. */}
+            <div className={styles.heroIslands} aria-hidden="true">
+              <figure className={styles.heroIsland}>
+                <img
+                  className={`${styles.heroIslandMap} ${styles.heroIslandAruba}`}
+                  src={arubaFlagMap}
+                  alt=""
+                  decoding="async"
+                />
+                <figcaption className={styles.heroIslandName}>Aruba</figcaption>
+              </figure>
+              <figure className={styles.heroIsland}>
+                <img
+                  className={`${styles.heroIslandMap} ${styles.heroIslandCuracao}`}
+                  src={curacaoFlagMap}
+                  alt=""
+                  decoding="async"
+                />
+                <figcaption className={styles.heroIslandName}>Curaçao</figcaption>
+              </figure>
+              <figure className={styles.heroIsland}>
+                <img
+                  className={`${styles.heroIslandMap} ${styles.heroIslandBonaire}`}
+                  src={bonaireFlagMap}
+                  alt=""
+                  decoding="async"
+                />
+                <figcaption className={styles.heroIslandName}>Bonaire</figcaption>
+              </figure>
+            </div>
+
             <p className={styles.eyebrow}>{t('home.hero.eyebrow')}</p>
             <h1 className={styles.heroTitle}>{t('home.hero.title')}</h1>
             <p className={styles.heroLead}>{t('home.hero.lead')}</p>
@@ -156,12 +193,12 @@ export default function Home() {
                 </>
               ) : (
                 <>
-                  <Link className={styles.primaryButton} to="/signup">
-                    {t('home.hero.startCta')}
-                  </Link>
-                  <a className={styles.ghostButton} href="#how">
+                  <a className={styles.primaryButton} href="#how">
                     {t('home.hero.howCta')}
                   </a>
+                  <Link className={styles.ghostButton} to="/signup">
+                    {t('home.hero.startCta')}
+                  </Link>
                 </>
               )}
             </div>
