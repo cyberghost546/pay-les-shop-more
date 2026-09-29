@@ -78,16 +78,40 @@
   width: auto;
   height: auto;
   object-fit: contain;
-  /* Follows the coastline, where a box-shadow would draw a rectangle. */
-  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.45));
-  transition: filter 0.25s ease, transform 0.25s ease;
+  /* Always glowing white around the coastline - a drop-shadow follows the
+     shape, where a box-shadow would draw a rectangle - and breathing
+     gently brighter and back. */
+  filter: drop-shadow(0 0 2px #ffffff) drop-shadow(0 0 8px #ffffff)
+    drop-shadow(0 0 16px rgba(255, 255, 255, 0.7));
+  animation: heroIslandGlow 2.8s ease-in-out infinite;
+  transition: transform 0.25s ease;
 }
 
-/* Pointed at, pressed or focused: a white glow around the coastline. */
+/* Out of step, so the glow moves along the row. */
+.heroIsland:nth-child(2) .heroIslandMap {
+  animation-delay: -0.93s;
+}
+
+.heroIsland:nth-child(3) .heroIslandMap {
+  animation-delay: -1.87s;
+}
+
+@keyframes heroIslandGlow {
+  0%,
+  100% {
+    filter: drop-shadow(0 0 2px #ffffff) drop-shadow(0 0 8px #ffffff)
+      drop-shadow(0 0 16px rgba(255, 255, 255, 0.7));
+  }
+  50% {
+    filter: drop-shadow(0 0 3px #ffffff) drop-shadow(0 0 12px #ffffff)
+      drop-shadow(0 0 24px #ffffff);
+  }
+}
+
+/* Pointed at, pressed or focused: a little larger. */
 .heroIslandCard:hover .heroIslandMap,
 .heroIslandCard:active .heroIslandMap,
 .heroIslandCard:focus-visible .heroIslandMap {
-  filter: drop-shadow(0 0 3px #ffffff) drop-shadow(0 0 10px rgba(255, 255, 255, 0.85));
   transform: scale(1.08);
 }
 
@@ -96,14 +120,6 @@
   font-weight: 800;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  opacity: 0.9;
-  transition: text-shadow 0.25s ease;
-}
-
-.heroIslandCard:hover .heroIslandName,
-.heroIslandCard:active .heroIslandName,
-.heroIslandCard:focus-visible .heroIslandName {
-  opacity: 1;
   text-shadow: 0 0 8px rgba(255, 255, 255, 0.8);
 }
 
@@ -658,6 +674,11 @@
   }
 
   .mapHalo {
+    animation: none;
+  }
+
+  /* The glow stays; only the breathing and the growing stop. */
+  .heroIslandMap {
     animation: none;
   }
 
