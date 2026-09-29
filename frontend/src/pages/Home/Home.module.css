@@ -30,16 +30,12 @@
   overflow: hidden;
 }
 
-/* Under the title: the ABC islands, each by its flag on a light card like
-   the island cards on the services page. */
+/* Under the title: the ABC islands, each as its flag-painted shape with
+   its name under it, straight on the navy. */
 .heroIslands {
-  /* Cards only as wide as the widest of them needs, all the same width,
-     rather than stretched across the row. */
-  display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: 1fr;
-  gap: 0.5rem;
-  width: fit-content;
+  display: flex;
+  justify-content: center;
+  gap: 1.25rem;
   margin: 0 auto 1.25rem;
   padding: 0;
   list-style: none;
@@ -51,64 +47,64 @@
 
 .heroIslandCard {
   display: flex;
-  flex: 1;
   flex-direction: column;
   align-items: center;
-  gap: 0.3rem;
-  padding: 0.4rem 0.55rem 0.35rem;
-  border: 1px solid rgba(255, 255, 255, 0.6);
+  gap: 0.4rem;
+  padding: 0.25rem;
   border-radius: 10px;
-  background: linear-gradient(160deg, #ffffff 0%, #f4f6f9 55%, #eef1f5 100%);
-  box-shadow: 0 12px 28px -14px rgba(0, 0, 0, 0.55);
-  color: var(--navy);
+  color: #ffffff;
   text-decoration: none;
-  transition: transform 0.35s ease, box-shadow 0.35s ease;
-}
-
-.heroIslandCard:hover,
-.heroIslandCard:focus-visible {
-  transform: translateY(-4px);
-  box-shadow: 0 18px 34px -14px rgba(0, 0, 0, 0.6);
+  -webkit-tap-highlight-color: transparent;
 }
 
 .heroIslandCard:focus-visible {
-  outline: 3px solid var(--brand-yellow);
+  outline: 2px solid var(--brand-yellow);
   outline-offset: 3px;
 }
 
-/* The same box for every flag, so the names line up. */
+/* The same box for every island, whatever its shape, so the names line up. */
 .heroIslandFrame {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 100%;
-  height: 34px;
+  width: 64px;
+  height: 48px;
 }
 
-.heroIslandFlag {
+.heroIslandMap {
   display: block;
-  width: auto;
-  height: 34px;
   max-width: 100%;
-  border-radius: 4px;
-  /* A hairline edge, so the white in Bonaire's flag does not melt into the
-     card. */
-  box-shadow:
-    0 0 0 1px rgba(11, 37, 69, 0.12),
-    0 4px 10px rgba(11, 37, 69, 0.18);
-  transition: transform 0.35s ease;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  /* Follows the coastline, where a box-shadow would draw a rectangle. */
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.45));
+  transition: filter 0.25s ease, transform 0.25s ease;
 }
 
-.heroIslandCard:hover .heroIslandFlag,
-.heroIslandCard:focus-visible .heroIslandFlag {
-  transform: scale(1.06);
+/* Pointed at, pressed or focused: a white glow around the coastline. */
+.heroIslandCard:hover .heroIslandMap,
+.heroIslandCard:active .heroIslandMap,
+.heroIslandCard:focus-visible .heroIslandMap {
+  filter: drop-shadow(0 0 3px #ffffff) drop-shadow(0 0 10px rgba(255, 255, 255, 0.85));
+  transform: scale(1.08);
 }
 
 .heroIslandName {
-  font-size: 0.62rem;
+  font-size: 0.66rem;
   font-weight: 800;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
+  opacity: 0.9;
+  transition: text-shadow 0.25s ease;
+}
+
+.heroIslandCard:hover .heroIslandName,
+.heroIslandCard:active .heroIslandName,
+.heroIslandCard:focus-visible .heroIslandName {
+  opacity: 1;
+  text-shadow: 0 0 8px rgba(255, 255, 255, 0.8);
 }
 
 /* One centred column: the copy, and under it the shops sliding past the
@@ -665,10 +661,9 @@
     animation: none;
   }
 
-  .heroIslandCard:hover,
-  .heroIslandCard:focus-visible,
-  .heroIslandCard:hover .heroIslandFlag,
-  .heroIslandCard:focus-visible .heroIslandFlag {
+  .heroIslandCard:hover .heroIslandMap,
+  .heroIslandCard:active .heroIslandMap,
+  .heroIslandCard:focus-visible .heroIslandMap {
     transform: none;
   }
 

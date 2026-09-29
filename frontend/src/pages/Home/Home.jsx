@@ -14,9 +14,6 @@ import ShopAndShip from '../../components/ShopAndShip/ShopAndShip';
 import ShopGrid from '../../components/ShopGrid/ShopGrid';
 import RouteMap from './RouteMap';
 import { findDestination } from '../../data/destinations';
-import arubaFlag from '../../images/Flag_of_Aruba.svg';
-import bonaireFlag from '../../images/Flag_of_Bonaire.svg';
-import curacaoFlag from '../../images/Flag_of_Curacao.webp';
 import { useAuth } from '../../auth/useAuth';
 import { useInViewport } from '../../hooks/useInViewport';
 import { useLanguage } from '../../i18n/useLanguage';
@@ -113,8 +110,7 @@ function Section({ children, className = '', id }) {
 }
 
 // The ABC islands under the hero title, in that order: Aruba, Bonaire,
-// Curaçao. Each is a card with the island's flag that leads to its own page.
-const HERO_FLAGS = { aruba: arubaFlag, bonaire: bonaireFlag, curacao: curacaoFlag };
+// Curaçao. Each is the island's shape in its own flag, leading to its page.
 const HERO_ISLANDS = ['aruba', 'bonaire', 'curacao'].map(findDestination);
 
 export default function Home() {
@@ -134,8 +130,9 @@ export default function Home() {
             <p className={styles.eyebrow}>{t('home.hero.eyebrow')}</p>
             <h1 className={styles.heroTitle}>{t('home.hero.title')}</h1>
 
-            {/* The ABC islands, each by its flag, on the same light cards as
-                the services page. */}
+            {/* The ABC islands, each in the shape of its coast and painted in
+                its own flag. No card behind them: they glow white when
+                pointed at, pressed or focused. */}
             <ul className={styles.heroIslands}>
               {HERO_ISLANDS.map((island) => (
                 <li key={island.slug} className={styles.heroIsland}>
@@ -145,8 +142,8 @@ export default function Home() {
                   >
                     <span className={styles.heroIslandFrame}>
                       <img
-                        className={styles.heroIslandFlag}
-                        src={HERO_FLAGS[island.slug]}
+                        className={styles.heroIslandMap}
+                        src={island.flagMap}
                         alt=""
                         decoding="async"
                       />
