@@ -23,15 +23,22 @@
 // that request answers, and if it fails, the bundled list in
 // src/data/shops.js stands in. The copy is under `home.shops`.
 
+import { useLayoutEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useLanguage } from '../../i18n/useLanguage';
 import { useShops } from '../../hooks/useShops';
 import styles from './ShopGrid.module.css';
 
-// How many cards the row needs before it is longer than the window it slides
-// behind: 1400px wide at most, at 170px a card with its gap. With fewer shops
-// than this the row is repeated until it is, or a short list would slide off
-// and leave a gap before it came round again.
+// How many cards the row needs, at least, before it is longer than the window
+// it slides behind: 1400px wide at most, at 170px a card with its gap. With
+// fewer shops than this the row is repeated until it is, or a short list
+// would slide off and leave a gap before it came round again.
+//
+// This is only the starting point. Once the row is on screen it measures the
+// real window and the real cards and adds more if they are needed - browser
+// zoom, a larger default font or a wide screen all change the sums, and nine
+// cards left barely a card to spare, so the end of the row could come into
+// view as empty space.
 const MIN_CARDS = 9;
 
 // How long each card takes to travel its own width, gap included. The loop's
@@ -93,14 +100,43 @@ function ShopCard({ shop, cta, clone = false }) {
  *   own running order.
  */
 function MarqueeRow({ shops, cta }) {
+  const trackRef = useRef(null);
+  const [minCards, setMinCards] = useState(MIN_CARDS);
+
+  // How many cards it really takes to cover the window, plus one so the end
+  // of a copy is never in view before the loop wraps round. Measured again
+  // whenever the window changes size.
+  useLayoutEffect(() => {
+    const track = trackRef.current;
+    const frame = track?.parentElement;
+    if (!track || !frame || typeof ResizeObserver === 'undefined') return undefined;
+
+    const measure = () => {
+      const card = track.firstElementChild;
+      // offsetWidth, not getBoundingClientRect: it ignores the slide's own
+      // transform.
+      const cardWidth = card?.offsetWidth ?? 0;
+      if (!cardWidth) return;
+      const gap = parseFloat(getComputedStyle(track).columnGap) || 0;
+      const needed = Math.ceil(frame.clientWidth / (cardWidth + gap)) + 1;
+      setMinCards(Math.max(MIN_CARDS, needed));
+    };
+
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(frame);
+    return () => observer.disconnect();
+  }, []);
+
   // Repeated until the row is longer than its window, so a short list still
   // fills it. Three shops become three runs of three, then doubled again
   // below for the loop itself.
   const filled = [];
-  while (filled.length < MIN_CARDS) filled.push(...shops);
+  while (filled.length < minCards) filled.push(...shops);
 
   return (
     <ul
+      ref={trackRef}
       className={styles.track}
       style={{ animationDuration: `${filled.length * SECONDS_PER_CARD}s` }}
     >

@@ -63,8 +63,8 @@ export const SHOPS = [
     href: 'https://www.coolblue.nl/',
   },
   { name: 'H&M', logo: hm, href: 'https://www2.hm.com/nl_nl/index.html' },
-  { name: 'MediaMarkt', logo: mediamarkt, href: 'https://www.mediamarkt.nl/' },
   { name: 'Action', logo: action, href: 'https://www.action.com/nl-nl/' },
+  { name: 'MediaMarkt', logo: mediamarkt, href: 'https://www.mediamarkt.nl/' },
   { name: 'Zalando', logo: zalando, href: 'https://www.zalando.nl/' },
   { name: 'Karwei', logo: karwei, tile: true, href: 'https://www.karwei.nl/' },
 ];

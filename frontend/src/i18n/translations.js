@@ -534,9 +534,9 @@ export const translations = {
     },
     home: {
       hero: {
-        eyebrow: 'Btw-vrij van Nederland naar Curaçao en Bonaire',
+        eyebrow: 'Btw-vrij van Nederland naar Aruba, Bonaire en Curaçao',
         title: 'Bestel in Nederland. Wij bezorgen het btw-vrij op het eiland.',
-        lead: 'Koop bij elke Nederlandse webshop en laat het naar ons magazijn in Nederland sturen. Uw bestellingen, eenvoudig geregeld. Wij bundelen en verschepen ze btw-vrij per boot of vliegtuig en bezorgen ze vervolgens bij u thuis op Curaçao.',
+        lead: 'Koop bij elke Nederlandse webshop en laat het naar ons magazijn in Nederland sturen. Uw bestellingen, eenvoudig geregeld. Wij bundelen en verschepen ze btw-vrij per boot of vliegtuig en bezorgen ze vervolgens bij u thuis op Aruba, Bonaire of Curaçao.',
         trackCta: 'Zending volgen',
         startCta: 'Aan de slag',
         howCta: 'Hoe het werkt',
@@ -1701,9 +1701,9 @@ export const translations = {
     },
     home: {
       hero: {
-        eyebrow: 'BTW-free from the Netherlands to Curaçao and Bonaire',
+        eyebrow: 'BTW-free from the Netherlands to Aruba, Bonaire and Curaçao',
         title: 'Shop in the Netherlands. We deliver it BTW-free to the island.',
-        lead: 'Buy from any Dutch webshop and have it sent to our warehouse in the Netherlands. Your orders, simply taken care of. We combine and ship them BTW-free (no Dutch VAT) by boat or plane, and then deliver them to your door in Curaçao.',
+        lead: 'Buy from any Dutch webshop and have it sent to our warehouse in the Netherlands. Your orders, simply taken care of. We combine and ship them BTW-free (no Dutch VAT) by boat or plane, and then deliver them to your door in Aruba, Bonaire or Curaçao.',
         trackCta: 'Track a shipment',
         startCta: 'Get started',
         howCta: 'How it works',
@@ -2845,9 +2845,9 @@ export const translations = {
     },
     home: {
       hero: {
-        eyebrow: 'Sin BTW for di Hulanda pa Kòrsou i Boneiru',
+        eyebrow: 'Sin BTW for di Hulanda pa Aruba, Boneiru i Kòrsou',
         title: 'Kumpra na Hulanda. Nos ta entregá e sin BTW na e isla.',
-        lead: 'Kumpra na kualke webshop hulandes i laga nan manda e pa nos warehouse na Hulanda. Bo órdennan, reglá fásil. Nos ta hunta i manda nan sin BTW pa barku òf avion, i despues entregá nan na bo kas na Kòrsou.',
+        lead: 'Kumpra na kualke webshop hulandes i laga nan manda e pa nos warehouse na Hulanda. Bo órdennan, reglá fásil. Nos ta hunta i manda nan sin BTW pa barku òf avion, i despues entregá nan na bo kas na Aruba, Boneiru òf Kòrsou.',
         trackCta: 'Sigui un enbio',
         startCta: 'Kuminsá',
         howCta: 'Kon e ta funshoná',
