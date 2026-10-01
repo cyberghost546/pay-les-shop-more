@@ -23,7 +23,7 @@
 // that request answers, and if it fails, the bundled list in
 // src/data/shops.js stands in. The copy is under `home.shops`.
 
-import { useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useLanguage } from '../../i18n/useLanguage';
 import { useShops } from '../../hooks/useShops';
@@ -41,10 +41,9 @@ import styles from './ShopGrid.module.css';
 // view as empty space.
 const MIN_CARDS = 9;
 
-// How long each card takes to travel its own width, gap included. The loop's
-// duration follows from it, so the row moves at the same pace however many
-// shops the office has added - about 48px a second.
-const SECONDS_PER_CARD = 3.5;
+// How fast the row travels, in pixels a second: a card and its gap about
+// every three and a half seconds, however many shops the office has added.
+const PIXELS_PER_SECOND = 48;
 
 /**
  * One shop, as a card that is entirely a link to that shop's Dutch storefront.
@@ -133,13 +132,70 @@ function MarqueeRow({ shops, cta }) {
   // below for the loop itself.
   const filled = [];
   while (filled.length < minCards) filled.push(...shops);
+  const loopCards = filled.length;
+
+  // The slide itself, moved a frame at a time rather than by a CSS animation.
+  // A CSS slide of "-50%" is worked out from the width the row had when it
+  // started, and a browser does not always work it out again when the row
+  // changes length under it - the shops arriving from the API, more cards
+  // added for a wider window. The row then slides past its own end and shows
+  // empty space. Here the length of one copy is measured on every frame, from
+  // the first card to the first card of the second copy, gaps included, so
+  // the loop always wraps at exactly the right place.
+  useEffect(() => {
+    const track = trackRef.current;
+    const frame = track?.parentElement;
+    if (!track || !frame || typeof requestAnimationFrame !== 'function') return undefined;
+
+    // Somebody who has asked for less motion gets a still row they can
+    // scroll instead; the stylesheet sets that up.
+    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return undefined;
+
+    // Stopped while the pointer is over the row or a card has focus: a row
+    // that keeps moving under the pointer is a row whose links are hard to
+    // click.
+    let hovered = false;
+    let focused = false;
+    const onEnter = () => { hovered = true; };
+    const onLeave = () => { hovered = false; };
+    const onFocusIn = () => { focused = true; };
+    const onFocusOut = () => { focused = false; };
+    frame.addEventListener('pointerenter', onEnter);
+    frame.addEventListener('pointerleave', onLeave);
+    frame.addEventListener('focusin', onFocusIn);
+    frame.addEventListener('focusout', onFocusOut);
+
+    let offset = 0;
+    let last = null;
+    let raf = requestAnimationFrame(function step(now) {
+      // Capped, so a tab left in the background does not leap on its return.
+      const elapsed = last === null ? 0 : Math.min(now - last, 100);
+      last = now;
+
+      const first = track.children[0];
+      const repeat = track.children[loopCards];
+      const loop = first && repeat ? repeat.offsetLeft - first.offsetLeft : 0;
+
+      if (loop > 0) {
+        if (!hovered && !focused) offset += (PIXELS_PER_SECOND * elapsed) / 1000;
+        offset %= loop;
+        track.style.transform = `translate3d(${-offset}px, 0, 0)`;
+      }
+      raf = requestAnimationFrame(step);
+    });
+
+    return () => {
+      cancelAnimationFrame(raf);
+      frame.removeEventListener('pointerenter', onEnter);
+      frame.removeEventListener('pointerleave', onLeave);
+      frame.removeEventListener('focusin', onFocusIn);
+      frame.removeEventListener('focusout', onFocusOut);
+      track.style.transform = '';
+    };
+  }, [loopCards]);
 
   return (
-    <ul
-      ref={trackRef}
-      className={styles.track}
-      style={{ animationDuration: `${filled.length * SECONDS_PER_CARD}s` }}
-    >
+    <ul ref={trackRef} className={styles.track}>
       {filled.map((shop, index) => (
         <ShopCard
           key={`${shop.id}-${index}`}

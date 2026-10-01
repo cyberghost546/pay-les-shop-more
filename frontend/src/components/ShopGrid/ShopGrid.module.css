@@ -43,10 +43,11 @@
   -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
 }
 
-/* The row: the two copies of its shops, side by side. Sliding exactly half
-   the track lands the second copy where the first began, so the loop has no
-   seam. The duration comes from the component, which sets it from the
-   number of cards so the pace stays the same however many there are. */
+/* The row: the two copies of its shops, side by side. Sliding exactly one
+   copy lands the second where the first began, so the loop has no seam. The
+   component moves it a frame at a time, from the measured length of a copy,
+   and stops it under the pointer - see MarqueeRow for why that is not a CSS
+   animation. */
 .track {
   display: flex;
   width: max-content;
@@ -55,26 +56,7 @@
   /* Room above for a card lifting on hover, inside the window's clip. */
   padding: 4px 0;
   list-style: none;
-  animation: slide 32s linear infinite;
-}
-
-@keyframes slide {
-  from {
-    transform: translateX(0);
-  }
-  to {
-    /* Half, plus half of one gap: the gap after the last card of the first
-       copy is part of what has to scroll past, or the seam jumps. */
-    transform: translateX(calc(-50% - 0.375rem));
-  }
-}
-
-/* The row stops while somebody is reading it, or tabbing through it. A row
-   that keeps moving under the pointer is a row whose links are hard to
-   click. */
-.marquee:hover .track,
-.marquee:focus-within .track {
-  animation-play-state: paused;
+  will-change: transform;
 }
 
 .item {
@@ -238,10 +220,6 @@
 @media (prefers-reduced-motion: reduce) {
   /* No travel. The row becomes an ordinary scrollable strip instead, so every
      shop is still reachable - by touch, and by tab through the real half. */
-  .track {
-    animation: none;
-  }
-
   .marquee {
     overflow-x: auto;
   }
