@@ -1,5 +1,6 @@
 import { Fragment, useEffect, useState } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
+import AccountMenu from '../AccountMenu/AccountMenu';
 import NavDropdown from '../NavDropdown/NavDropdown';
 import { DESTINATIONS } from '../../data/destinations';
 import { useAuth } from '../../auth/useAuth';
@@ -16,7 +17,8 @@ const NAV_LINKS = [
   { key: 'nav.home', href: '/' },
   { key: 'nav.services', href: '/services' },
   { key: 'nav.tutorial', href: '/tutorial' },
-  { key: 'nav.booking', href: '/booking' },
+  // tour: the data-tour hook the onboarding tour highlights this link by.
+  { key: 'nav.booking', href: '/booking', tour: 'booking' },
   { key: 'nav.calculator', href: '/calculator' },
   { key: 'nav.contact', href: '/contact' },
 ];
@@ -35,16 +37,6 @@ const MENU_ID = 'primary-navigation';
 
 // How far down the page before the bar condenses.
 const CONDENSE_AFTER = 24;
-
-/** "Christopher Molina" becomes "CM". */
-function initialsOf(name) {
-  return name
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0].toUpperCase())
-    .join('');
-}
 
 export default function Header() {
   const [open, setOpen] = useState(false);
@@ -91,7 +83,24 @@ export default function Header() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const name = user?.name?.trim() || '';
+  // The account menu's links. Staff get a shortcut to their dashboard
+  // first - only a shortcut: the dashboard's own guard and the API both
+  // check the role again. "Dashboard" is not translated on purpose: the back
+  // office is English throughout.
+  const isStaffish =
+    user?.isStaff || user?.isWarehouse || user?.role === 'driver';
+  const dashboardPath = user?.isStaff
+    ? '/dashboard'
+    : user?.isWarehouse
+      ? '/warehouse'
+      : '/driver';
+  // Staff have their own profile page; /profile is a customer's.
+  const profilePath =
+    user?.isStaff || user?.isWarehouse ? '/warehouse/profile' : '/profile';
+  const accountLinks = [
+    ...(isStaffish ? [{ to: dashboardPath, label: 'Dashboard' }] : []),
+    { to: profilePath, label: t('account.profile') },
+  ];
 
   return (
     // .header spans the full width so its background/border reach both edges.
@@ -104,8 +113,12 @@ export default function Header() {
         </Link>
 
         {/* Hamburger: hidden on wide screens, where the nav shows in full */}
+        {/* data-tour="..." attributes on this page are the stable hooks the
+            onboarding tour (src/components/Tutorial) uses to find and
+            highlight elements. Keep them if you restyle the header. */}
         <button
           type="button"
+          data-tour="menu"
           className={styles.menuButton}
           aria-expanded={open}
           aria-controls={MENU_ID}
@@ -132,6 +145,7 @@ export default function Header() {
                   <li>
                     <NavLink
                       to={link.href}
+                      data-tour={link.tour}
                       end={link.href === '/'}
                       onClick={close}
                       className={({ isActive }) =>
@@ -165,61 +179,36 @@ export default function Header() {
 
           <div className={styles.account}>
             {isAuthenticated ? (
-              <>
-                {/* Staff only, and only a shortcut — the dashboard's own
-                    guard and the API both check the flag again. Untranslated
-                    on purpose: the back office is English throughout. */}
-                {(user?.isStaff || user?.isWarehouse || user?.role === 'driver') && (
-                  <Link
-                    // The office's dashboard for anyone who has it; the
-                    // floor's own for a warehouse account.
-                    to={user?.isStaff ? '/dashboard' : user?.isWarehouse ? '/warehouse' : '/driver'}
-                    className={styles.dashboard}
-                    onClick={close}
-                  >
-                    <svg
-                      className={styles.dashboardIcon}
-                      viewBox="0 0 24 24"
-                      aria-hidden="true"
-                    >
-                      <rect x="3" y="3" width="7.5" height="7.5" rx="1.5" />
-                      <rect x="13.5" y="3" width="7.5" height="7.5" rx="1.5" />
-                      <rect x="3" y="13.5" width="7.5" height="7.5" rx="1.5" />
-                      <rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.5" />
-                    </svg>
-                    Dashboard
-                  </Link>
-                )}
-
-                {/* The account itself: initials and a name, which reads as a
-                    person rather than as another destination in the nav. */}
-                <Link
-                  // Staff have their own profile page; /profile is a customer's.
-                  to={user?.isStaff || user?.isWarehouse ? '/warehouse/profile' : '/profile'}
-                  className={styles.identity}
-                  onClick={close}
-                >
-                  <span className={styles.avatar} aria-hidden="true">
-                    {initialsOf(name || user?.email || '?')}
-                  </span>
-                  <span className={styles.identityName}>
-                    {name || t('account.profile')}
-                  </span>
-                </Link>
-
-                {/* Quiet: ending a session is the least important thing on
-                    this bar, and the filled style belongs to whatever the
-                    main action is. When signed in there is not one. */}
-                <button type="button" className={styles.quiet} onClick={handleSignOut}>
-                  {t('account.logout')}
-                </button>
-              </>
+              // One button for the signed-in person (initials, name, role)
+              // opening a small menu: Dashboard (staff only), My account,
+              // Log out. The same component the dashboards use, so the
+              // account looks the same everywhere.
+              // data-tour: the onboarding tour highlights it.
+              <div className={styles.accountSlot} data-tour="account">
+                <AccountMenu
+                  inSheet
+                  links={accountLinks}
+                  signOutLabel={t('account.logout')}
+                  onSignOut={handleSignOut}
+                  onNavigate={close}
+                />
+              </div>
             ) : (
               <>
-                <Link to="/login" className={styles.quiet} onClick={close}>
+                <Link
+                  to="/login"
+                  data-tour="login"
+                  className={styles.quiet}
+                  onClick={close}
+                >
                   {t('account.login')}
                 </Link>
-                <Link to="/signup" className={styles.primary} onClick={close}>
+                <Link
+                  to="/signup"
+                  data-tour="signup"
+                  className={styles.primary}
+                  onClick={close}
+                >
                   {t('account.signup')}
                 </Link>
               </>

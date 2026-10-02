@@ -1,8 +1,12 @@
 // src/components/AccountMenu/AccountMenu.jsx
 //
-// The signed-in person in a dashboard top bar: initials, name and role on a
-// button that opens a short menu - the links the dashboard passes in, then
-// Sign out. Used by both the office and the warehouse dashboards.
+// The signed-in person: initials, name and role on a button that opens a
+// short menu - the links passed in, then Sign out. Used by the office,
+// warehouse and driver dashboards, and by the website's own header.
+//
+// In the website header (`inSheet`), on phones and tablets the whole account
+// block sits inside the ☰ menu sheet; there the menu opens in place, under
+// the button, instead of floating over the sheet.
 
 import { useCallback, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
@@ -25,9 +29,17 @@ function initialsOf(user) {
 
 /**
  * @param {{ links?: { to: string, label: string }[], signOutLabel: string,
- *   onSignOut: () => void }} props
+ *   onSignOut: () => void, onNavigate?: () => void, inSheet?: boolean }} props
+ *   onNavigate  called when any item is chosen, e.g. to close a mobile menu
+ *   inSheet     the website header's layout (see the note at the top)
  */
-export default function AccountMenu({ links = [], signOutLabel, onSignOut }) {
+export default function AccountMenu({
+  links = [],
+  signOutLabel,
+  onSignOut,
+  onNavigate,
+  inSheet = false,
+}) {
   const { user } = useAuth();
   const { t } = useLanguage();
   const [open, setOpen] = useState(false);
@@ -35,11 +47,20 @@ export default function AccountMenu({ links = [], signOutLabel, onSignOut }) {
   const close = useCallback(() => setOpen(false), []);
   useDismiss(wrapper, open, close);
 
+  // Choosing anything closes this menu, and tells the page (onNavigate).
+  function chosen() {
+    close();
+    onNavigate?.();
+  }
+
   const name = user?.name?.trim() || user?.email;
   const role = t(`dashboard.roles.${user?.role ?? 'customer'}`);
 
   return (
-    <div className={styles.account} ref={wrapper}>
+    <div
+      className={inSheet ? `${styles.account} ${styles.inSheet}` : styles.account}
+      ref={wrapper}
+    >
       <button
         type="button"
         className={styles.accountButton}
@@ -66,7 +87,7 @@ export default function AccountMenu({ links = [], signOutLabel, onSignOut }) {
             <span className={styles.accountMenuEmail}>{role}</span>
           </div>
           {links.map((link) => (
-            <Link key={link.to} to={link.to} className={styles.accountMenuItem} onClick={close}>
+            <Link key={link.to} to={link.to} className={styles.accountMenuItem} onClick={chosen}>
               {link.label}
             </Link>
           ))}
@@ -74,7 +95,7 @@ export default function AccountMenu({ links = [], signOutLabel, onSignOut }) {
             type="button"
             className={`${styles.accountMenuItem} ${styles.accountMenuSignOut}`}
             onClick={() => {
-              close();
+              chosen();
               onSignOut();
             }}
           >

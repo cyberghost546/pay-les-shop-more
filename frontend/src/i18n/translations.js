@@ -1009,12 +1009,16 @@ export const translations = {
     },
     guide: {
       eyebrow: 'Uitleg bij deze pagina',
+      // The robot panel: greeting, the "On this page" box, Read more/less.
+      greeting: 'Hoi! Waarmee kan ik helpen?',
+      onThisPage: 'Op deze pagina',
+      more: 'Meer lezen',
+      less: 'Minder tonen',
       panelLabel: 'Uitleg bij deze pagina',
-      openLabel: 'Uitleg bij deze pagina openen',
+      openLabel: 'Hulp en uitleg bij deze pagina openen',
       close: 'Sluiten',
       listen: 'Lees voor',
       stop: 'Stop',
-      full: 'Hele uitleg',
       dontShow: 'Niet meer automatisch tonen',
       pages: {
         home: {
@@ -1095,20 +1099,180 @@ export const translations = {
         },
       },
     },
-    // The welcome pop-up for first-time visitors
-    // (src/components/WelcomeGuide). The step texts themselves are shared
-    // with the tutorial page: see tutorial.steps below.
-    welcome: {
-      eyebrow: 'Nieuw hier?',
-      title: 'Welkom bij Pay Less Shop More',
-      intro:
-        'Bestel bij Nederlandse webshops en wij verzenden het naar het eiland. In een paar korte stappen laten we zien hoe het werkt.',
-      start: 'Laat zien hoe het werkt',
-      skip: 'Overslaan',
-      close: 'Sluiten',
-      // {current} and {total} are filled in by the component.
+    // The onboarding tour (src/components/Tutorial) and its "?" help button.
+    // Steps: onboarding.steps.<id> must match the ids in
+    // src/components/Tutorial/tutorialSteps.js. Each step has a `title` and
+    // optionally `text`, `points` (bullet list), `note` and `warning`.
+    // Shipping times are NOT here: they come from src/data/destinations.js.
+    onboarding: {
       stepOf: 'Stap {current} van {total}',
-      fullGuide: 'Volledige uitleg',
+      progressLabel: 'Voortgang van de uitleg',
+      duration: 'Ongeveer 2 minuten',
+      start: 'Start de uitleg',
+      skip: 'Uitleg overslaan',
+      close: 'Uitleg sluiten',
+      back: 'Vorige',
+      next: 'Volgende',
+      finish: 'Afronden',
+      openWebsite: 'Naar de website',
+      steps: {
+        welcome: {
+          title: 'Welkom bij Pay Less Shop More',
+          text: 'Wij nemen u mee in een korte rondleiding en laten zien hoe winkelen en verzenden werkt.',
+        },
+        account: {
+          title: 'Maak uw account aan',
+          text: 'Maak uw Pay Less Shop More-account aan, zodat u uw bestellingen, zendingen en persoonlijke gegevens kunt beheren.',
+          points: [
+            'Gebruik de knop "Aanmelden" bovenaan de pagina. Op een telefoon vindt u die in het menu (☰).',
+            'Vul uw eigen persoonlijke gegevens in: uw eigen naam, e-mailadres en telefoonnummer.',
+          ],
+        },
+        shop: {
+          title: 'Shop bij uw favoriete winkels',
+          text: 'Koop producten bij Nederlandse webshops en laat uw aankopen bezorgen in ons magazijn in Nederland.',
+          points: [
+            'Gebruik bij het afrekenen het magazijnadres van Pay Less Shop More als afleveradres. In de volgende stap ziet u precies wat u invult.',
+          ],
+          note: 'Rond de betaling direct af. Achteraf betalen is niet toegestaan.',
+        },
+        address: {
+          title: 'Laat uw bestelling naar ons magazijn sturen',
+          text: 'Gebruik dit adres bij het bestellen in een Nederlandse webshop, zowel bij de factuurgegevens als bij het afleveradres.',
+          warning: 'Vul het magazijnadres precies zo in als hier staat, bij de factuurgegevens én bij het afleveradres. Is dat niet goed ingevuld, dan kunnen wij uw zending niet verwerken.',
+        },
+        // {email} is filled in from src/data/company.js.
+        register: {
+          title: 'Meld uw zending bij ons aan',
+          text: 'Laat ons na het bestellen weten dat er een pakket naar ons magazijn onderweg is. Zo weten wij dat het van u is zodra het binnenkomt.',
+          points: [
+            'Vul het aanmeldformulier in (via "Boeking" bovenaan de pagina), of mail ons op {email}.',
+            'Stuur ons de factuur van de webshop zo snel mogelijk.',
+          ],
+        },
+        warehouse: {
+          title: 'Uw pakket komt aan in ons magazijn',
+          text: 'Zodra uw pakket in ons magazijn aankomt, verwerken wij het en maken wij het klaar voor verzending naar uw bestemming.',
+        },
+        shipping: {
+          title: 'Kies uw verzendwijze',
+        },
+        track: {
+          title: 'Volg uw zending',
+          text: 'Met Track & Trace bekijkt u de laatst beschikbare informatie over uw zending.',
+          points: [
+            'Track & Trace staat in uw account: log in en klik bovenaan op uw naam.',
+            'De informatie verschijnt zodra die voor uw zending beschikbaar is.',
+          ],
+        },
+        help: {
+          title: 'Hulp nodig?',
+          text: 'Ons team helpt u graag met vragen over:',
+        },
+      },
+      address: {
+        firstName: 'Voornaam',
+        lastName: 'Achternaam',
+        street: 'Adres',
+        postcode: 'Postcode',
+        city: 'Plaats',
+        country: 'Land',
+        countryValue: 'Nederland',
+        copy: 'Adres kopiëren',
+        copied: 'Adres gekopieerd!',
+        copyFailed: 'Kopiëren lukte niet. Selecteer het adres en kopieer het zelf.',
+      },
+      flow: {
+        label: 'Van webshop tot uw bestemming',
+        store: 'Webshop',
+        warehouse: 'Magazijn van Pay Less Shop More',
+        shipping: 'Verzending',
+        destination: 'Uw bestemming',
+      },
+      shipping: {
+        allIslands: 'Alle eilanden',
+        faster: 'Heeft u het sneller nodig?',
+        disclaimer: 'Dit zijn schattingen. De werkelijke duur hangt af van het verzendschema en de omstandigheden.',
+        quoteQuestion: 'Wilt u weten wat het kost?',
+        quoteLink: 'Kies uw eiland en vraag een offerte aan',
+      },
+      help: {
+        topics: [
+          'Verzendkosten',
+          'Douane',
+          'Grote spullen',
+          'Zakelijk verzenden',
+          'Andere bestemmingen',
+          'Algemene vragen',
+        ],
+        contact: 'Neem contact op met ons team:',
+        again: 'Klik op elke pagina op de robot linksonder en kies "Rondleiding door deze pagina": de robot legt dan die pagina uit. Op de homepage start deze uitleg opnieuw.',
+        doneTitle: 'U bent er klaar voor!',
+        doneText: 'U kent nu de basis van winkelen en verzenden met Pay Less Shop More.',
+      },
+      // The page tours: one per page, started from the robot's "Rondleiding
+      // door deze pagina". The step ids match pageTours in
+      // src/components/Tutorial/tutorialSteps.js.
+      pages: {
+        services: {
+          intro: { title: 'Onze diensten', text: 'Op deze pagina leest u wat wij voor u doen, van ons magazijn in Nederland tot de aflevering op het eiland.' },
+          islands: { title: 'De eilanden', text: 'Klik op een eiland om te zien hoe verzenden daarheen werkt, hoe lang het duurt en om een offerte aan te vragen.' },
+          offer: { title: 'Wat wij voor u doen', text: 'Zeevracht en luchtvracht, het ontvangen en samenvoegen van uw pakketten, de douane en de aflevering op het eiland.' },
+          partners: { title: 'Onze partners', text: 'De bedrijven waarmee wij samenwerken om uw zending op het eiland te krijgen.' },
+          contact: { title: 'Nog vragen?', text: 'Wilt u weten wat wij voor u kunnen doen? Met deze knop neemt u contact met ons op.' },
+        },
+        booking: {
+          intro: { title: 'De boekingsbon', text: 'Hier meldt u uw zending bij ons aan, in plaats van op papier. Het shippingnummer, het volume en het gewicht vullen wij aan zodra uw zending bij ons is.' },
+          shipment: { title: 'Uw zending', text: 'Kies hoe u verstuurt (zeevracht of luchtvracht) en naar welke bestemming.' },
+          people: { title: 'Afzender en ontvanger', text: 'Vul hier uw eigen gegevens in, en daaronder die van de ontvanger op het eiland.' },
+          consignment: { title: 'Wat u verstuurt', text: 'Vertel ons wat er in de zending zit, hoeveel stuks het zijn en wat het waard is.' },
+          terms: { title: 'Voorwaarden en ondertekenen', text: 'Ga akkoord met de voorwaarden, zet uw naam als handtekening en verstuur de boekingsbon.' },
+        },
+        contact: {
+          methods: { title: 'Zo bereikt u ons', text: 'Mail of bel ons, of kom langs. Klik op een van de drie om direct te mailen, te bellen of de route te zien.' },
+          form: { title: 'Stuur ons een bericht', text: 'Liever schrijven? Vul dit formulier in. Wij antwoorden per e-mail.' },
+        },
+        destinations: {
+          list: { title: 'Kies uw eiland', text: 'Klik op een eiland. Daar leest u hoe lang verzenden duurt, hoe het werkt, en kunt u een offerte aanvragen.' },
+        },
+        destination: {
+          facts: { title: 'In het kort', text: 'Hoe lang de overtocht duurt, waar uw zending aankomt en hoe de aflevering gaat.' },
+          how: { title: 'Zo komt uw bestelling aan', text: 'Stap voor stap: van uw bestelling in Nederland tot de aflevering op dit eiland.' },
+          faq: { title: 'Veelgestelde vragen', text: 'Antwoorden op wat mensen het vaakst vragen over verzenden naar dit eiland. Klik op een vraag om het antwoord te lezen.' },
+          quote: { title: 'Vraag een offerte aan', text: 'Vul uw naam en e-mailadres in, upload uw factuur en verstuur de aanvraag. Wij mailen u een indicatieve prijs.' },
+        },
+        profile: {
+          details: { title: 'Uw gegevens', text: 'Uw naam, e-mailadres, telefoonnummer en afleveradres. Houd ze actueel, zodat wij u kunnen bereiken.' },
+          tracking: { title: 'Track & Trace', text: 'Volg hier uw zending. De informatie verschijnt zodra die voor uw zending beschikbaar is.' },
+          shipments: { title: 'Mijn zendingen', text: 'Al uw zendingen op een rij, met waar elke zending nu is.' },
+          invoices: { title: 'Facturen en bonnen', text: 'Hier vindt u onze facturen, en uploadt u de aankoopbonnen van uw bestellingen.' },
+          notifications: { title: 'Meldingen', text: 'Kies welke e-mails u van ons wilt ontvangen.' },
+        },
+        login: {
+          form: { title: 'Inloggen', text: 'Vul het e-mailadres en het wachtwoord van uw account in.' },
+          forgot: { title: 'Wachtwoord vergeten?', text: 'Klik hier. Wij mailen u een link om een nieuw wachtwoord te kiezen.' },
+          signup: { title: 'Nog geen account?', text: 'Maak er hier gratis een aan. Dat duurt ongeveer een minuut.' },
+        },
+        signup: {
+          form: { title: 'Uw gegevens', text: 'Vul uw eigen naam, e-mailadres en telefoonnummer in.' },
+          password: { title: 'Kies een wachtwoord', text: 'Kies een sterk wachtwoord. Met het oogje kunt u zien wat u typt.' },
+          terms: { title: 'Akkoord en klaar', text: 'Ga akkoord met de voorwaarden en klik op de knop om uw account aan te maken.' },
+        },
+        tutorial: {
+          player: { title: 'De uitleg, stap voor stap', text: 'Ga met "Volgende" en "Vorige" door de stappen. Met "Lees voor" leest de robot de stap voor.' },
+          written: { title: 'Alles op een rij', text: 'Dezelfde stappen onder elkaar, om rustig na te lezen of uit te printen.' },
+          cta: { title: 'Klaar om te beginnen?', text: 'Meld uw zending aan, of neem contact met ons op als u nog vragen heeft.' },
+        },
+      },
+      helpButton: {
+        label: 'Hulp',
+        menuLabel: 'Hulp',
+        pageTour: 'Rondleiding door deze pagina',
+        shipping: 'Verzendinformatie',
+        howToOrder: 'Zo bestelt u',
+        track: 'Mijn pakket volgen',
+        contact: 'Contact opnemen',
+      },
     },
     tutorial: {
       eyebrow: 'UITLEG',
@@ -2183,12 +2347,15 @@ export const translations = {
     },
     guide: {
       eyebrow: 'About this page',
+      greeting: 'Hi! How can I help?',
+      onThisPage: 'On this page',
+      more: 'Read more',
+      less: 'Show less',
       panelLabel: 'About this page',
-      openLabel: 'Open the guide for this page',
+      openLabel: 'Open help and the guide for this page',
       close: 'Close',
       listen: 'Read aloud',
       stop: 'Stop',
-      full: 'Full guide',
       dontShow: 'Stop showing this automatically',
       pages: {
         home: {
@@ -2269,20 +2436,180 @@ export const translations = {
         },
       },
     },
-    // The welcome pop-up for first-time visitors
-    // (src/components/WelcomeGuide). The step texts themselves are shared
-    // with the tutorial page: see tutorial.steps below.
-    welcome: {
-      eyebrow: 'New here?',
-      title: 'Welcome to Pay Less Shop More',
-      intro:
-        'Order from Dutch webshops and we ship it to the island. In a few short steps we show you how it works.',
-      start: 'Show me how it works',
-      skip: 'Skip',
-      close: 'Close',
-      // {current} and {total} are filled in by the component.
+    // The onboarding tour (src/components/Tutorial) and its "?" help button.
+    // Steps: onboarding.steps.<id> must match the ids in
+    // src/components/Tutorial/tutorialSteps.js. Each step has a `title` and
+    // optionally `text`, `points` (bullet list), `note` and `warning`.
+    // Shipping times are NOT here: they come from src/data/destinations.js.
+    onboarding: {
       stepOf: 'Step {current} of {total}',
-      fullGuide: 'Full guide',
+      progressLabel: 'Tour progress',
+      duration: 'About 2 minutes',
+      start: 'Start tutorial',
+      skip: 'Skip tutorial',
+      close: 'Close tutorial',
+      back: 'Back',
+      next: 'Next',
+      finish: 'Finish',
+      openWebsite: 'Open website',
+      steps: {
+        welcome: {
+          title: 'Welcome to Pay Less Shop More',
+          text: "Let's take a quick tour and show you how shopping and shipping works.",
+        },
+        account: {
+          title: 'Create your account',
+          text: 'Create your Pay Less Shop More account so you can manage your orders, shipments, and personal information.',
+          points: [
+            'Use the "Sign up" button at the top of the page. On a phone, you find it in the menu (☰).',
+            'Enter your own personal information: your own name, email address and phone number.',
+          ],
+        },
+        shop: {
+          title: 'Shop at your favorite stores',
+          text: 'Buy products from Dutch online stores and have your purchases delivered to our warehouse in the Netherlands.',
+          points: [
+            'At checkout, use the Pay Less Shop More warehouse address as the delivery address. The next step shows you exactly what to enter.',
+          ],
+          note: 'Pay for your order straight away. Paying afterwards is not allowed.',
+        },
+        address: {
+          title: 'Send your order to our warehouse',
+          text: 'When ordering from a Dutch webshop, use this address for both the billing details and the delivery address.',
+          warning: 'Make sure you enter the warehouse address exactly as shown, for both billing and delivery. If it is not filled in correctly, we cannot process your shipment.',
+        },
+        // {email} is filled in from src/data/company.js.
+        register: {
+          title: 'Register your shipment with us',
+          text: 'After ordering, let us know that a parcel is on its way to our warehouse. That way we know it is yours as soon as it arrives.',
+          points: [
+            'Fill in the booking form ("Booking" at the top of the page), or email us at {email}.',
+            'Send us the invoice from the webshop as soon as possible.',
+          ],
+        },
+        warehouse: {
+          title: 'Your package arrives at our warehouse',
+          text: 'Once your package arrives at our warehouse, we process it and prepare it for shipping to your destination.',
+        },
+        shipping: {
+          title: 'Choose your shipping method',
+        },
+        track: {
+          title: 'Track your shipment',
+          text: 'Use Track & Trace to check the latest available information about your shipment.',
+          points: [
+            'Track & Trace is in your account: log in and click your name at the top of the page.',
+            'Information appears as soon as it is available for your shipment.',
+          ],
+        },
+        help: {
+          title: 'Need help?',
+          text: 'Our team is happy to help with questions about:',
+        },
+      },
+      address: {
+        firstName: 'First name',
+        lastName: 'Last name',
+        street: 'Address',
+        postcode: 'Postal code',
+        city: 'City',
+        country: 'Country',
+        countryValue: 'Netherlands',
+        copy: 'Copy address',
+        copied: 'Address copied!',
+        copyFailed: 'Copying did not work. Please select the address and copy it yourself.',
+      },
+      flow: {
+        label: 'From the online store to your destination',
+        store: 'Online store',
+        warehouse: 'Pay Less Shop More warehouse',
+        shipping: 'Shipping',
+        destination: 'Your destination',
+      },
+      shipping: {
+        allIslands: 'All islands',
+        faster: 'Need a faster option?',
+        disclaimer: 'These are estimates. The actual time depends on the shipping schedule and circumstances.',
+        quoteQuestion: 'Want to know the price?',
+        quoteLink: 'Choose your island and request a quote',
+      },
+      help: {
+        topics: [
+          'Shipping costs',
+          'Customs',
+          'Large items',
+          'Business shipping',
+          'Other destinations',
+          'General questions',
+        ],
+        contact: 'Contact our team:',
+        again: 'On any page, click the robot in the bottom-left corner and choose "Tour this page": it explains that page. On the home page it starts this tour again.',
+        doneTitle: "You're all set!",
+        doneText: 'You now know the basics of shopping and shipping with Pay Less Shop More.',
+      },
+      // The page tours: one per page, started from the robot's "Tour this
+      // page". The step ids match pageTours in
+      // src/components/Tutorial/tutorialSteps.js.
+      pages: {
+        services: {
+          intro: { title: 'Our services', text: 'This page explains what we do for you, from our warehouse in the Netherlands to delivery on the island.' },
+          islands: { title: 'The islands', text: 'Click an island to see how shipping there works, how long it takes, and to request a quote.' },
+          offer: { title: 'What we do for you', text: 'Sea and air freight, receiving and combining your parcels, customs, and delivery on the island.' },
+          partners: { title: 'Our partners', text: 'The companies we work with to get your shipment onto the island.' },
+          contact: { title: 'Any questions?', text: 'Want to know what we can do for you? Use this button to get in touch.' },
+        },
+        booking: {
+          intro: { title: 'The booking form', text: 'This is where you register your shipment with us, instead of on paper. We add the shipping number, volume and weight once your shipment reaches us.' },
+          shipment: { title: 'Your shipment', text: 'Choose how you are sending it (sea or air freight) and where it is going.' },
+          people: { title: 'Sender and recipient', text: 'Fill in your own details here, and below them the details of the person receiving it on the island.' },
+          consignment: { title: 'What you are sending', text: 'Tell us what is in the shipment, how many items there are and what it is worth.' },
+          terms: { title: 'Terms and signature', text: 'Agree to the terms, type your name as your signature, and send the booking form.' },
+        },
+        contact: {
+          methods: { title: 'How to reach us', text: 'Email us, call us or visit. Click one of the three to email, call, or see the way.' },
+          form: { title: 'Send us a message', text: 'Rather write? Fill in this form. We reply by email.' },
+        },
+        destinations: {
+          list: { title: 'Choose your island', text: 'Click an island. There you can read how long shipping takes and how it works, and request a quote.' },
+        },
+        destination: {
+          facts: { title: 'At a glance', text: 'How long the crossing takes, where your shipment arrives and how delivery works.' },
+          how: { title: 'How your order gets there', text: 'Step by step: from your order in the Netherlands to delivery on this island.' },
+          faq: { title: 'Frequently asked questions', text: 'Answers to what people ask most about shipping to this island. Click a question to read the answer.' },
+          quote: { title: 'Request a quote', text: 'Fill in your name and email address, upload your invoice, and send the request. We email you an indicative price.' },
+        },
+        profile: {
+          details: { title: 'Your details', text: 'Your name, email address, phone number and delivery address. Keep them up to date so we can reach you.' },
+          tracking: { title: 'Track & Trace', text: 'Follow your shipment here. Information appears as soon as it is available for your shipment.' },
+          shipments: { title: 'My shipments', text: 'All your shipments in one list, with where each one is now.' },
+          invoices: { title: 'Invoices and receipts', text: 'Find our invoices here, and upload the receipts for your orders.' },
+          notifications: { title: 'Notifications', text: 'Choose which emails you want to receive from us.' },
+        },
+        login: {
+          form: { title: 'Log in', text: 'Enter the email address and password of your account.' },
+          forgot: { title: 'Forgotten your password?', text: 'Click here. We email you a link to choose a new one.' },
+          signup: { title: 'No account yet?', text: 'Create one here for free. It takes about a minute.' },
+        },
+        signup: {
+          form: { title: 'Your details', text: 'Fill in your own name, email address and phone number.' },
+          password: { title: 'Choose a password', text: 'Choose a strong password. The eye button shows what you are typing.' },
+          terms: { title: 'Agree and done', text: 'Agree to the terms and click the button to create your account.' },
+        },
+        tutorial: {
+          player: { title: 'The guide, step by step', text: 'Use "Next" and "Back" to go through the steps. "Read aloud" has the robot read the step to you.' },
+          written: { title: 'Every step in writing', text: 'The same steps one after another, to read at your own pace or print out.' },
+          cta: { title: 'Ready to start?', text: 'Register your shipment, or contact us if you still have questions.' },
+        },
+      },
+      helpButton: {
+        label: 'Help',
+        menuLabel: 'Help',
+        pageTour: 'Tour this page',
+        shipping: 'Shipping information',
+        howToOrder: 'How to order',
+        track: 'How to track my package',
+        contact: 'Contact us',
+      },
     },
     tutorial: {
       eyebrow: 'GUIDE',
@@ -3359,12 +3686,15 @@ export const translations = {
     },
     guide: {
       eyebrow: 'Splikashon di e página aki',
+      greeting: 'Halo! Kon mi por yudabo?',
+      onThisPage: 'Riba e página aki',
+      more: 'Lesa mas',
+      less: 'Mustra ménos',
       panelLabel: 'Splikashon di e página aki',
-      openLabel: 'Habri e splikashon di e página aki',
+      openLabel: 'Habri yudansa i e splikashon di e página aki',
       close: 'Sera',
       listen: 'Lesa na bos haltu',
       stop: 'Stop',
-      full: 'Gia kompletu',
       dontShow: 'No mustra esaki outomátikamente mas',
       pages: {
         home: {
@@ -3445,21 +3775,182 @@ export const translations = {
         },
       },
     },
-    // The welcome pop-up for first-time visitors
-    // (src/components/WelcomeGuide). The step texts themselves are shared
-    // with the tutorial page: see tutorial.steps below.
+    // The onboarding tour (src/components/Tutorial) and its "?" help button.
+    // Steps: onboarding.steps.<id> must match the ids in
+    // src/components/Tutorial/tutorialSteps.js. Each step has a `title` and
+    // optionally `text`, `points` (bullet list), `note` and `warning`.
+    // Shipping times are NOT here: they come from src/data/destinations.js.
     // NOTE: needs review by a native speaker, like the rest of this section.
-    welcome: {
-      eyebrow: 'Nobo aki?',
-      title: 'Bon bini na Pay Less Shop More',
-      intro:
-        'Kumpra na webshopnan hulandes i nos ta manda bo kumpra pa e isla. Den un par di paso kòrtiku nos ta mustra bo kon e ta funshoná.',
-      start: 'Mustra mi kon e ta funshoná',
-      skip: 'Salta',
-      close: 'Sera',
-      // {current} and {total} are filled in by the component.
+    onboarding: {
       stepOf: 'Paso {current} di {total}',
-      fullGuide: 'Gia kompletu',
+      progressLabel: 'Progreso di e gia',
+      duration: 'Mas o ménos 2 minüt',
+      start: 'Kuminsá e gia',
+      skip: 'Salta e gia',
+      close: 'Sera e gia',
+      back: 'Atras',
+      next: 'Siguiente',
+      finish: 'Kaba',
+      openWebsite: 'Habri e website',
+      steps: {
+        welcome: {
+          title: 'Bon bini na Pay Less Shop More',
+          text: 'Laga nos hasi un tur kòrtiku i mustra bo kon kumpra i manda ta funshoná.',
+        },
+        account: {
+          title: 'Traha bo kuenta',
+          text: 'Traha bo kuenta di Pay Less Shop More pa bo por maneha bo ordernan, enbionan i informashon personal.',
+          points: [
+            "Usa e boton \"Registrá\" ariba den e página. Riba un telefòn bo ta hañ'é den e menu (☰).",
+            'Yena bo mes informashon personal: bo mes nòmber, e-mail i number di telefòn.',
+          ],
+        },
+        shop: {
+          title: 'Kumpra na bo tiendanan faborito',
+          text: 'Kumpra produktonan na webshopnan hulandes i laga nan entregá bo kompranan na nos warehouse na Hulanda.',
+          points: [
+            'Ora bo ta paga, usa e adres di warehouse di Pay Less Shop More komo adres di entrega. Den e siguiente paso bo ta mira eksaktamente kiko pa yena.',
+          ],
+          note: 'Paga bo order mesora. No ta permití pa paga despues.',
+        },
+        address: {
+          title: 'Manda bo order pa nos warehouse',
+          text: 'Ora bo ta ordená na un webshop hulandes, usa e adres aki pa e informashon di faktura i tambe pa e adres di entrega.',
+          warning: 'Sigurá bo ta yena e adres di warehouse eksaktamente manera e ta aki, pa faktura i pa entrega. Si e no ta yená korekto, nos no por prosesá bo enbio.',
+        },
+        // {email} is filled in from src/data/company.js.
+        register: {
+          title: 'Anunsiá bo enbio serka nos',
+          text: 'Despues di ordená, laga nos sa ku un pakete ta na kaminda pa nos warehouse. Asina nos sa ku e ta di bo apenas e yega.',
+          points: [
+            'Yena e formulario di boeking ("Boeking" ariba den e página), of manda nos un e-mail na {email}.',
+            'Manda nos e faktura di e webshop mas lihé posibel.',
+          ],
+        },
+        warehouse: {
+          title: 'Bo pakete ta yega na nos warehouse',
+          text: 'Ora bo pakete yega na nos warehouse, nos ta prosesá esaki i prepará e pa manda pa bo destinashon.',
+        },
+        shipping: {
+          title: 'Skohe bo manera di manda',
+        },
+        track: {
+          title: 'Sigui bo enbio',
+          text: 'Usa Track & Trace pa wak e último informashon disponibel tokante bo enbio.',
+          points: [
+            'Track & Trace ta den bo kuenta: drenta i klek riba bo nòmber ariba den e página.',
+            'E informashon ta aparesé apenas e ta disponibel pa bo enbio.',
+          ],
+        },
+        help: {
+          title: 'Bo mester yudansa?',
+          text: 'Nos tim ta yuda bo ku gusto ku preguntanan tokante:',
+        },
+      },
+      address: {
+        firstName: 'Nòmber',
+        lastName: 'Fam',
+        street: 'Adres',
+        postcode: 'Kódigo postal',
+        city: 'Stat',
+        country: 'Pais',
+        countryValue: 'Hulanda',
+        copy: 'Kopia adres',
+        copied: 'Adres kopiá!',
+        copyFailed: "Kopiamentu no a bai bon. Selekshoná e adres i kopi'é bo mes.",
+      },
+      flow: {
+        label: 'For di webshop te bo destinashon',
+        store: 'Webshop',
+        warehouse: 'Warehouse di Pay Less Shop More',
+        shipping: 'Enbio',
+        destination: 'Bo destinashon',
+      },
+      shipping: {
+        allIslands: 'Tur isla',
+        faster: "Bo mester'é mas lihé?",
+        disclaimer: 'Esakinan ta estimashon. E tempu real ta dependé di e skedel di enbio i e sirkunstansianan.',
+        quoteQuestion: 'Bo ke sa kuantu e ta kosta?',
+        quoteLink: 'Skohe bo isla i pidi un preisnota',
+      },
+      help: {
+        topics: [
+          'Kosto di enbio',
+          'Aduana',
+          'Kosnan grandi',
+          'Enbio komersial',
+          'Otro destinashon',
+          'Preguntanan general',
+        ],
+        contact: 'Tuma kontakto ku nos tim:',
+        again: 'Riba kada página, klek riba e robot abou na banda robes i skohe "Tur dor di e página aki": e ta splika e página ei. Riba e página prinsipal e ta kuminsá e gia aki di nobo.',
+        doneTitle: 'Bo ta kla!',
+        doneText: 'Awor bo sa e base di kumpra i manda ku Pay Less Shop More.',
+      },
+      // The page tours: one per page, started from the robot's "Tur dor di
+      // e página aki". The step ids match pageTours in
+      // src/components/Tutorial/tutorialSteps.js.
+      // NOTE: needs review by a native speaker.
+      pages: {
+        services: {
+          intro: { title: 'Nos servisionan', text: 'E página aki ta splika kiko nos ta hasi pa bo, for di nos warehouse na Hulanda te na entrega riba e isla.' },
+          islands: { title: 'E islanan', text: 'Klek riba un isla pa mira kon manda pa ei ta funshoná, kuantu tempu e ta tuma, i pa pidi un preisnota.' },
+          offer: { title: 'Kiko nos ta hasi pa bo', text: 'Fleta pa laman i pa aire, risibí i kombiná bo paketenan, aduana, i entrega riba e isla.' },
+          partners: { title: 'Nos sosionan', text: 'E kompanianan ku nos ta traha kuné pa hiba bo enbio riba e isla.' },
+          contact: { title: 'Bo tin pregunta?', text: 'Bo ke sa kiko nos por hasi pa bo? Ku e boton aki bo ta tuma kontakto ku nos.' },
+        },
+        booking: {
+          intro: { title: 'E formulario di boeking', text: 'Akinan bo ta anunsiá bo enbio serka nos, en bes di riba papel. Nos ta yena e number di enbio, e volumen i e peso ora bo enbio yega serka nos.' },
+          shipment: { title: 'Bo enbio', text: 'Skohe kon bo ta manda (pa laman òf pa aire) i pa unda.' },
+          people: { title: 'Remitente i risibidó', text: 'Yena bo mes informashon akinan, i abou esun di e persona ku ta risibí riba e isla.' },
+          consignment: { title: 'Kiko bo ta manda', text: 'Konta nos kiko tin den e enbio, kuantu pida e ta i kuantu e bal.' },
+          terms: { title: 'Kondishon i firma', text: 'Aseptá e kondishonnan, skirbi bo nòmber komo firma i manda e formulario.' },
+        },
+        contact: {
+          methods: { title: 'Kon pa yega na nos', text: 'Manda nos un e-mail, yama nos òf pasa serka nos. Klek riba un di e tres pa manda e-mail, yama, òf mira e kaminda.' },
+          form: { title: 'Manda nos un mensahe', text: 'Bo ta preferá skirbi? Yena e formulario aki. Nos ta kontestá pa e-mail.' },
+        },
+        destinations: {
+          list: { title: 'Skohe bo isla', text: 'Klek riba un isla. Ei bo por lesa kuantu tempu e enbio ta tuma i kon e ta funshoná, i pidi un preisnota.' },
+        },
+        destination: {
+          facts: { title: 'Na kòrtiku', text: 'Kuantu tempu e biahe ta tuma, unda bo enbio ta yega i kon e entrega ta bai.' },
+          how: { title: 'Asina bo order ta yega', text: 'Paso pa paso: for di bo order na Hulanda te na entrega riba e isla aki.' },
+          faq: { title: 'Preguntanan frekuente', text: 'Kontestanan riba loke hende ta puntra mas tokante manda pa e isla aki. Klek riba un pregunta pa lesa e kontesta.' },
+          quote: { title: 'Pidi un preisnota', text: 'Yena bo nòmber i direkshon di e-mail, upload bo faktura i manda e petishon. Nos ta manda bo un preis indikativo pa e-mail.' },
+        },
+        profile: {
+          details: { title: 'Bo informashon', text: 'Bo nòmber, e-mail, number di telefòn i adres di entrega. Tene nan al dia pa nos por yega na bo.' },
+          tracking: { title: 'Track & Trace', text: 'Sigui bo enbio akinan. E informashon ta aparesé apenas e ta disponibel pa bo enbio.' },
+          shipments: { title: 'Mi enbionan', text: 'Tur bo enbionan riba un lista, ku unda kada un ta awor.' },
+          invoices: { title: 'Faktura i resibu', text: 'Akinan bo ta haña nos fakturanan, i bo ta upload e resibunan di bo kompranan.' },
+          notifications: { title: 'Notifikashon', text: 'Skohe kua e-mail bo ke risibí di nos.' },
+        },
+        login: {
+          form: { title: 'Drenta', text: 'Yena e direkshon di e-mail i e kontraseña di bo kuenta.' },
+          forgot: { title: 'Bo a lubidá bo kontraseña?', text: 'Klek akinan. Nos ta manda bo un link pa skohe un kontraseña nobo.' },
+          signup: { title: 'Ainda bo no tin kuenta?', text: 'Traha un akinan grátis. E ta tuma mas o ménos un minüt.' },
+        },
+        signup: {
+          form: { title: 'Bo informashon', text: 'Yena bo mes nòmber, e-mail i number di telefòn.' },
+          password: { title: 'Skohe un kontraseña', text: 'Skohe un kontraseña fuerte. Ku e wowo bo por mira kiko bo ta tek.' },
+          terms: { title: 'Aseptá i kla', text: 'Aseptá e kondishonnan i klek riba e boton pa traha bo kuenta.' },
+        },
+        tutorial: {
+          player: { title: 'E gia, paso pa paso', text: 'Usa "Siguiente" i "Atras" pa pasa dor di e pasonan. Ku "Lesa na bos haltu" e robot ta lesa e paso pa bo.' },
+          written: { title: 'Tur paso na skirbi', text: 'E mesun pasonan un tras di otro, pa lesa kalmo òf pa imprimí.' },
+          cta: { title: 'Kla pa kuminsá?', text: 'Anunsiá bo enbio, òf tuma kontakto ku nos si bo tin pregunta ainda.' },
+        },
+      },
+      helpButton: {
+        label: 'Yudansa',
+        menuLabel: 'Yudansa',
+        pageTour: 'Tur dor di e página aki',
+        shipping: 'Informashon di enbio',
+        howToOrder: 'Kon pa ordená',
+        track: 'Kon pa sigui mi pakete',
+        contact: 'Tuma kontakto',
+      },
     },
     tutorial: {
       eyebrow: 'GIA',

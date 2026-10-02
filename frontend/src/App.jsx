@@ -9,7 +9,7 @@ import RequireWarehouse from './components/RequireWarehouse/RequireWarehouse';
 import RequireDriver from './components/RequireDriver/RequireDriver';
 import LanguageSwitcher from './components/LanguageSwitcher/LanguageSwitcher';
 import PageGuide from './components/PageGuide/PageGuide';
-import WelcomeGuide from './components/WelcomeGuide/WelcomeGuide';
+import TutorialProvider from './components/Tutorial/TutorialProvider';
 import Footer from './components/Footer/Footer';
 import { useAuth } from './auth/useAuth';
 
@@ -112,7 +112,9 @@ export default function App() {
   );
 
   return (
-    <>
+    // The onboarding tour wraps the whole site, so the robot's "Help" list
+    // and any page can start it. Off on the staff screens, like the guide below.
+    <TutorialProvider enabled={!isDashboard}>
       {!isDashboard && <Header />}
       {/* Boundary outside Suspense: a chunk that fails to download throws
           rather than suspending, so only the boundary can catch it. */}
@@ -239,16 +241,13 @@ export default function App() {
           dashboard is English-only, so the switcher has nothing to offer
           there. */}
       {!isDashboard && <LanguageSwitcher />}
-      {/* The robot in the corner, explaining whatever page is showing. Off
+      {/* The robot in the corner: explains whatever page is showing, and
+          holds the "Help" list (restart the tour, shipping info, ...). Off
           the staff screens for the same reason the switcher is: those are an
           application, and their own onboarding is a different job. */}
       {/* Keyed on the path: a new page gets a fresh guide, closed, with the
           previous page's narration stopped as the old one unmounts. */}
       {!isDashboard && <PageGuide key={pathname} />}
-      {/* The "how ordering works" pop-up a first-time visitor sees once.
-          It decides for itself whether to open (signed out, not seen before
-          in this browser); see the notes at the top of WelcomeGuide.jsx. */}
-      {!isDashboard && <WelcomeGuide />}
-    </>
+    </TutorialProvider>
   );
 }

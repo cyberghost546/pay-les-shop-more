@@ -131,7 +131,14 @@ export default function Login() {
           </p>
         )}
 
-        <form className={styles.form} onSubmit={handleSubmit} noValidate>
+        {/* data-tour="..." on this page: what the robot's page tour
+            highlights (src/components/Tutorial/tutorialSteps.js). */}
+        <form
+          className={styles.form}
+          onSubmit={handleSubmit}
+          noValidate
+          data-tour="login-form"
+        >
           <label className={styles.field}>
             <span className={styles.label}>{t('login.email')}</span>
             <input
@@ -221,6 +228,7 @@ export default function Login() {
 
             <Link
               to="/forgot-password"
+              data-tour="login-forgot"
               // Carries whatever they have already typed, so the next page
               // does not ask for it again.
               state={{ email: form.email.trim() }}
@@ -235,7 +243,7 @@ export default function Login() {
           </button>
         </form>
 
-        <p className={styles.footer}>
+        <p className={styles.footer} data-tour="login-signup">
           {t('login.noAccount')}{' '}
           <Link to="/signup" className={styles.footerLink}>
             {t('login.signupLink')}

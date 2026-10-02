@@ -247,6 +247,8 @@
 }
 
 .speaker {
+  display: inline-flex;
+  vertical-align: -0.2em;
   margin-right: 0.4rem;
 }
 

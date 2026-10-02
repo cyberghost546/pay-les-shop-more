@@ -4,6 +4,12 @@
 // page it can explain what that page is for and what to do on it, in the
 // active language, read aloud if asked.
 //
+// It is also the site's one help button. Under the page explanation its panel
+// has a "Help" list (TutorialHelpMenu, in src/components/Tutorial): restart
+// the onboarding tour, shipping information, how to order, tracking, contact.
+// On pages it has no explanation for (the tutorial page, 404, ...) the panel
+// shows only that list, so help is available everywhere.
+//
 // Who it interrupts, and when, is the whole design of this thing:
 //
 //   - Signed in: it opens itself once per page, the first time that account
@@ -21,8 +27,15 @@
 // wrapped.
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import RobotGuide from '../RobotGuide/RobotGuide';
+import TutorialHelpMenu from '../Tutorial/TutorialHelpMenu';
+import {
+  ChevronRightIcon,
+  CloseIcon,
+  SpeakerIcon,
+  StopIcon,
+} from '../Icons/icons';
 import { useAuth } from '../../auth/useAuth';
 import { useLanguage } from '../../i18n/useLanguage';
 import { useSpeech } from '../../hooks/useSpeech';
@@ -46,9 +59,9 @@ const PAGES = [
   { match: (path) => path === '/signup', key: 'signup' },
 ];
 
-// The guide has nothing to add on the tutorial page — that page is the same
-// copy at length — and the 404 and password-reset pages are not somewhere to
-// be taught anything.
+// No page explanation on the tutorial page — that page is the same copy at
+// length — or on the 404 and password-reset pages, which are not somewhere
+// to be taught anything. The robot still shows there, with only "Help".
 function pageKeyFor(pathname) {
   return PAGES.find((page) => page.match(pathname))?.key ?? null;
 }
@@ -97,6 +110,8 @@ export default function PageGuide() {
   const { supported, speaking, speak, stop } = useSpeech(language);
 
   const [open, setOpen] = useState(false);
+  // Whether the page explanation is shown in full ("Read more").
+  const [expanded, setExpanded] = useState(false);
   const [off, setOff] = useState(readOff);
 
   const pageKey = pageKeyFor(pathname);
@@ -163,16 +178,16 @@ export default function PageGuide() {
     close();
   }
 
-  // Nothing sensible to say about this route.
-  if (!pageKey) return null;
-
+  // data-tour="help" on both the button and the open panel: the onboarding
+  // tour's last step highlights whichever of the two is showing.
   if (!open) {
     return (
       <button
         type="button"
+        data-tour="help"
         className={styles.launcher}
         onClick={() => {
-          if (userId) rememberSeen(userId, pageKey);
+          if (userId && pageKey) rememberSeen(userId, pageKey);
           setOpen(true);
         }}
         aria-label={t('guide.openLabel')}
@@ -183,55 +198,91 @@ export default function PageGuide() {
     );
   }
 
+  // The panel, top to bottom:
+  //   1. The robot, a greeting, a small speaker button (read aloud) and ×.
+  //   2. "On this page": the page's title and a short explanation, cut off
+  //      after a few lines with "Read more" to see all of it.
+  //   3. The help options as a grid of tiles (TutorialHelpMenu).
+  //   4. "Stop showing this automatically", small, at the bottom.
+  // Pages without an explanation show only 1 and 3.
   return (
-    <aside className={styles.panel} aria-label={t('guide.panelLabel')}>
+    <aside
+      className={styles.panel}
+      aria-label={t('guide.panelLabel')}
+      data-tour="help"
+    >
       <div className={styles.head}>
         <RobotGuide className={styles.panelRobot} speaking={speaking} />
-        <div>
-          <p className={styles.eyebrow}>{t('guide.eyebrow')}</p>
-          <h2 className={styles.title}>{title}</h2>
-        </div>
-        <button
-          type="button"
-          className={styles.close}
-          onClick={close}
-          aria-label={t('guide.close')}
-        >
-          ×
-        </button>
-      </div>
+        <h2 className={styles.greeting}>{t('guide.greeting')}</h2>
 
-      <p className={styles.body}>{body}</p>
-
-      {bullets.length > 0 && (
-        <ul className={styles.bullets}>
-          {bullets.map((line) => (
-            <li key={line}>{line}</li>
-          ))}
-        </ul>
-      )}
-
-      <div className={styles.actions}>
-        {supported && (
+        {/* Read aloud, as an icon: the label is in aria-label and the
+            tooltip. Only where there is a page explanation to read. */}
+        {pageKey && supported && (
           <button
             type="button"
-            className={`${styles.button} ${speaking ? styles.listening : ''}`}
+            className={`${styles.iconButton} ${speaking ? styles.listening : ''}`}
             onClick={toggleVoice}
             aria-pressed={speaking}
+            aria-label={speaking ? t('guide.stop') : t('guide.listen')}
+            title={speaking ? t('guide.stop') : t('guide.listen')}
           >
-            <span aria-hidden="true">{speaking ? '🔊' : '🔈'}</span>{' '}
-            {speaking ? t('guide.stop') : t('guide.listen')}
+            {speaking ? <StopIcon size={18} /> : <SpeakerIcon size={18} />}
           </button>
         )}
 
-        <Link to="/tutorial" className={styles.link} onClick={close}>
-          {t('guide.full')}
-        </Link>
+        <button
+          type="button"
+          className={styles.iconButton}
+          onClick={close}
+          aria-label={t('guide.close')}
+          title={t('guide.close')}
+        >
+          <CloseIcon size={18} />
+        </button>
       </div>
 
-      <button type="button" className={styles.dismiss} onClick={silence}>
-        {t('guide.dontShow')}
-      </button>
+      {pageKey && (
+        <section className={styles.page}>
+          <p className={styles.eyebrow}>{t('guide.onThisPage')}</p>
+          <h3 className={styles.title}>{title}</h3>
+          {/* Cut to three lines until "Read more" (see .clamped). The full
+              text is always in the page, so screen readers read all of it. */}
+          <p className={`${styles.body} ${expanded ? '' : styles.clamped}`}>{body}</p>
+
+          {expanded && bullets.length > 0 && (
+            <ul className={styles.bullets}>
+              {bullets.map((line) => (
+                <li key={line}>{line}</li>
+              ))}
+            </ul>
+          )}
+
+          <button
+            type="button"
+            className={styles.more}
+            onClick={() => setExpanded((value) => !value)}
+            aria-expanded={expanded}
+          >
+            {expanded ? t('guide.less') : t('guide.more')}
+            <ChevronRightIcon
+              size={16}
+              className={expanded ? styles.moreIconOpen : styles.moreIcon}
+            />
+          </button>
+        </section>
+      )}
+
+      {/* The help options. "How to order" goes to the tutorial page.
+          Choosing anything closes this panel first. */}
+      <TutorialHelpMenu onChoose={close} />
+
+      {/* Only where the panel opens by itself, i.e. where there is a page
+          explanation. */}
+      {pageKey && (
+        <button type="button" className={styles.dismiss} onClick={silence}>
+          {t('guide.dontShow')}
+        </button>
+      )}
     </aside>
   );
 }

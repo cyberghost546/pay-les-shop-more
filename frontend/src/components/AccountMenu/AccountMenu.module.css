@@ -155,3 +155,35 @@
     padding: 0 0.25rem;
   }
 }
+
+/* The website header (inSheet). Placed after the rule above, so on phones
+   and tablets - where this block sits inside the header's ☰ sheet - the
+   name and role stay visible and the menu opens in place under the button,
+   as part of the sheet, rather than floating on top of it. 1100px is the
+   header's own breakpoint (Header.module.css). */
+@media (max-width: 1100px) {
+  .inSheet .accountText,
+  .inSheet .accountChevron {
+    display: flex;
+  }
+
+  .inSheet .accountChevron {
+    display: block;
+  }
+
+  .inSheet .accountButton {
+    width: 100%;
+    padding: 0 0.7rem 0 0.25rem;
+  }
+
+  .inSheet .accountText {
+    flex: 1;
+    max-width: none;
+  }
+
+  .inSheet .accountMenu {
+    position: static;
+    margin-top: 0.4rem;
+    box-shadow: none;
+  }
+}

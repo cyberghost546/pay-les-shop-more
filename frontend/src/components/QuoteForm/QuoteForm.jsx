@@ -143,7 +143,8 @@ export default function QuoteForm({ destination }) {
   }
 
   return (
-    <section className={styles.section}>
+    // data-tour: highlighted by the robot's tour of a destination page.
+    <section className={styles.section} data-tour="quote-form">
       <div className={styles.inner}>
         <header className={styles.head}>
           {/* The form is per-island and says which one. Without it, someone

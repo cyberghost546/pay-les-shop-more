@@ -5,15 +5,16 @@ import { sendContactMessage } from '../../api/contact';
 import { API_ERRORS } from '../../api/client';
 import { useLanguage } from '../../i18n/useLanguage';
 import { usePageMeta } from '../../hooks/usePageMeta';
+import { CONTACT, WAREHOUSE_ADDRESS } from '../../data/company';
 import styles from './Contact.module.css';
 
+// The details themselves are in src/data/company.js, shared with the rest of
+// the site.
 const OFFICE = {
-  street: 'Hertzstraat 10',
-  postcode: '2652 XX',
-  town: 'Berkel en Rodenrijs',
-  phone: '+31 10 767 0 371',
-  phoneHref: 'tel:+31107670371',
-  email: 'info@paylesshopmore.com',
+  street: WAREHOUSE_ADDRESS.street,
+  postcode: WAREHOUSE_ADDRESS.postcode,
+  town: WAREHOUSE_ADDRESS.town,
+  ...CONTACT,
 };
 
 // Google Maps embed centred on the office.
@@ -178,7 +179,13 @@ export default function Contact() {
 
       {/* The three ways to reach us, above the form — most people want one of
           these rather than to fill anything in. */}
-      <section className={styles.methods} aria-label={t('contact.addressTitle')}>
+      {/* data-tour="..." on this page: what the robot's page tour
+          highlights (src/components/Tutorial/tutorialSteps.js). */}
+      <section
+        className={styles.methods}
+        aria-label={t('contact.addressTitle')}
+        data-tour="contact-methods"
+      >
         {METHODS.map((method) => (
           <a
             key={method.id}
@@ -197,7 +204,7 @@ export default function Contact() {
         ))}
       </section>
 
-      <section className={styles.content}>
+      <section className={styles.content} data-tour="contact-form">
         <div className={styles.card}>
           <h2 className={styles.formTitle}>{t('contact.formTitle')}</h2>
 

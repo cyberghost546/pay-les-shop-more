@@ -1,0 +1,764 @@
+/* src/components/Tutorial/Tutorial.module.css
+ *
+ * Styling for the onboarding tour and the "Help" list in the robot's panel.
+ *
+ * Colours are the site's own: navy (--brand-ink) and yellow (--brand-yellow
+ * and friends), defined in src/index.css. Yellow is the "glow" round the
+ * highlighted element and the colour of the main buttons, always with navy
+ * text on it for contrast.
+ *
+ * Built for older visitors too: large text (body 1.05rem+), buttons at least
+ * 48px high, strong contrast, and only simple fades and slides.
+ *
+ * Layers (z-index), from the bottom:
+ *   80   language rail, robot guide + help    (other components)
+ *   100  site header                          (Header.module.css)
+ *   120  the tour: dark layer, spotlight, card
+ */
+
+/* ===== The tour ========================================================= */
+
+.root {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  /* Clicks go to the click shield and the card, not this wrapper. */
+  pointer-events: none;
+}
+
+.root > * {
+  pointer-events: auto;
+}
+
+/* The page darkened all over (steps with nothing to highlight). */
+.dim {
+  position: fixed;
+  inset: 0;
+  background: rgba(7, 26, 48, 0.72);
+  animation: fadeIn 250ms ease-out;
+}
+
+/* The lit "hole" round the highlighted element. The last, enormous shadow is
+   what darkens the rest of the page; the first two are the yellow ring and
+   its glow. */
+.spotlight {
+  position: fixed;
+  border-radius: 12px;
+  pointer-events: none;
+  box-shadow:
+    0 0 0 4px var(--brand-yellow),
+    0 0 28px 10px rgba(253, 224, 71, 0.55),
+    0 0 0 9999px rgba(7, 26, 48, 0.72);
+  /* Glides from one element to the next. */
+  transition:
+    top 300ms ease,
+    left 300ms ease,
+    width 300ms ease,
+    height 300ms ease;
+  animation: glow 2.4s ease-in-out infinite;
+}
+
+/* A slow, gentle breathing of the glow, so the eye finds it. */
+@keyframes glow {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 4px var(--brand-yellow),
+      0 0 28px 10px rgba(253, 224, 71, 0.55),
+      0 0 0 9999px rgba(7, 26, 48, 0.72);
+  }
+  50% {
+    box-shadow:
+      0 0 0 4px var(--brand-yellow),
+      0 0 40px 16px rgba(253, 224, 71, 0.75),
+      0 0 0 9999px rgba(7, 26, 48, 0.72);
+  }
+}
+
+/* Invisible layer that stops clicks reaching the page underneath. */
+.clickShield {
+  position: fixed;
+  inset: 0;
+  background: transparent;
+}
+
+/* The card. On larger screens `top` and `left` are set from
+   TutorialModal.jsx (next to the highlighted element). */
+.card {
+  position: fixed;
+  /* Width and max-height include the padding and border, so the limits
+     set from TutorialModal.jsx are the card's real outer size. */
+  box-sizing: border-box;
+  width: min(480px, calc(100vw - 2rem));
+  max-height: calc(100vh - 2rem);
+  overflow-y: auto;
+  padding: 1.25rem 1.5rem 1.25rem;
+  border-radius: 14px;
+  border: 2px solid var(--brand-yellow);
+  background: #ffffff;
+  color: var(--brand-ink);
+  box-shadow: 0 24px 60px rgba(7, 26, 48, 0.45);
+  transition:
+    top 300ms ease,
+    left 300ms ease;
+  animation: fadeIn 250ms ease-out;
+}
+
+.card:focus {
+  outline: none;
+}
+
+/* Phones: a panel along the bottom of the screen... */
+.sheet {
+  top: auto;
+  left: 0.75rem;
+  right: 0.75rem;
+  bottom: 0.75rem;
+  width: auto;
+  max-height: 72vh;
+  padding: 1.1rem 1.1rem 1rem;
+}
+
+/* The pinned button strip follows the panel's smaller padding. */
+.sheet .footer {
+  bottom: -1rem;
+  margin: 1rem -1.1rem -1rem;
+  padding: 0.75rem 1.1rem 1rem;
+}
+
+/* ...or along the top, when the highlighted element is low down. */
+.sheetTop {
+  top: 0.75rem;
+  bottom: auto;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Each step's content slides in gently. */
+.stepAnimate {
+  animation: stepIn 260ms ease-out;
+}
+
+@keyframes stepIn {
+  from {
+    opacity: 0;
+    transform: translateX(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Progress on the left, × on the right. */
+.cardHead {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  margin-bottom: 0.9rem;
+}
+
+.close {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  margin: -0.4rem -0.6rem 0 0;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: #4b5563;
+  font-size: 1.75rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.close:hover {
+  background: #f3f4f6;
+  color: var(--brand-ink);
+}
+
+/* ----- Progress ----- */
+
+.progress {
+  flex: 1;
+}
+
+.progressText {
+  margin: 0 0 0.4rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #374151;
+}
+
+.progressTrack {
+  height: 8px;
+  border-radius: 999px;
+  background: #e5e7eb;
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--brand-yellow-deep);
+  transition: width 300ms ease;
+}
+
+/* ----- Step text ----- */
+
+.title {
+  margin: 0 0 0.6rem;
+  font-size: 1.5rem;
+  font-weight: 800;
+  line-height: 1.25;
+  color: var(--brand-ink);
+}
+
+.title:focus {
+  outline: none;
+}
+
+.text {
+  margin: 0;
+  font-size: 1.08rem;
+  line-height: 1.65;
+  color: #1f2937;
+}
+
+.textSmall {
+  margin: 0.5rem 0 0;
+  font-size: 0.98rem;
+  line-height: 1.55;
+  color: #374151;
+}
+
+.points {
+  margin: 0.75rem 0 0;
+  padding-left: 1.25rem;
+  font-size: 1.05rem;
+  line-height: 1.6;
+  color: #1f2937;
+}
+
+.points li + li {
+  margin-top: 0.4rem;
+}
+
+/* A yellow warning line ("Pay straight away"). */
+.note,
+.warning {
+  margin: 0.85rem 0 0;
+  padding: 0.65rem 0.85rem;
+  border-left: 4px solid var(--brand-yellow-deep);
+  border-radius: 6px;
+  background: var(--brand-yellow-pale);
+  font-size: 1rem;
+  line-height: 1.55;
+  color: var(--brand-ink);
+}
+
+.warning {
+  font-weight: 700;
+}
+
+/* "About 2 minutes" on the welcome step. */
+.duration {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 1rem 0 0;
+  padding: 0.35rem 0.85rem;
+  border-radius: 999px;
+  background: var(--brand-yellow-pale);
+  font-size: 0.98rem;
+  font-weight: 700;
+  color: var(--brand-ink);
+}
+
+/* ----- Address card ----- */
+
+.addressCard {
+  margin-top: 1rem;
+  padding: 1rem 1.1rem;
+  border: 2px dashed var(--brand-yellow-deep);
+  border-radius: 10px;
+  background: #fffdf3;
+}
+
+.addressList {
+  margin: 0;
+}
+
+.addressRow {
+  display: grid;
+  grid-template-columns: 8.5rem 1fr;
+  gap: 0.5rem;
+  padding: 0.3rem 0;
+  font-size: 1.05rem;
+}
+
+.addressRow + .addressRow {
+  border-top: 1px solid #f1e7b4;
+}
+
+.addressRow dt {
+  color: #4b5563;
+}
+
+.addressRow dd {
+  margin: 0;
+  font-weight: 700;
+  color: var(--brand-ink);
+  /* Lets the visitor select the address by hand too. */
+  user-select: all;
+}
+
+/* "Your own first name": an instruction, not a value to copy. */
+.addressRow dd.ownValue {
+  font-weight: 500;
+  font-style: italic;
+  user-select: text;
+}
+
+.copyButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 48px;
+  margin-top: 0.85rem;
+  padding: 0.6rem 1.1rem;
+  border: 2px solid var(--brand-ink);
+  border-radius: 8px;
+  background: #ffffff;
+  color: var(--brand-ink);
+  font: inherit;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.copyButton:hover {
+  background: var(--brand-ink);
+  color: #ffffff;
+}
+
+.copyStatus {
+  margin: 0.4rem 0 0;
+  font-size: 0.95rem;
+  color: #b91c1c;
+}
+
+.copyStatus:empty {
+  display: none;
+}
+
+/* ----- Store -> warehouse -> shipping -> destination ----- */
+
+.flow {
+  margin: 1rem 0 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.flowItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+.flowBox {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  width: min(300px, 100%);
+  padding: 0.6rem 0.9rem;
+  border: 2px solid #d8e3ee;
+  border-radius: 10px;
+  background: #f8fafc;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--brand-ink);
+}
+
+/* The warehouse is the step this is about: picked out in yellow. */
+.flowItem:nth-child(2) .flowBox {
+  border-color: var(--brand-yellow-deep);
+  background: var(--brand-yellow-pale);
+}
+
+/* The icon on a small white tile inside each box. */
+.flowIcon {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: #ffffff;
+  color: var(--brand-ink);
+}
+
+.flowArrow {
+  display: flex;
+  margin: 0.2rem 0;
+  color: var(--brand-yellow-deep);
+}
+
+/* ----- Shipping cards ----- */
+
+.shippingGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.shippingCard {
+  padding: 0.85rem 0.9rem;
+  border: 2px solid #d8e3ee;
+  border-radius: 10px;
+  background: #f8fafc;
+}
+
+.shippingTitle {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0 0 0.5rem;
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--brand-ink);
+}
+
+.shippingLead {
+  margin: 0 0 0.4rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.shippingList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 1rem;
+}
+
+/* Island name on one line, the days or flight times under it - the same in
+   both cards, so the rows line up whatever the length of the text. */
+.shippingList li {
+  padding: 0.3rem 0;
+}
+
+.shippingList li + li {
+  border-top: 1px solid #e5e7eb;
+}
+
+.shippingList strong {
+  display: block;
+}
+
+.shippingNote {
+  margin: 0.5rem 0 0;
+  font-size: 0.92rem;
+  color: #4b5563;
+}
+
+.disclaimer {
+  margin: 0.75rem 0 0;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: #374151;
+  font-style: italic;
+}
+
+/* "Want to know the price? Request a quote" under the shipping cards. */
+.quoteLine {
+  margin: 0.85rem 0 0;
+  padding: 0.65rem 0.85rem;
+  border-radius: 8px;
+  background: #eef4fa;
+  font-size: 1.02rem;
+  line-height: 1.5;
+  color: var(--brand-ink);
+}
+
+.quoteLine a {
+  font-weight: 700;
+  color: #1d4ed8;
+}
+
+/* ----- Help step ----- */
+
+.topics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0.85rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.topic {
+  padding: 0.4rem 0.8rem;
+  border-radius: 999px;
+  background: #eef4fa;
+  font-size: 0.98rem;
+  font-weight: 600;
+  color: var(--brand-ink);
+}
+
+.contactLine {
+  margin: 0.9rem 0 0;
+  font-size: 1rem;
+  line-height: 1.6;
+  color: #1f2937;
+}
+
+.contactLine a {
+  font-weight: 700;
+  color: #1d4ed8;
+}
+
+.done {
+  margin-top: 1rem;
+  padding: 0.85rem 1rem;
+  border-radius: 10px;
+  background: var(--brand-ink);
+  color: #ffffff;
+}
+
+.doneTitle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: var(--brand-yellow);
+}
+
+.doneText {
+  margin: 0.3rem 0 0;
+  font-size: 1rem;
+  line-height: 1.55;
+}
+
+/* ----- Buttons ----- */
+
+.footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.6rem;
+  /* Pinned to the bottom of the card: on a long step (or a small phone) the
+     text scrolls inside the card, but the buttons always stay in view. The
+     negative margins and matching padding let the white strip reach the
+     card's edges, so text scrolling underneath is hidden. */
+  position: sticky;
+  bottom: -1.25rem;
+  margin: 1.25rem -1.5rem -1.25rem;
+  padding: 0.85rem 1.5rem 1.25rem;
+  background: #ffffff;
+  box-shadow: 0 -10px 12px -12px rgba(7, 26, 48, 0.35);
+}
+
+.footerSpacer {
+  flex: 1;
+}
+
+.primary,
+.secondary {
+  min-height: 48px;
+  padding: 0.65rem 1.3rem;
+  border-radius: 8px;
+  font: inherit;
+  font-size: 1.05rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.primary {
+  border: 2px solid var(--brand-yellow-deep);
+  background: var(--brand-yellow);
+  color: var(--brand-ink);
+}
+
+.primary:hover {
+  background: var(--brand-yellow-light);
+}
+
+.secondary {
+  border: 2px solid #cbd5e1;
+  background: #ffffff;
+  color: var(--brand-ink);
+}
+
+.secondary:hover {
+  border-color: var(--brand-ink);
+}
+
+.skip {
+  min-height: 48px;
+  padding: 0 0.25rem;
+  border: none;
+  background: none;
+  color: #4b5563;
+  font: inherit;
+  font-size: 1rem;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.skip:hover {
+  color: var(--brand-ink);
+}
+
+/* A clear focus ring on everything clickable, for keyboard users. */
+.card button:focus-visible,
+.card a:focus-visible {
+  outline: 3px solid var(--brand-yellow-deep);
+  outline-offset: 2px;
+}
+
+/* ===== The help tiles in the robot's panel (TutorialHelpMenu) ======== */
+
+.helpMenu {
+  margin-top: 0.85rem;
+}
+
+/* Two tiles per row. */
+.helpMenuList {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* An odd tile at the end takes the whole row. */
+.helpMenuList li:last-child:nth-child(odd) {
+  grid-column: 1 / -1;
+}
+
+/* A tile: icon above the label, centred. At least 84px tall, so it is an
+   easy target on a phone. */
+.helpMenuItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  width: 100%;
+  height: 100%;
+  min-height: 84px;
+  padding: 0.65rem 0.5rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: #ffffff;
+  color: var(--brand-ink);
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 700;
+  line-height: 1.25;
+  text-align: center;
+  cursor: pointer;
+  transition:
+    background 150ms,
+    border-color 150ms,
+    transform 150ms;
+}
+
+/* The wide tile at the end: icon beside the label, on one line. */
+.helpMenuList li:last-child:nth-child(odd) .helpMenuItem {
+  flex-direction: row;
+  min-height: 52px;
+}
+
+.helpMenuItem:hover {
+  border-color: var(--brand-yellow-deep);
+  background: #fffdf3;
+  transform: translateY(-1px);
+}
+
+.helpMenuItem:focus-visible {
+  outline: 3px solid var(--brand-yellow-deep);
+  outline-offset: 1px;
+}
+
+/* The icon on a round yellow disc, which fills in on hover. */
+.helpMenuIcon {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: var(--brand-yellow-pale);
+  color: var(--brand-ink);
+}
+
+.helpMenuItem:hover .helpMenuIcon {
+  background: var(--brand-yellow);
+}
+
+/* ===== Phones =========================================================== */
+
+@media (max-width: 640px) {
+  .title {
+    font-size: 1.3rem;
+  }
+
+  .shippingGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .addressRow {
+    grid-template-columns: 7rem 1fr;
+    font-size: 1rem;
+  }
+
+  /* Full-width buttons, easy to tap. Skip goes on its own line under them. */
+  .primary,
+  .secondary {
+    flex: 1 1 40%;
+  }
+
+  .footerSpacer {
+    display: none;
+  }
+
+  .skip {
+    order: 10;
+    width: 100%;
+  }
+}
+
+/* Visitors who asked their system for less motion: no animations. */
+@media (prefers-reduced-motion: reduce) {
+  .dim,
+  .spotlight,
+  .card,
+  .stepAnimate,
+  .progressFill,
+  .helpMenuItem {
+    animation: none;
+    transition: none;
+  }
+}

@@ -160,75 +160,10 @@
 
 /* ------------------------------------------------------------- signed in */
 
-/* The staff shortcut. Outlined, so it is clearly a place to go without
-   competing with the wordmark or shouting like a filled button. */
-.dashboard {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  padding: 0.45rem 0.8rem;
-  border: 1px solid #dbe3ec;
-  border-radius: 8px;
-  color: #1d4ed8;
-  font-size: 0.85rem;
-  font-weight: 600;
-  text-decoration: none;
-  white-space: nowrap;
-  transition: background 0.15s ease, border-color 0.15s ease;
-}
-
-.dashboard:hover {
-  background: #eff6ff;
-  border-color: #bfdbfe;
-}
-
-.dashboardIcon {
-  width: 14px;
-  height: 14px;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 1.8;
-}
-
-/* Name and initials. A person, not a menu item. */
-.identity {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.55rem;
-  padding: 0.3rem 0.6rem 0.3rem 0.3rem;
-  border-radius: 999px;
-  color: #0b2545;
-  text-decoration: none;
-  transition: background 0.15s ease;
-}
-
-.identity:hover {
-  background: #f1f5f9;
-}
-
-.avatar {
+/* The signed-in person is one AccountMenu (src/components/AccountMenu),
+   which brings its own styling. This is only the slot it sits in. */
+.accountSlot {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 30px;
-  height: 30px;
-  flex-shrink: 0;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #2563eb, #0ea5e9);
-  color: #ffffff;
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-}
-
-.identityName {
-  font-size: 0.875rem;
-  font-weight: 600;
-  white-space: nowrap;
-  /* A long name must not push Log out off the bar. */
-  max-width: 14ch;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 /* ---------------------------------------------------------------- actions */
@@ -279,8 +214,6 @@
 
 .quiet:focus-visible,
 .primary:focus-visible,
-.dashboard:focus-visible,
-.identity:focus-visible,
 .navLink:focus-visible,
 .logo:focus-visible,
 .menuButton:focus-visible {
@@ -469,18 +402,10 @@
     border-top: 1px solid #e8ecf1;
   }
 
-  .identity,
-  .dashboard {
+  /* The account menu takes the whole row of the sheet. */
+  .accountSlot {
     flex: 1 1 100%;
-    justify-content: flex-start;
-  }
-
-  .dashboard {
-    padding: 0.7rem 0.9rem;
-  }
-
-  .identityName {
-    max-width: none;
+    flex-direction: column;
   }
 
   .quiet,

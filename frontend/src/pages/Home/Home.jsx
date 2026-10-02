@@ -200,7 +200,8 @@ export default function Home() {
 
           {/* Under the copy, the full width of the hero: the shops customers
               order from, sliding past. The shops are in src/data/shops.js. */}
-          <div className={styles.visual}>
+          {/* data-tour: highlighted by the onboarding tour's shopping step. */}
+          <div className={styles.visual} data-tour="shops">
             <ShopGrid />
           </div>
         </div>

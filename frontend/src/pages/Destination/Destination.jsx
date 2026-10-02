@@ -98,7 +98,10 @@ export default function Destination() {
       <DestinationHero title={name} image={destination.hero.src} />
 
       {/* The three things people ask before anything else. */}
-      <section className={styles.facts}>
+      {/* data-tour="..." on this page: what the robot's page tour
+          highlights (src/components/Tutorial/tutorialSteps.js). The quote
+          form marks itself (data-tour="quote-form"). */}
+      <section className={styles.facts} data-tour="destination-facts">
         <dl className={styles.factList}>
           <div className={styles.fact}>
             <dt className={styles.factLabel}>{t('destination.facts.transit')}</dt>
@@ -126,7 +129,7 @@ export default function Destination() {
         </dl>
       </section>
 
-      <section className={styles.how}>
+      <section className={styles.how} data-tour="destination-how">
         <div className={styles.howInner}>
           <header className={styles.howHead}>
             <p className={styles.eyebrow}>{t('destination.eyebrow')}</p>
@@ -169,7 +172,7 @@ export default function Destination() {
       {/* Answers to what the contact form gets asked most. Plain <details>,
           so it opens without JavaScript and the browser handles the
           keyboard and screen-reader behaviour correctly. */}
-      <section className={styles.faq}>
+      <section className={styles.faq} data-tour="destination-faq">
         <div className={styles.faqInner}>
           <h2 className={styles.faqTitle}>{fill('destination.faq.title')}</h2>
 

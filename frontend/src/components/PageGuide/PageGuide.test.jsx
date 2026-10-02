@@ -10,6 +10,23 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { renderWithProviders } from '../../test/utils';
 import PageGuide from './PageGuide';
+import TutorialProvider from '../Tutorial/TutorialProvider';
+import { COMPLETED_KEY, VERSION_KEY } from '../Tutorial/storage';
+import { TUTORIAL_VERSION } from '../Tutorial/tutorialSteps';
+
+// The panel's "Help" list starts the onboarding tour, so the guide needs the
+// tour's provider around it, as it has in App.jsx. The tour is marked as
+// done so that it does not open over these tests.
+function renderGuide(route) {
+  window.localStorage.setItem(COMPLETED_KEY, 'true');
+  window.localStorage.setItem(VERSION_KEY, String(TUTORIAL_VERSION));
+  return renderWithProviders(
+    <TutorialProvider>
+      <PageGuide />
+    </TutorialProvider>,
+    { route },
+  );
+}
 
 // The auth context is stubbed rather than provided: the real one fires a
 // profile request on mount, which has nothing to do with what is tested here.
@@ -36,10 +53,10 @@ afterEach(() => {
 
 describe('the page guide', () => {
   it('waits in the corner for a visitor who is not signed in', async () => {
-    renderWithProviders(<PageGuide />, { route: '/' });
+    renderGuide('/');
 
     const launcher = screen.getByRole('button', {
-      name: 'Open the guide for this page',
+      name: 'Open help and the guide for this page',
     });
     expect(launcher).toBeInTheDocument();
     expect(screen.queryByRole('complementary')).toBeNull();
@@ -53,25 +70,26 @@ describe('the page guide', () => {
 
   it('opens on click, with the copy for the page it is on', async () => {
     const user = userEvent.setup();
-    renderWithProviders(<PageGuide />, { route: '/tracking' });
+    renderGuide('/tracking');
 
     await user.click(
-      screen.getByRole('button', { name: 'Open the guide for this page' }),
+      screen.getByRole('button', { name: 'Open help and the guide for this page' }),
     );
 
     expect(
       screen.getByRole('heading', { name: 'Follow your shipment' }),
     ).toBeInTheDocument();
     expect(screen.getByText(/Enter your tracking code/)).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Full guide' })).toHaveAttribute(
-      'href',
-      '/tutorial',
-    );
+    // The Help list sits under the explanation.
+    expect(
+      screen.getByRole('button', { name: /Tour this page/ }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /How to order/ })).toBeInTheDocument();
   });
 
   it('introduces itself once to a signed-in account, then leaves it alone', async () => {
     signedIn();
-    const { unmount } = renderWithProviders(<PageGuide />, { route: '/booking' });
+    const { unmount } = renderGuide('/booking');
 
     await waitFor(
       () =>
@@ -85,20 +103,20 @@ describe('the page guide', () => {
 
     // Same account, same page, second visit: the corner button and nothing
     // more.
-    renderWithProviders(<PageGuide />, { route: '/booking' });
+    renderGuide('/booking');
     await new Promise((resolve) => {
       setTimeout(resolve, 1200);
     });
     expect(screen.queryByRole('heading', { name: 'Register a shipment' })).toBeNull();
     expect(
-      screen.getByRole('button', { name: 'Open the guide for this page' }),
+      screen.getByRole('button', { name: 'Open help and the guide for this page' }),
     ).toBeInTheDocument();
   });
 
   it('stops opening itself once the visitor says so', async () => {
     signedIn();
     const user = userEvent.setup();
-    const { unmount } = renderWithProviders(<PageGuide />, { route: '/profile' });
+    const { unmount } = renderGuide('/profile');
 
     await waitFor(
       () => expect(screen.getByRole('heading', { name: 'Your account' })).toBeInTheDocument(),
@@ -113,17 +131,65 @@ describe('the page guide', () => {
     unmount();
 
     // A page this account has never seen, which would otherwise open.
-    renderWithProviders(<PageGuide />, { route: '/services' });
+    renderGuide('/services');
     await new Promise((resolve) => {
       setTimeout(resolve, 1200);
     });
     expect(screen.queryByRole('heading', { name: 'Our services' })).toBeNull();
   });
 
-  it('renders nothing on a page it has nothing to say about', () => {
+  it('offers only Help on a page it has nothing to explain', async () => {
     signedIn();
-    const { container } = renderWithProviders(<PageGuide />, { route: '/tutorial' });
+    const user = userEvent.setup();
+    renderGuide('/tutorial');
 
-    expect(container).toBeEmptyDOMElement();
+    await user.click(
+      screen.getByRole('button', { name: 'Open help and the guide for this page' }),
+    );
+    expect(
+      screen.getByRole('heading', { name: 'Hi! How can I help?' }),
+    ).toBeInTheDocument();
+    // No page box, and so no "Read more" either.
+    expect(screen.queryByRole('button', { name: /Read more/ })).toBeNull();
+    expect(
+      screen.getByRole('button', { name: /Tour this page/ }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'Stop showing this automatically' }),
+    ).toBeNull();
+  });
+
+  it('shows the page text short, with Read more for the rest', async () => {
+    const user = userEvent.setup();
+    renderGuide('/');
+
+    await user.click(
+      screen.getByRole('button', { name: 'Open help and the guide for this page' }),
+    );
+    // The tips under the text only show after "Read more".
+    expect(screen.queryByText(/Open "Services"/)).toBeNull();
+    const more = screen.getByRole('button', { name: /Read more/ });
+    expect(more).toHaveAttribute('aria-expanded', 'false');
+
+    await user.click(more);
+    expect(screen.getByRole('button', { name: /Show less/ })).toHaveAttribute(
+      'aria-expanded',
+      'true',
+    );
+    expect(screen.getByText(/Open "Services"/)).toBeInTheDocument();
+  });
+
+  it('starts the onboarding tour from the Help list', async () => {
+    const user = userEvent.setup();
+    renderGuide('/');
+
+    await user.click(
+      screen.getByRole('button', { name: 'Open help and the guide for this page' }),
+    );
+    await user.click(screen.getByRole('button', { name: /Tour this page/ }));
+
+    // The panel closes and the tour opens at step 1.
+    expect(await screen.findByRole('dialog')).toBeInTheDocument();
+    expect(screen.queryByRole('complementary')).toBeNull();
   });
 });

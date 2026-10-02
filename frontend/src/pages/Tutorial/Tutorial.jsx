@@ -13,19 +13,23 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import RobotGuide from '../../components/RobotGuide/RobotGuide';
+import { SpeakerIcon, StopIcon } from '../../components/Icons/icons';
 import { useLanguage } from '../../i18n/useLanguage';
 import { usePageMeta } from '../../hooks/usePageMeta';
 import { useSpeech } from '../../hooks/useSpeech';
+import { WAREHOUSE_ADDRESS } from '../../data/company';
 import styles from './Tutorial.module.css';
 
 // The warehouse address goes on the visitor's order at the shop. It is not
 // translated — an address is typed into a form exactly as it stands — and it
 // is the one thing on this page that must never drift, so it lives here once
 // and both the step and the copy card below read from it.
+// The address itself lives in src/data/company.js, shared with the
+// onboarding tour.
 const PICKUP = {
-  lastName: 'Pay less Shop More',
-  street: 'Hertzstraat 10',
-  city: '2652 XX Berkel en Rodenrijs',
+  lastName: WAREHOUSE_ADDRESS.lastName,
+  street: WAREHOUSE_ADDRESS.street,
+  city: `${WAREHOUSE_ADDRESS.postcode} ${WAREHOUSE_ADDRESS.town}`,
 };
 
 // `to` puts a button under the step that goes where the step is talking about.
@@ -111,8 +115,9 @@ export default function Tutorial() {
     });
   }
 
+  // data-tour: the onboarding tour highlights this card on its address step.
   const addressCard = (
-    <dl className={styles.address}>
+    <dl className={styles.address} data-tour="address">
       <div className={styles.addressRow}>
         <dt>{t('tutorial.address.firstName')}</dt>
         <dd>{t('tutorial.address.firstNameValue')}</dd>
@@ -154,7 +159,13 @@ export default function Tutorial() {
 
       {/* The player. aria-live so that stepping through it is announced to a
           screen reader, which otherwise sees the page silently rewrite itself. */}
-      <section className={styles.player} aria-label={t('tutorial.playerLabel')}>
+      {/* data-tour="..." on this page: what the robot's page tour
+          highlights (src/components/Tutorial/tutorialSteps.js). */}
+      <section
+        className={styles.player}
+        aria-label={t('tutorial.playerLabel')}
+        data-tour="tutorial-player"
+      >
         <div className={styles.playerInner}>
           <div className={styles.stage}>
             <RobotGuide
@@ -218,8 +229,8 @@ export default function Tutorial() {
                 onClick={toggleNarration}
                 aria-pressed={narrating}
               >
-                <span className={styles.speaker} aria-hidden="true">
-                  {narrating ? '🔊' : '🔈'}
+                <span className={styles.speaker}>
+                  {narrating ? <StopIcon size={18} /> : <SpeakerIcon size={18} />}
                 </span>
                 {narrating ? t('tutorial.stopVoice') : t('tutorial.playVoice')}
               </button>
@@ -264,7 +275,7 @@ export default function Tutorial() {
 
       {/* The written version. Everything at once, for reading rather than
           being walked through. */}
-      <section className={styles.written}>
+      <section className={styles.written} data-tour="tutorial-written">
         <h2 className={styles.writtenTitle}>{t('tutorial.writtenTitle')}</h2>
         <p className={styles.writtenLead}>{t('tutorial.writtenLead')}</p>
 
@@ -309,7 +320,7 @@ export default function Tutorial() {
           })}
         </ol>
 
-        <div className={styles.cta}>
+        <div className={styles.cta} data-tour="tutorial-cta">
           <h2 className={styles.ctaTitle}>{t('tutorial.ctaTitle')}</h2>
           <p className={styles.ctaBody}>{t('tutorial.ctaBody')}</p>
           <div className={styles.ctaActions}>

@@ -20,8 +20,8 @@
 //     <p>Uitleg hier…</p>
 //   </HelpDialog>
 //
-// Used by the quote form (src/components/QuoteForm). The welcome pop-up for
-// new visitors (src/components/WelcomeGuide) is a separate, bigger component
+// Used by the quote form (src/components/QuoteForm). The onboarding tour for
+// new visitors (src/components/Tutorial) is a separate, bigger component
 // because it has several pages and remembers whether it was seen.
 //
 // While open, the window: closes on Escape or a click on the dark background,

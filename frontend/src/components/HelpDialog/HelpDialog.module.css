@@ -1,6 +1,6 @@
 /* src/components/HelpDialog/HelpDialog.module.css
  *
- * Same look as the welcome pop-up (WelcomeGuide). z-index 110 puts it above
+ * Same family as the onboarding tour (Tutorial). z-index 110 puts it above
  * the header (100), the language rail and the robot in the corner (80).
  * --brand-yellow / --brand-ink are defined in src/index.css.
  */

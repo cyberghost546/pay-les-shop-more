@@ -300,7 +300,9 @@ export default function Booking() {
 
   return (
     <main className={styles.page}>
-      <section className={styles.banner}>
+      {/* data-tour="..." on this page: what the robot's page tour
+          highlights (src/components/Tutorial/tutorialSteps.js). */}
+      <section className={styles.banner} data-tour="booking-intro">
         <div className={styles.bannerInner}>
           <p className={styles.eyebrow}>Carib Intertrans</p>
           <h1 className={styles.title}>{t('booking.title')}</h1>
@@ -316,7 +318,7 @@ export default function Booking() {
         )}
 
         {/* 1 — the shipment ------------------------------------------- */}
-        <fieldset className={styles.card}>
+        <fieldset className={styles.card} data-tour="booking-shipment">
           <legend className={styles.legend}>{t('booking.sections.shipment')}</legend>
 
           <div className={styles.field}>
@@ -348,7 +350,7 @@ export default function Booking() {
         </fieldset>
 
         {/* 2 — sender ------------------------------------------------- */}
-        <fieldset className={styles.card}>
+        <fieldset className={styles.card} data-tour="booking-sender">
           <legend className={styles.legend}>{t('booking.sections.sender')}</legend>
 
           <div className={styles.row}>
@@ -392,7 +394,7 @@ export default function Booking() {
         </fieldset>
 
         {/* 4 — the consignment ---------------------------------------- */}
-        <fieldset className={styles.card}>
+        <fieldset className={styles.card} data-tour="booking-consignment">
           <legend className={styles.legend}>{t('booking.sections.consignment')}</legend>
 
           <div className={styles.row}>
@@ -573,7 +575,7 @@ export default function Booking() {
         </fieldset>
 
         {/* 7 — terms and signature ------------------------------------ */}
-        <fieldset className={`${styles.card} ${styles.terms}`}>
+        <fieldset className={`${styles.card} ${styles.terms}`} data-tour="booking-terms">
           <legend className={styles.legend}>{t('booking.sections.terms')}</legend>
 
           {/* Left in Dutch, word for word from the paper form. It is the

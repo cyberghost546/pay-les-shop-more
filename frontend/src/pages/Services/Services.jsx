@@ -201,7 +201,9 @@ export default function Services() {
   return (
     <main>
       {/* 1. The split banner --------------------------------------------- */}
-      <section className={styles.banner}>
+      {/* data-tour="..." on this page: what the robot's page tour
+          highlights (src/components/Tutorial/tutorialSteps.js). */}
+      <section className={styles.banner} data-tour="services-intro">
         <div className={styles.titlePanel}>
           <p className={styles.eyebrow}>{t('services.eyebrow')}</p>
           <h1 className={styles.title}>{t('services.title')}</h1>
@@ -242,7 +244,7 @@ export default function Services() {
       {/* Everything below runs on the navy, as one band. */}
       <div className={styles.page}>
         {/* 3. The islands, as photographs and nothing else --------------- */}
-        <section className={styles.islands}>
+        <section className={styles.islands} data-tour="services-islands">
           <p className={styles.intro}>{t('services.hero.lead')}</p>
 
           {/* The label sits on the list, not the section: it is the list that
@@ -263,7 +265,11 @@ export default function Services() {
         </section>
 
         {/* 4. What we do ------------------------------------------------- */}
-        <section className={styles.offer} aria-labelledby="offer-title">
+        <section
+          className={styles.offer}
+          aria-labelledby="offer-title"
+          data-tour="services-offer"
+        >
           <div className={styles.sectionHead}>
             <h2 className={styles.sectionTitle} id="offer-title">
               {t('services.offer.title')}
@@ -293,7 +299,11 @@ export default function Services() {
         </section>
 
         {/* 5. The companies --------------------------------------------- */}
-        <section className={styles.companies} aria-labelledby="companies-title">
+        <section
+          className={styles.companies}
+          aria-labelledby="companies-title"
+          data-tour="services-partners"
+        >
           <div className={styles.sectionHead}>
             <h2 className={styles.sectionTitle} id="companies-title">
               {t('services.companies.title')}
@@ -313,7 +323,7 @@ export default function Services() {
         </section>
 
         {/* 6. Closing call to action ------------------------------------- */}
-        <section className={styles.cta}>
+        <section className={styles.cta} data-tour="services-contact">
           <div className={styles.ctaInner}>
             <h2 className={styles.ctaTitle}>{t('services.contactCta.title')}</h2>
             <Link className={styles.ctaButton} to="/contact">

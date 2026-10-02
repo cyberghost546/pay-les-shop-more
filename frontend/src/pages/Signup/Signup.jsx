@@ -215,7 +215,14 @@ export default function Signup() {
           </p>
         )}
 
-        <form className={styles.form} onSubmit={handleSubmit} noValidate>
+        {/* data-tour="..." on this page: what the robot's page tour
+            highlights (src/components/Tutorial/tutorialSteps.js). */}
+        <form
+          className={styles.form}
+          onSubmit={handleSubmit}
+          noValidate
+          data-tour="signup-form"
+        >
           {/* Side by side on anything but a narrow phone */}
           <div className={styles.row}>
             <label className={styles.field}>
@@ -304,7 +311,7 @@ export default function Signup() {
             )}
           </label>
 
-          <label className={styles.field}>
+          <label className={styles.field} data-tour="signup-password">
             <span className={styles.label}>{t('signup.password')}</span>
             <span className={styles.passwordWrap}>
               <input
@@ -408,7 +415,7 @@ export default function Signup() {
             )}
           </label>
 
-          <div className={styles.field}>
+          <div className={styles.field} data-tour="signup-terms">
             <label className={styles.terms}>
               <input
                 type="checkbox"

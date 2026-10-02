@@ -25,7 +25,8 @@ export default function Destinations() {
           <p className={styles.subtitle}>{t('destination.indexSubtitle')}</p>
         </header>
 
-        <ul className={styles.grid}>
+        {/* data-tour: highlighted by the robot's page tour. */}
+        <ul className={styles.grid} data-tour="destinations-list">
           {DESTINATIONS.map((item) => (
             <li key={item.slug}>
               <Link to={`/destinations/${item.slug}`} className={styles.card}>
