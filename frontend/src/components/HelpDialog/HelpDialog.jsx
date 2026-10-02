@@ -39,6 +39,8 @@ import styles from './HelpDialog.module.css';
  * @param {string} props.closeLabel     screen-reader text for the × button
  * @param {string} props.doneLabel      text on the button at the bottom
  * @param {import('react').ReactNode} props.children  the explanation itself
+ * @param {boolean} [props.wide]  a wider window (760px instead of 520px),
+ *   for content with more on a line - e.g. a shipment's details
  */
 export default function HelpDialog({
   open,
@@ -47,6 +49,7 @@ export default function HelpDialog({
   closeLabel,
   doneLabel,
   children,
+  wide = false,
 }) {
   const dialogRef = useRef(null);
   // A unique id, so the window can point at its own title for screen readers
@@ -89,7 +92,7 @@ export default function HelpDialog({
     >
       <div
         ref={dialogRef}
-        className={styles.dialog}
+        className={wide ? `${styles.dialog} ${styles.wide}` : styles.dialog}
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}

@@ -320,7 +320,11 @@ class PackageViewSet(
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        return Package.objects.filter(user=self.request.user)
+        # The address comes along: every row reads its country for
+        # `destination`, and one query beats one per shipment.
+        return Package.objects.filter(user=self.request.user).select_related(
+            "delivery_address"
+        )
 
 
 class PackageDocumentViewSet(

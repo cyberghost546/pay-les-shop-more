@@ -1,17 +1,31 @@
 // "Mijn zendingen" on the profile page: the customer's shipments, split
-// under "Nog te verzenden", "Onderweg" and "Ontvangen", each with its status
-// in the page's language and its dates with the time.
+// under "Nog te verzenden", "Onderweg" and "Ontvangen". Each is a slim bar;
+// clicking it opens a pop-up window with how long it will still take, where
+// it is, the facts and its invoice.
 //
-// Read in Dutch, the site's default language, because the English status
-// coming from the server is exactly what these tests make sure is replaced.
+// Read in Dutch, the site's default language, because the English the
+// server sends is exactly what these tests make sure is replaced.
 
 import { screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { renderWithProviders } from '../../test/utils';
 import { listPackages } from '../../api/profile';
 import Shipments from './Shipments';
 
 vi.mock('../../api/profile', () => ({ listPackages: vi.fn() }));
+
+const STAGES = [
+  'paid',
+  'purchased',
+  'received',
+  'measured',
+  'packed',
+  'ready_for_shipping',
+  'in_transit',
+  'arrived',
+  'delivered',
+].map((value) => ({ value, label: `EN ${value}` }));
 
 /** A shipment as the API sends it. */
 function shipment(id, status, extra = {}) {
@@ -25,9 +39,22 @@ function shipment(id, status, extra = {}) {
     locked: ['in_transit', 'arrived', 'delivered', 'cancelled'].includes(status),
     shipped_at: null,
     delivered_at: null,
+    estimated_arrival: null,
     created_at: '2026-09-29T10:12:00Z',
+    destination: 'Curaçao',
+    progress: 20,
+    stages: STAGES,
+    stage_index: STAGES.findIndex((stage) => stage.value === status),
     ...extra,
   };
+}
+
+/** An ISO date `days` from today, as the API sends estimated_arrival. */
+function dateIn(days) {
+  const date = new Date();
+  date.setDate(date.getDate() + days);
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
 }
 
 beforeEach(() => {
@@ -38,6 +65,9 @@ beforeEach(() => {
 /** The group headings in the order they are on the page. */
 const headings = () =>
   screen.getAllByRole('heading', { level: 3 }).map((h) => h.textContent);
+
+/** The bar (button) for a shipment. */
+const bar = (number) => screen.getByRole('button', { name: new RegExp(number) });
 
 describe('Mijn zendingen', () => {
   it('splits the shipments into to send, on the way and received', async () => {
@@ -59,8 +89,43 @@ describe('Mijn zendingen', () => {
     const toSend = screen.getByRole('heading', { name: /Nog te verzenden/ }).closest('section');
     expect(within(toSend).getByText('PLSM-1')).toBeInTheDocument();
     expect(within(toSend).getByText('PLSM-4')).toBeInTheDocument();
-    const received = screen.getByRole('heading', { name: /Ontvangen/ }).closest('section');
-    expect(within(received).getByText('PLSM-3')).toBeInTheDocument();
+  });
+
+  it('folds the groups open and closed like a dropdown', async () => {
+    const user = userEvent.setup();
+    listPackages.mockResolvedValue([
+      shipment(1, 'paid'),
+      shipment(2, 'in_transit', { shipped_at: '2026-09-24T16:30:00Z' }),
+      shipment(3, 'delivered', {
+        shipped_at: '2026-08-23T16:30:00Z',
+        delivered_at: '2026-09-13T11:15:00Z',
+      }),
+      shipment(5, 'cancelled'),
+    ]);
+    renderWithProviders(<Shipments />);
+    await screen.findByText('PLSM-1');
+
+    const toSend = screen.getByRole('button', { name: /^Nog te verzenden/ });
+    const onTheWay = screen.getByRole('button', { name: /^Onderweg/ });
+    const received = screen.getByRole('button', { name: /^Ontvangen/ });
+    const cancelled = screen.getByRole('button', { name: /^Geannuleerd/ });
+
+    // What is still happening starts open; the history starts folded.
+    expect(toSend).toHaveAttribute('aria-expanded', 'true');
+    expect(onTheWay).toHaveAttribute('aria-expanded', 'true');
+    expect(received).toHaveAttribute('aria-expanded', 'false');
+    expect(cancelled).toHaveAttribute('aria-expanded', 'false');
+    expect(screen.queryByText('PLSM-3')).toBeNull();
+    // A folded group still says how many are in it.
+    expect(received).toHaveTextContent('1');
+
+    await user.click(received);
+    expect(received).toHaveAttribute('aria-expanded', 'true');
+    expect(screen.getByText('PLSM-3')).toBeInTheDocument();
+
+    await user.click(toSend);
+    expect(toSend).toHaveAttribute('aria-expanded', 'false');
+    expect(screen.queryByText('PLSM-1')).toBeNull();
   });
 
   it('shows the status in Dutch, not the English the server sends', async () => {
@@ -75,28 +140,157 @@ describe('Mijn zendingen', () => {
     expect(screen.queryByText(/^EN /)).toBeNull();
   });
 
-  it('heads a delivered shipment "afgeleverd", not "onderweg"', async () => {
+  it('opens the details in a pop-up window, and closes it again', async () => {
+    const user = userEvent.setup();
     listPackages.mockResolvedValue([
-      shipment(3, 'delivered', {
-        shipped_at: '2026-08-23T16:30:00Z',
-        delivered_at: '2026-09-13T11:15:00Z',
+      shipment(2, 'in_transit', {
+        shipped_at: '2026-09-24T16:30:00Z',
+        estimated_arrival: dateIn(10),
       }),
     ]);
     renderWithProviders(<Shipments />);
 
-    expect(await screen.findByText('Zending is afgeleverd')).toBeInTheDocument();
+    const button = await screen.findByRole('button', { name: /PLSM-2/ });
+    // The bar's date: when it is expected.
+    expect(button).toHaveTextContent(/Verwacht/);
+    expect(screen.queryByRole('dialog')).toBeNull();
+
+    await user.click(button);
+    const popup = screen.getByRole('dialog', { name: 'Zending PLSM-2' });
+    expect(within(popup).getByText('Hoe lang duurt het nog?')).toBeInTheDocument();
+
+    // The button at the bottom closes it...
+    await user.click(within(popup).getAllByRole('button', { name: 'Sluiten' }).pop());
+    expect(screen.queryByRole('dialog')).toBeNull();
+
+    // ...and so does Escape.
+    await user.click(button);
+    await user.keyboard('{Escape}');
+    expect(screen.queryByRole('dialog')).toBeNull();
+  });
+
+  it('says how many days are left until the expected arrival', async () => {
+    const user = userEvent.setup();
+    listPackages.mockResolvedValue([
+      shipment(2, 'in_transit', {
+        shipped_at: '2026-09-24T16:30:00Z',
+        estimated_arrival: dateIn(10),
+      }),
+    ]);
+    renderWithProviders(<Shipments />);
+
+    await user.click(await screen.findByRole('button', { name: /PLSM-2/ }));
+    expect(screen.getByText(/Verwachte aankomst:/)).toBeInTheDocument();
+    expect(screen.getByText('Nog ongeveer 10 dagen.')).toBeInTheDocument();
+    // Where it is: the journey, with its stages in Dutch.
+    expect(screen.getByText('Waar is uw zending?')).toBeInTheDocument();
+    expect(screen.getByText('Ontvangen in ons magazijn')).toBeInTheDocument();
+    expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '20');
+  });
+
+  it('says when a delivered shipment arrived and how long it took', async () => {
+    const user = userEvent.setup();
+    listPackages.mockResolvedValue([
+      shipment(3, 'delivered', {
+        shipped_at: '2026-08-23T16:30:00Z',
+        delivered_at: '2026-09-13T16:30:00Z',
+      }),
+    ]);
+    renderWithProviders(<Shipments />);
+
+    // "Ontvangen" starts folded: open it first.
+    await user.click(await screen.findByRole('button', { name: /^Ontvangen/ }));
+    await user.click(screen.getByRole('button', { name: /PLSM-3/ }));
+    expect(screen.getByText(/Afgeleverd op 13 september 2026/)).toBeInTheDocument();
+    expect(screen.getByText('De reis duurde 21 dagen.')).toBeInTheDocument();
+    // Asked in the past tense: it has arrived.
+    expect(screen.getByText('Hoe lang duurde het?')).toBeInTheDocument();
+    // The notice heading matches: delivered, not "on its way".
+    expect(screen.getByText('Zending is afgeleverd')).toBeInTheDocument();
     expect(screen.queryByText('Zending is onderweg')).toBeNull();
   });
 
-  it('shows dates with the time', async () => {
+  it('says an arrived shipment is on the island, not that it is late', async () => {
+    const user = userEvent.setup();
+    listPackages.mockResolvedValue([
+      shipment(8, 'arrived', {
+        shipped_at: '2026-09-12T16:30:00Z',
+        // Already passed: it has arrived, which is not "late".
+        estimated_arrival: dateIn(-4),
+      }),
+    ]);
+    renderWithProviders(<Shipments />);
+
+    const button = await screen.findByRole('button', { name: /PLSM-8/ });
+    expect(button).toHaveTextContent(/Verscheept/);
+    expect(button).not.toHaveTextContent(/Verwacht/);
+
+    await user.click(button);
+    expect(screen.getByText('Aangekomen op het eiland')).toBeInTheDocument();
+    expect(screen.queryByText(/langer dan verwacht/)).toBeNull();
+  });
+
+  it('gives the usual sailing time when it has not shipped yet', async () => {
+    const user = userEvent.setup();
     listPackages.mockResolvedValue([shipment(1, 'paid')]);
     renderWithProviders(<Shipments />);
 
-    // "Aangemeld op 29 sep 2026, 12:12" - the exact hour depends on the
-    // time zone the tests run in, so only the shape is checked.
-    const line = await screen.findByText(/Aangemeld op/);
-    expect(line.textContent).toMatch(/2026,? \d{1,2}:\d{2}/);
-    expect(line.textContent).toMatch(/Nog niet verscheept/);
+    await user.click(await screen.findByRole('button', { name: /PLSM-1/ }));
+    expect(screen.getByText('Nog niet verscheept')).toBeInTheDocument();
+    // Curaçao: 17 days at sea, from src/data/destinations.js.
+    expect(screen.getByText(/naar Curaçao ongeveer 17 dagen/)).toBeInTheDocument();
+  });
+
+  it('shows the shipment that was clicked', async () => {
+    const user = userEvent.setup();
+    listPackages.mockResolvedValue([shipment(1, 'paid'), shipment(4, 'purchased')]);
+    renderWithProviders(<Shipments />);
+
+    await screen.findByText('PLSM-1');
+    await user.click(bar('PLSM-4'));
+
+    const popup = screen.getByRole('dialog');
+    expect(popup).toHaveAccessibleName('Zending PLSM-4');
+    expect(within(popup).getByText('Zending 4')).toBeInTheDocument();
+    // Its status, as the label (and again as a step on the timeline).
+    expect(within(popup).getAllByText('Producten gekocht').length).toBeGreaterThan(0);
+  });
+
+  it('shows the invoice that belongs to the shipment, and only that one', async () => {
+    const user = userEvent.setup();
+    listPackages.mockResolvedValue([shipment(1, 'paid'), shipment(4, 'purchased')]);
+    const invoices = [
+      { id: 10, number: 'INV-2026-00010', trackingNumber: 'PLSM-1', valueEur: '50.00', downloadUrl: '/api/invoices/10/download/' },
+      { id: 11, number: 'INV-2026-00011', trackingNumber: 'PLSM-4', valueEur: '80.00', downloadUrl: '/api/invoices/11/download/' },
+    ];
+    renderWithProviders(<Shipments invoices={invoices} />);
+
+    await user.click(await screen.findByRole('button', { name: /PLSM-1/ }));
+    expect(screen.getByText('INV-2026-00010')).toBeInTheDocument();
+    expect(screen.queryByText('INV-2026-00011')).toBeNull();
+  });
+
+  it('says so when a shipment has no invoice yet', async () => {
+    const user = userEvent.setup();
+    listPackages.mockResolvedValue([shipment(1, 'paid')]);
+    renderWithProviders(<Shipments invoices={[]} />);
+
+    await user.click(await screen.findByRole('button', { name: /PLSM-1/ }));
+    expect(
+      screen.getByText('Er is nog geen factuur voor deze zending.'),
+    ).toBeInTheDocument();
+  });
+
+  it('shows dates with the time', async () => {
+    const user = userEvent.setup();
+    listPackages.mockResolvedValue([shipment(1, 'paid')]);
+    renderWithProviders(<Shipments />);
+
+    await user.click(await screen.findByRole('button', { name: /PLSM-1/ }));
+    // "29 sep 2026, 12:12" - the hour depends on the time zone the tests
+    // run in, so only the shape is checked.
+    const registered = screen.getByText('Aangemeld', { selector: 'dt' });
+    expect(registered.nextElementSibling.textContent).toMatch(/2026,? \d{1,2}:\d{2}/);
   });
 
   it('still shows a shipment with a status it does not know', async () => {

@@ -15,6 +15,7 @@ from django.utils.http import urlsafe_base64_decode
 from rest_framework import serializers
 
 from .models import Address, Package, PackageDocument
+from .public import PUBLIC_STAGES, public_stage_index
 
 User = get_user_model()
 
@@ -274,6 +275,14 @@ class PackageSerializer(serializers.ModelSerializer):
     locked_for_customer = serializers.BooleanField(read_only=True)
     lock_reason = serializers.CharField(read_only=True)
 
+    # Where the shipment is on its journey, for the details a customer opens
+    # under "My shipments": the same reading as the Track & Trace lookup
+    # (see public.py), so the two pages can never disagree.
+    destination = serializers.CharField(source="destination_label", read_only=True)
+    progress = serializers.IntegerField(read_only=True)
+    stage_index = serializers.SerializerMethodField()
+    stages = serializers.SerializerMethodField()
+
     class Meta:
         model = Package
         fields = [
@@ -291,10 +300,22 @@ class PackageSerializer(serializers.ModelSerializer):
             "delivery_address_text",
             "shipped_at",
             "delivered_at",
+            "estimated_arrival",
             "created_at",
+            "destination",
+            "progress",
+            "stage_index",
+            "stages",
         ]
         # Customers read their shipments; only staff change them.
         read_only_fields = fields
+
+    def get_stages(self, obj):
+        return [{"value": value, "label": label} for value, label in PUBLIC_STAGES]
+
+    def get_stage_index(self, obj):
+        # -1 for quoted and cancelled: not points on the journey.
+        return public_stage_index(obj)
 
 
 class PackageDocumentSerializer(serializers.ModelSerializer):

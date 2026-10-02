@@ -3,6 +3,12 @@
 // The customer's shipment history: one card per shipment, never one merged
 // list of everything they have ever sent.
 //
+// The groups ("Nog te verzenden", "Onderweg", ...) fold open and closed
+// like a dropdown: click the heading. Each shipment in them is a slim bar -
+// order number, what is in it, status, one date. Clicking it opens a pop-up
+// window (HelpDialog) with the details: how long it will still take, where
+// it is, the facts and its invoice (ShipmentDetails.jsx).
+//
 // That separation is the point of the card rather than a layout preference.
 // A customer who buys something after their first shipment has left ends up
 // with two shipments, each with its own tracking number and its own journey,
@@ -10,15 +16,18 @@
 // boat" — is only answerable if the page keeps them apart. A shipment that
 // has gone is drawn as a record: its own notice, and nothing to press.
 
-import { useEffect, useState } from 'react';
+import { useEffect, useId, useState } from 'react';
 import { listPackages } from '../../api/profile';
 import {
   CheckCircleIcon,
+  ChevronRightIcon,
   ClockIcon,
   CloseIcon,
   ShipIcon,
 } from '../../components/Icons/icons';
 import { useLanguage } from '../../i18n/useLanguage';
+import HelpDialog from '../../components/HelpDialog/HelpDialog';
+import ShipmentDetails from './ShipmentDetails';
 import styles from './Profile.module.css';
 
 /**
@@ -55,6 +64,10 @@ function lockText(shipment) {
 // about presentation; the texts are profile.shipments.groups.<id>.
 // Each group also has its own icon and colour (the colours are in
 // Profile.module.css, under .shipmentGroup[data-group=...]).
+// Which groups start open: the ones with something still happening. The
+// history (received, cancelled) starts folded, showing only its count.
+const OPEN_AT_START = ['toSend', 'onTheWay'];
+
 const GROUPS = [
   {
     id: 'toSend',
@@ -81,8 +94,27 @@ function groupOf(shipment) {
   return 'toSend';
 }
 
-export default function Shipments() {
+/**
+ * @param {object} props
+ * @param {object[]} [props.invoices]  the customer's invoices, loaded by the
+ *   profile page for "My invoices"; each shipment shows its own.
+ */
+export default function Shipments({ invoices = [] }) {
   const { t, language } = useLanguage();
+  // Which shipment is open (its id), or null. One at a time.
+  const [openId, setOpenId] = useState(null);
+  // The groups that are unfolded, by id.
+  const [openGroups, setOpenGroups] = useState(() => new Set(OPEN_AT_START));
+  const idBase = useId();
+
+  function toggleGroup(id) {
+    setOpenGroups((current) => {
+      const next = new Set(current);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
 
   const [shipments, setShipments] = useState([]);
   // 'loading' | 'ready' | 'error'
@@ -116,6 +148,11 @@ export default function Shipments() {
     day: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
+  });
+  // Just the day, for the one date on a closed bar: "15 okt".
+  const shortDay = new Intl.DateTimeFormat(language, {
+    month: 'short',
+    day: 'numeric',
   });
 
   if (state === 'loading') {
@@ -157,6 +194,29 @@ export default function Shipments() {
     return label === key ? shipment.status_display : label;
   }
 
+  // The shipment whose details are open in the pop-up, if any.
+  const selected = shipments.find((shipment) => shipment.id === openId);
+
+  // The one date on a closed bar: the one the customer cares about most
+  // for that shipment.
+  function barDate(shipment) {
+    const say = (key, date) =>
+      `${t(`profile.shipments.bar.${key}`)} ${shortDay.format(date)}`;
+    if (shipment.delivered_at)
+      return say('delivered', new Date(shipment.delivered_at));
+    if (shipment.status === 'cancelled') return null;
+    // Already on the island: an expected date would be in the past.
+    if (shipment.status === 'arrived' && shipment.shipped_at)
+      return say('shipped', new Date(shipment.shipped_at));
+    if (shipment.estimated_arrival) {
+      const [y, m, d] = shipment.estimated_arrival.split('-').map(Number);
+      return say('expected', new Date(y, m - 1, d));
+    }
+    if (shipment.shipped_at)
+      return say('shipped', new Date(shipment.shipped_at));
+    return say('registered', new Date(shipment.created_at));
+  }
+
   return (
     <>
       <p className={styles.cardIntro}>{t('profile.shipments.intro')}</p>
@@ -177,73 +237,110 @@ export default function Shipments() {
             className={styles.shipmentGroup}
             data-group={group.id}
           >
+            {/* The heading is the button that folds the group open and
+                closed; the arrow points down when it is open. */}
             <h3 className={styles.shipmentGroupTitle}>
-              <span className={styles.shipmentGroupIcon}>
-                <group.Icon size={16} />
-              </span>
-              {t(`profile.shipments.groups.${group.id}`)}
-              <span className={styles.shipmentGroupCount}>
-                {inGroup.length}
-              </span>
+              <button
+                type="button"
+                className={styles.shipmentGroupToggle}
+                aria-expanded={openGroups.has(group.id)}
+                aria-controls={`${idBase}-${group.id}`}
+                onClick={() => toggleGroup(group.id)}
+              >
+                <span className={styles.shipmentGroupIcon}>
+                  <group.Icon size={16} />
+                </span>
+                {t(`profile.shipments.groups.${group.id}`)}
+                <span className={styles.shipmentGroupCount}>
+                  {inGroup.length}
+                </span>
+                <ChevronRightIcon
+                  size={20}
+                  className={styles.shipmentGroupChevron}
+                />
+              </button>
             </h3>
 
-            <ul className={styles.shipmentList}>
-              {inGroup.map((shipment) => {
-                const lock = lockText(shipment);
+            {openGroups.has(group.id) && (
+              <ul className={styles.shipmentList} id={`${idBase}-${group.id}`}>
+                {inGroup.map((shipment) => {
+                  const when = barDate(shipment);
 
-                return (
-                  <li key={shipment.id} className={styles.shipment}>
-                    <div className={styles.shipmentHead}>
-                      <p className={styles.invoiceNumber}>
-                        {shipment.tracking_number}
-                      </p>
-                      <span className={styles.shipmentStatus}>
-                        {statusLabel(shipment)}
-                      </span>
-                    </div>
-
-                    {shipment.description && (
-                      <p className={styles.invoiceMeta}>
-                        {shipment.description}
-                      </p>
-                    )}
-
-                    <p className={styles.invoiceMeta}>
-                      {/* Not shipped yet: when it was registered with us, so
-                          the customer still sees a date and time for it. */}
-                      {shipment.shipped_at
-                        ? `${t('profile.shipments.shipped')} ${dateFormat.format(
-                            new Date(shipment.shipped_at),
-                          )}`
-                        : `${t('profile.shipments.registered')} ${dateFormat.format(
-                            new Date(shipment.created_at),
-                          )} · ${t('profile.shipments.notShippedYet')}`}
-                      {shipment.delivered_at &&
-                        ` · ${t('profile.shipments.delivered')} ${dateFormat.format(
-                          new Date(shipment.delivered_at),
-                        )}`}
-                    </p>
-
-                    {/* The read-only notice. Stated on the shipment itself
-                        rather than left to be inferred from the absence of
-                        buttons: what the customer needs to know is not that
-                        this card has no controls, but that their next
-                        purchase travels on its own shipment. */}
-                    {lock && (
-                      <div className={styles.shipmentLocked}>
-                        <p className={styles.shipmentLockedTitle}>
-                          {t(lock.title)}
-                        </p>
-                        <p className={styles.invoiceMeta}>{t(lock.body)}</p>
-                      </div>
-                    )}
-                  </li>
-                );
-              })}
-            </ul>
+                  return (
+                    <li key={shipment.id} className={styles.shipment}>
+                      {/* The bar. The whole bar is the button that opens the
+                        details in a pop-up window. */}
+                      <button
+                        type="button"
+                        className={styles.shipmentBar}
+                        aria-haspopup="dialog"
+                        onClick={() => setOpenId(shipment.id)}
+                      >
+                        <span className={styles.shipmentBarMain}>
+                          <span className={styles.invoiceNumber}>
+                            {shipment.tracking_number}
+                          </span>
+                          {shipment.description && (
+                            <span className={styles.shipmentBarText}>
+                              {shipment.description}
+                            </span>
+                          )}
+                        </span>
+                        <span className={styles.shipmentBarSide}>
+                          <span className={styles.shipmentStatus}>
+                            {statusLabel(shipment)}
+                          </span>
+                          {when && (
+                            <span className={styles.shipmentBarWhen}>
+                              {when}
+                            </span>
+                          )}
+                        </span>
+                        <ChevronRightIcon
+                          size={20}
+                          className={styles.shipmentChevron}
+                        />
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
           </section>
         );
       })}
+
+      {/* The details of the clicked shipment, in a pop-up window over the
+          page. Closes with its button, the x, Escape or a click outside. */}
+      {selected && (
+        <HelpDialog
+          open
+          wide
+          onClose={() => setOpenId(null)}
+          title={`${t('profile.shipments.details.order')} ${selected.tracking_number}`}
+          closeLabel={t('profile.shipments.details.close')}
+          doneLabel={t('profile.shipments.details.close')}
+        >
+          {/* Inside the group's colours (see .shipmentGroup in the CSS),
+              so the pop-up matches the bar that was clicked. */}
+          <div className={styles.shipmentGroup} data-group={groupOf(selected)}>
+            <div className={styles.shipmentPopupHead}>
+              {selected.description && (
+                <p className={styles.shipmentBarText}>{selected.description}</p>
+              )}
+              <span className={styles.shipmentStatus}>
+                {statusLabel(selected)}
+              </span>
+            </div>
+            <ShipmentDetails
+              shipment={selected}
+              invoices={invoices}
+              dateFormat={dateFormat}
+              lock={lockText(selected)}
+            />
+          </div>
+        </HelpDialog>
+      )}
     </>
   );
 }

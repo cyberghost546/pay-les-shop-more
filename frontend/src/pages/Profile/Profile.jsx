@@ -632,7 +632,9 @@ export default function Profile() {
               {t('profile.sections.shipments')}
             </h2>
 
-            <Shipments />
+            {/* The invoices loaded for "Mijn facturen" below, so each
+                shipment can show its own without a second request. */}
+            <Shipments invoices={invoices} />
           </section>
 
           <section className={styles.card} id="invoices">

@@ -21,6 +21,9 @@
 /* The white window. Scrolls inside itself on a short phone screen. */
 .dialog {
   position: relative;
+  /* Width and max-height include the padding, so the window is never
+     taller than the screen. */
+  box-sizing: border-box;
   width: min(520px, 100%);
   max-height: calc(100vh - 2rem);
   overflow-y: auto;
@@ -29,6 +32,11 @@
   background: #ffffff;
   box-shadow: 0 24px 60px rgba(11, 37, 69, 0.3);
   animation: rise 240ms ease-out;
+}
+
+/* The `wide` option: more room for content with more on a line. */
+.wide {
+  width: min(760px, 100%);
 }
 
 /* It takes focus when it opens; a ring round the whole window looks wrong. */
