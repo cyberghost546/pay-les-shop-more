@@ -84,7 +84,7 @@ function MovedToPackages() {
 }
 
 /**
- * /profile is the customer's page: addresses, shipments, invoices, receipts.
+ * /profile is the customer's page: addresses, shipments, invoices.
  * Anyone who works here - office or floor - has their own profile in the
  * warehouse shell instead, so they are sent there.
  */

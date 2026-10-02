@@ -10,7 +10,6 @@ import {
   updateProfile,
 } from '../../api/profile';
 import { listInvoices } from '../../api/invoices';
-import Receipts from './Receipts';
 import Shipments from './Shipments';
 import { AUTH_ERRORS } from '../../api/auth';
 import { useAuth } from '../../auth/useAuth';
@@ -120,12 +119,6 @@ function SectionIcon({ name }) {
         <path d="M9 16h4" />
       </>
     ),
-    receipts: (
-      <>
-        <path d="M7 3.5h10v17l-2.5-1.6-2.5 1.6-2.5-1.6L7 20.5Z" />
-        <path d="M10 8h4M10 12h4" />
-      </>
-    ),
     password: (
       <>
         <rect x="4.5" y="10.5" width="15" height="10" rx="2" />
@@ -170,7 +163,6 @@ const SECTIONS = [
   { id: 'tracking', labelKey: 'profile.sections.tracking' },
   { id: 'shipments', labelKey: 'profile.sections.shipments' },
   { id: 'invoices', labelKey: 'profile.sections.invoices' },
-  { id: 'receipts', labelKey: 'profile.sections.receipts' },
   { id: 'password', labelKey: 'profile.sections.password' },
   { id: 'notifications', labelKey: 'profile.sections.notifications' },
   { id: 'danger', labelKey: 'profile.sections.danger' },
@@ -716,18 +708,6 @@ export default function Profile() {
                 ))}
               </ul>
             )}
-          </section>
-
-          {/* What the customer sends in: the receipt for what they bought,
-              the shop's invoice, a customs form. The opposite direction to
-              the invoices above. */}
-          <section className={styles.card} id="receipts">
-            <h2 className={styles.cardTitle}>
-              <SectionIcon name="receipts" />
-              {t('profile.sections.receipts')}
-            </h2>
-
-            <Receipts />
           </section>
 
           {/* Change password */}

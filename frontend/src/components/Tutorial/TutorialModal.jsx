@@ -122,21 +122,49 @@ export default function TutorialModal() {
   const rect = useTargetRect(step.target, step.id);
 
   const cardRef = useRef(null);
-  // The card's size, measured after each render, for cardPosition().
+  // Wraps everything inside the card. Its height is the card's FULL height,
+  // even while the card itself has been made shorter to fit the screen.
+  const contentRef = useRef(null);
+  // The card's full (uncut) size, for cardPosition().
   const [cardSize, setCardSize] = useState({ width: 480, height: 420 });
   // Re-render on resize / rotate, so the position is recalculated.
   const [, setViewport] = useState(0);
 
-  // Measured whenever the card changes size (a new step, a longer
+  // Measured whenever the contents change size (a new step, a longer
   // translation, a rotated phone). ResizeObserver also reports the size
   // once straight away. Very old browsers lack it and keep the estimate.
+  //
+  // IMPORTANT: this measures the contents, not the card. cardPosition() may
+  // make the card shorter (maxHeight) to fit beside the highlighted element.
+  // Measuring the shortened card would report "it fits now", the card would
+  // be made full height again, then measured as "too tall", shortened...
+  // an endless loop that made the card flicker (and hid its buttons) on
+  // screens around 1536x730. The contents' height does not change when the
+  // card is shortened, so the decision stays the same.
   useEffect(() => {
     const card = cardRef.current;
-    if (!card || typeof ResizeObserver === 'undefined') return undefined;
+    const content = contentRef.current;
+    if (!card || !content || typeof ResizeObserver === 'undefined') {
+      return undefined;
+    }
     const observer = new ResizeObserver(() => {
-      setCardSize({ width: card.offsetWidth, height: card.offsetHeight });
+      const style = window.getComputedStyle(card);
+      // The card's own padding and border, around the contents.
+      const frame =
+        parseFloat(style.paddingTop) +
+        parseFloat(style.paddingBottom) +
+        parseFloat(style.borderTopWidth) +
+        parseFloat(style.borderBottomWidth);
+      const width = card.offsetWidth;
+      const height = Math.round(content.offsetHeight + frame);
+      // Only when it really changed, so a re-render cannot set off another.
+      setCardSize((current) =>
+        current.width === width && current.height === height
+          ? current
+          : { width, height },
+      );
     });
-    observer.observe(card);
+    observer.observe(content);
     return () => observer.disconnect();
   }, []);
 
@@ -189,7 +217,10 @@ export default function TutorialModal() {
         const first = focusable[0];
         const last = focusable[focusable.length - 1];
         const active = document.activeElement;
-        if (event.shiftKey && (active === first || !cardRef.current.contains(active))) {
+        if (
+          event.shiftKey &&
+          (active === first || !cardRef.current.contains(active))
+        ) {
           event.preventDefault();
           last.focus();
         } else if (!event.shiftKey && active === last) {
@@ -235,82 +266,104 @@ export default function TutorialModal() {
         aria-labelledby={titleId}
         onKeyDown={handleCardKeyDown}
       >
-        <div className={styles.cardHead}>
-          <TutorialProgress current={stepIndex + 1} total={steps.length} />
-          <button
-            type="button"
-            className={styles.close}
-            onClick={close}
-            aria-label={t('onboarding.close')}
-          >
-            ×
-          </button>
-        </div>
+        {/* Everything inside the card, so its full height can be measured
+            (see contentRef above). */}
+        <div ref={contentRef}>
+          <div className={styles.cardHead}>
+            <TutorialProgress current={stepIndex + 1} total={steps.length} />
+            <button
+              type="button"
+              className={styles.close}
+              onClick={close}
+              aria-label={t('onboarding.close')}
+            >
+              ×
+            </button>
+          </div>
 
-        {/* Keyed on the step, so each new step plays the fade-in. The texts
+          {/* Keyed on the step, so each new step plays the fade-in. The texts
             of a page tour live under onboarding.pages.<tour>. */}
-        <div key={step.id} className={styles.stepAnimate}>
-          <TutorialStep
-            step={step}
-            titleId={titleId}
-            textBase={
-              isGeneralTour ? 'onboarding.steps' : `onboarding.pages.${tourId}`
-            }
-          />
-        </div>
+          <div key={step.id} className={styles.stepAnimate}>
+            <TutorialStep
+              step={step}
+              titleId={titleId}
+              textBase={
+                isGeneralTour
+                  ? 'onboarding.steps'
+                  : `onboarding.pages.${tourId}`
+              }
+            />
+          </div>
 
-        <div className={styles.footer}>
-          {isFirst && isGeneralTour ? (
-            // The general tour's welcome step: Skip or Start.
-            <>
-              <button type="button" className={styles.secondary} onClick={close}>
-                {t('onboarding.skip')}
-              </button>
-              <button type="button" className={styles.primary} onClick={next}>
-                {t('onboarding.start')}
-              </button>
-            </>
-          ) : (
-            <>
-              {/* "Skip" on the left, quietly; Back and Next on the right.
-                  No Back on the first step of a page tour, nothing to go
-                  back to. */}
-              {!isLast && (
-                <button type="button" className={styles.skip} onClick={close}>
+          <div className={styles.footer}>
+            {isFirst && isGeneralTour ? (
+              // The general tour's welcome step: Skip or Start.
+              <>
+                <button
+                  type="button"
+                  className={styles.secondary}
+                  onClick={close}
+                >
                   {t('onboarding.skip')}
                 </button>
-              )}
-              <span className={styles.footerSpacer} />
-              {!isFirst && (
-                <button type="button" className={styles.secondary} onClick={back}>
-                  {t('onboarding.back')}
+                <button type="button" className={styles.primary} onClick={next}>
+                  {t('onboarding.start')}
                 </button>
-              )}
-              {isLast ? (
-                <>
-                  {/* "Open website" belongs to the general tour, which may
+              </>
+            ) : (
+              <>
+                {/* "Skip" on the left, quietly; Back and Next on the right.
+                  No Back on the first step of a page tour, nothing to go
+                  back to. */}
+                {!isLast && (
+                  <button type="button" className={styles.skip} onClick={close}>
+                    {t('onboarding.skip')}
+                  </button>
+                )}
+                <span className={styles.footerSpacer} />
+                {!isFirst && (
+                  <button
+                    type="button"
+                    className={styles.secondary}
+                    onClick={back}
+                  >
+                    {t('onboarding.back')}
+                  </button>
+                )}
+                {isLast ? (
+                  <>
+                    {/* "Open website" belongs to the general tour, which may
                       have been started anywhere; a page tour ends where it
                       is. */}
-                  {isGeneralTour && (
+                    {isGeneralTour && (
+                      <button
+                        type="button"
+                        className={styles.secondary}
+                        onClick={openWebsite}
+                      >
+                        {t('onboarding.openWebsite')}
+                      </button>
+                    )}
                     <button
                       type="button"
-                      className={styles.secondary}
-                      onClick={openWebsite}
+                      className={styles.primary}
+                      onClick={close}
                     >
-                      {t('onboarding.openWebsite')}
+                      {t('onboarding.finish')}
                     </button>
-                  )}
-                  <button type="button" className={styles.primary} onClick={close}>
-                    {t('onboarding.finish')}
+                  </>
+                ) : (
+                  <button
+                    type="button"
+                    className={styles.primary}
+                    onClick={next}
+                  >
+                    {t('onboarding.next')}
                   </button>
-                </>
-              ) : (
-                <button type="button" className={styles.primary} onClick={next}>
-                  {t('onboarding.next')}
-                </button>
-              )}
-            </>
-          )}
+                )}
+              </>
+            )}
+          </div>
         </div>
       </div>
     </div>

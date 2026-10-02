@@ -159,7 +159,7 @@ export const pageTours = {
     { id: 'details', target: '#details' },
     { id: 'tracking', target: '#tracking' },
     { id: 'shipments', target: '#shipments' },
-    { id: 'invoices', target: ['#invoices', '#receipts'] },
+    { id: 'invoices', target: '#invoices' },
     { id: 'notifications', target: '#notifications' },
   ],
   login: [
