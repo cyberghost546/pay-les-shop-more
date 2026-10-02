@@ -9,6 +9,7 @@ import RequireWarehouse from './components/RequireWarehouse/RequireWarehouse';
 import RequireDriver from './components/RequireDriver/RequireDriver';
 import LanguageSwitcher from './components/LanguageSwitcher/LanguageSwitcher';
 import PageGuide from './components/PageGuide/PageGuide';
+import WelcomeGuide from './components/WelcomeGuide/WelcomeGuide';
 import Footer from './components/Footer/Footer';
 import { useAuth } from './auth/useAuth';
 
@@ -244,6 +245,10 @@ export default function App() {
       {/* Keyed on the path: a new page gets a fresh guide, closed, with the
           previous page's narration stopped as the old one unmounts. */}
       {!isDashboard && <PageGuide key={pathname} />}
+      {/* The "how ordering works" pop-up a first-time visitor sees once.
+          It decides for itself whether to open (signed out, not seen before
+          in this browser); see the notes at the top of WelcomeGuide.jsx. */}
+      {!isDashboard && <WelcomeGuide />}
     </>
   );
 }

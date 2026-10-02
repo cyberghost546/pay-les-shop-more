@@ -191,4 +191,23 @@ describe('QuoteForm', () => {
     // network error and makes the sender type everything again.
     expect(screen.getByLabelText(/First name/)).toHaveValue('Ana');
   });
+
+  // The "How does this form work?" pop-up: opens on the button, explains the
+  // steps, and closes again on "Got it" without touching what was typed.
+  it('explains the form in a pop-up', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<QuoteForm destination="Curaçao" />);
+
+    expect(screen.getByText('Your invoice')).toBeInTheDocument();
+
+    await user.click(
+      screen.getByRole('button', { name: /How does this form work\?/ }),
+    );
+    const dialog = screen.getByRole('dialog', { name: 'How to request a quote' });
+    expect(dialog).toBeInTheDocument();
+    expect(dialog.querySelectorAll('li')).toHaveLength(4);
+
+    await user.click(screen.getByRole('button', { name: 'Got it' }));
+    expect(screen.queryByRole('dialog')).toBeNull();
+  });
 });

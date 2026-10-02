@@ -8,6 +8,7 @@ import {
 } from '../../api/quote';
 import { API_ERRORS } from '../../api/client';
 import { useLanguage } from '../../i18n/useLanguage';
+import HelpDialog from '../HelpDialog/HelpDialog';
 import styles from './QuoteForm.module.css';
 
 const SUPPORT_EMAIL = 'info@paylesshopmore.com';
@@ -65,6 +66,8 @@ export default function QuoteForm({ destination }) {
   const [sent, setSent] = useState(false);
   const [dragging, setDragging] = useState(false);
   const fileInputRef = useRef(null);
+  // Whether the "how does this form work?" pop-up is showing.
+  const [helpOpen, setHelpOpen] = useState(false);
   const { t, language } = useLanguage();
 
   function handleChange(event) {
@@ -155,6 +158,38 @@ export default function QuoteForm({ destination }) {
         </header>
 
         <div className={styles.card}>
+          {/* Opens the pop-up below that explains the form step by step.
+              The texts are under destination.quote.help in translations.js. */}
+          <button
+            type="button"
+            className={styles.helpButton}
+            onClick={() => setHelpOpen(true)}
+          >
+            <span className={styles.helpIcon} aria-hidden="true">
+              ?
+            </span>
+            {t('destination.quote.help.open')}
+          </button>
+
+          <HelpDialog
+            open={helpOpen}
+            onClose={() => setHelpOpen(false)}
+            title={t('destination.quote.help.title')}
+            closeLabel={t('destination.quote.help.close')}
+            doneLabel={t('destination.quote.help.done')}
+          >
+            {/* One numbered step per line of help.steps. The check guards
+                against a language that is missing the list. */}
+            <ol className={styles.helpSteps}>
+              {(Array.isArray(t('destination.quote.help.steps'))
+                ? t('destination.quote.help.steps')
+                : []
+              ).map((step) => (
+                <li key={step}>{step}</li>
+              ))}
+            </ol>
+          </HelpDialog>
+
           {failureKey && (
             <p className={styles.failure} role="alert">
               {t(failureKey)}

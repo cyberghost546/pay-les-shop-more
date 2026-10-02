@@ -507,7 +507,22 @@ export const translations = {
         firstName: 'Voornaam',
         lastName: 'Achternaam',
         email: 'E-mailadres',
-        upload: 'Uw bestand',
+        // The upload is meant for the webshop invoice of what is being sent.
+        upload: 'Uw factuur',
+        // The "Hoe werkt dit?" pop-up above the form (HelpDialog). Each line
+        // of `steps` becomes one numbered step in the pop-up.
+        help: {
+          open: 'Hoe werkt dit formulier?',
+          title: 'Zo vraagt u een offerte aan',
+          steps: [
+            'Vul uw voornaam, achternaam en e-mailadres in. Op dat e-mailadres sturen wij u de offerte.',
+            'Upload de factuur van uw bestelling bij "Uw factuur": klik op "Kies een bestand" of sleep het bestand in het vak. Een PDF, foto of screenshot (JPG of PNG) van maximaal 10 MB is goed.',
+            'Nog geen factuur, of meer dan één? Beschrijf in het berichtenveld wat u wilt versturen, of mail de overige facturen naar info@paylesshopmore.com.',
+            'Klik op "Aanvraag versturen". U ontvangt zo snel mogelijk een indicatieve offerte per e-mail.',
+          ],
+          done: 'Begrepen',
+          close: 'Sluiten',
+        },
         uploadHint: 'PDF, JPG of PNG, maximaal 10 MB.',
         chooseFile: 'Kies een bestand',
         noFile: 'Geen bestand gekozen',
@@ -1079,6 +1094,21 @@ export const translations = {
             'Stel hier uw vraag. Vermeld uw trackingcode of ordernummer als uw vraag over een zending gaat, dan kunnen wij direct meekijken.',
         },
       },
+    },
+    // The welcome pop-up for first-time visitors
+    // (src/components/WelcomeGuide). The step texts themselves are shared
+    // with the tutorial page: see tutorial.steps below.
+    welcome: {
+      eyebrow: 'Nieuw hier?',
+      title: 'Welkom bij Pay Less Shop More',
+      intro:
+        'Bestel bij Nederlandse webshops en wij verzenden het naar het eiland. In een paar korte stappen laten we zien hoe het werkt.',
+      start: 'Laat zien hoe het werkt',
+      skip: 'Overslaan',
+      close: 'Sluiten',
+      // {current} and {total} are filled in by the component.
+      stepOf: 'Stap {current} van {total}',
+      fullGuide: 'Volledige uitleg',
     },
     tutorial: {
       eyebrow: 'UITLEG',
@@ -1674,7 +1704,22 @@ export const translations = {
         firstName: 'First name',
         lastName: 'Last name',
         email: 'Email address',
-        upload: 'Your file',
+        // The upload is meant for the webshop invoice of what is being sent.
+        upload: 'Your invoice',
+        // The "How does this work?" pop-up above the form (HelpDialog). Each
+        // line of `steps` becomes one numbered step in the pop-up.
+        help: {
+          open: 'How does this form work?',
+          title: 'How to request a quote',
+          steps: [
+            'Fill in your first name, last name and email address. We send the quote to that email address.',
+            'Upload the invoice for your order under "Your invoice": click "Choose a file" or drag the file into the box. A PDF, photo or screenshot (JPG or PNG) of up to 10 MB is fine.',
+            'No invoice yet, or more than one? Describe what you want to send in the message box, or email the other invoices to info@paylesshopmore.com.',
+            'Click "Send request". You will receive an indicative quote by email as soon as possible.',
+          ],
+          done: 'Got it',
+          close: 'Close',
+        },
         uploadHint: 'PDF, JPG or PNG, up to 10 MB.',
         chooseFile: 'Choose a file',
         noFile: 'No file selected',
@@ -2223,6 +2268,21 @@ export const translations = {
             'Ask your question here. Mention your tracking code or order number if it is about a shipment, so we can look into it right away.',
         },
       },
+    },
+    // The welcome pop-up for first-time visitors
+    // (src/components/WelcomeGuide). The step texts themselves are shared
+    // with the tutorial page: see tutorial.steps below.
+    welcome: {
+      eyebrow: 'New here?',
+      title: 'Welcome to Pay Less Shop More',
+      intro:
+        'Order from Dutch webshops and we ship it to the island. In a few short steps we show you how it works.',
+      start: 'Show me how it works',
+      skip: 'Skip',
+      close: 'Close',
+      // {current} and {total} are filled in by the component.
+      stepOf: 'Step {current} of {total}',
+      fullGuide: 'Full guide',
     },
     tutorial: {
       eyebrow: 'GUIDE',
@@ -2818,7 +2878,23 @@ export const translations = {
         firstName: 'Nòmber',
         lastName: 'Fam',
         email: 'Direkshon di e-mail',
-        upload: 'Bo dokumento',
+        // The upload is meant for the webshop invoice of what is being sent.
+        upload: 'Bo faktura',
+        // The "Kon e formulario aki ta funshoná?" pop-up above the form
+        // (HelpDialog). Each line of `steps` becomes one numbered step.
+        // NOTE: needs review by a native speaker.
+        help: {
+          open: 'Kon e formulario aki ta funshoná?',
+          title: 'Kon pa pidi un preisnota',
+          steps: [
+            'Yena bo nòmber, fam i direkshon di e-mail. Nos ta manda e preisnota pa e direkshon di e-mail ei.',
+            'Upload e faktura di bo kompra na "Bo faktura": klek riba "Skohe un dokumento" of lag e dokumento kai den e kaha. Un PDF, potrèt of screenshot (JPG of PNG) te ku 10 MB ta bon.',
+            'Ainda no tin faktura, of bo tin mas ku un? Deskribí den e kaha di mensahe kiko bo ke manda, of manda e otro fakturanan pa info@paylesshopmore.com.',
+            'Klek riba "Manda petishon". Lo bo risibí un preisnota indikativo pa e-mail mas lihé posibel.',
+          ],
+          done: 'Mi a komprondé',
+          close: 'Sera',
+        },
         uploadHint: 'PDF, JPG of PNG, te ku 10 MB.',
         chooseFile: 'Skohe un dokumento',
         noFile: 'No a skohe dokumento',
@@ -3368,6 +3444,22 @@ export const translations = {
             'Hasi bo pregunta aki. Menshoná bo kódigo di tracking òf number di òrdu si e ta tokante un enbio, asina nos por wak mesora.',
         },
       },
+    },
+    // The welcome pop-up for first-time visitors
+    // (src/components/WelcomeGuide). The step texts themselves are shared
+    // with the tutorial page: see tutorial.steps below.
+    // NOTE: needs review by a native speaker, like the rest of this section.
+    welcome: {
+      eyebrow: 'Nobo aki?',
+      title: 'Bon bini na Pay Less Shop More',
+      intro:
+        'Kumpra na webshopnan hulandes i nos ta manda bo kumpra pa e isla. Den un par di paso kòrtiku nos ta mustra bo kon e ta funshoná.',
+      start: 'Mustra mi kon e ta funshoná',
+      skip: 'Salta',
+      close: 'Sera',
+      // {current} and {total} are filled in by the component.
+      stepOf: 'Paso {current} di {total}',
+      fullGuide: 'Gia kompletu',
     },
     tutorial: {
       eyebrow: 'GIA',
